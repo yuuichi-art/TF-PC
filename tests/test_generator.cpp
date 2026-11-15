@@ -154,8 +154,9 @@ void testBenchmarkSet() {
     const std::string folder = "tmp_test_generator";
     std::filesystem::remove_all(folder);
 
-    // Una semilla por categoría: cada escenario completo construye su grafo de misión.
-    std::vector<std::string> paths = DatasetGenerator::generateBenchmarkSet(folder, 1);
+    // Una semilla por categoría y sin el peor caso: cada escenario completo construye su grafo
+    // de misión, y el Extreme al máximo tarda varios segundos (más aún en Debug).
+    std::vector<std::string> paths = DatasetGenerator::generateBenchmarkSet(folder, 1, false);
     assert(paths.size() == 4);
     assert(paths.front() == folder + "/small_1.txt");
     assert(paths.back() == folder + "/extreme_1.txt");
@@ -170,6 +171,15 @@ void testBenchmarkSet() {
     Scenario onlyLayout = layout(DatasetCategory::SMALL, 3);
     onlyLayout.battery = full.battery;
     assert(toText(full) == toText(onlyLayout));
+
+    // El peor caso fija cada cantidad en el máximo del rango.
+    for (DatasetCategory category : GENERATED_CATEGORIES) {
+        CategorySpec range = DatasetGenerator::specFor(category);
+        Scenario worst = DatasetGenerator::generateLayout(DatasetGenerator::worstCaseSpecFor(category), category, 1);
+        assert(worst.numClients() == range.maxClients);
+        assert(worst.numStations() == range.maxStations);
+        assert(worst.numObstacles() == range.maxObstacles);
+    }
 
     std::filesystem::remove_all(folder);
 

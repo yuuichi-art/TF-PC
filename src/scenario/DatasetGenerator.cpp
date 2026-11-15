@@ -117,6 +117,14 @@ CategorySpec DatasetGenerator::specFor(DatasetCategory category) {
     throw std::invalid_argument("la categoria ADVERSARIAL no se genera: sus casos se escriben a mano");
 }
 
+CategorySpec DatasetGenerator::worstCaseSpecFor(DatasetCategory category) {
+    CategorySpec spec = specFor(category);
+    spec.minClients = spec.maxClients;
+    spec.minStations = spec.maxStations;
+    spec.minObstacles = spec.maxObstacles;
+    return spec;
+}
+
 Scenario DatasetGenerator::generate(DatasetCategory category, uint64_t seed, double width, double height) {
     Scenario scenario = generateLayout(specFor(category), category, seed, width, height);
     scenario.battery = batteryFor(scenario);
@@ -159,18 +167,28 @@ Scenario DatasetGenerator::generateLayout(const CategorySpec& spec, DatasetCateg
     return scenario;
 }
 
-std::vector<std::string> DatasetGenerator::generateBenchmarkSet(const std::string& folder, int seedsPerCategory) {
+std::vector<std::string> DatasetGenerator::generateBenchmarkSet(const std::string& folder, int seedsPerCategory,
+                                                                bool includeWorstCase) {
     const DatasetCategory categories[] = {
         DatasetCategory::SMALL, DatasetCategory::MEDIUM, DatasetCategory::LARGE, DatasetCategory::EXTREME
     };
     std::vector<std::string> paths;
+    auto saveScenario = [&](const Scenario& scenario) {
+        std::string path = folder + "/" + scenario.name + ".txt";
+        ScenarioIO::save(scenario, path);
+        paths.push_back(path);
+    };
+
     for (DatasetCategory category : categories) {
         for (int seed = 1; seed <= seedsPerCategory; ++seed) {
-            Scenario scenario = generate(category, static_cast<uint64_t>(seed));
-            std::string path = folder + "/" + scenario.name + ".txt";
-            ScenarioIO::save(scenario, path);
-            paths.push_back(path);
+            saveScenario(generate(category, static_cast<uint64_t>(seed)));
         }
+    }
+    if (includeWorstCase) {
+        Scenario worst = generateLayout(worstCaseSpecFor(DatasetCategory::EXTREME), DatasetCategory::EXTREME, 1);
+        worst.name = "extreme_max";
+        worst.battery = batteryFor(worst);
+        saveScenario(worst);
     }
     return paths;
 }

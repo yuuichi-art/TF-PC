@@ -29,6 +29,8 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
+**Resultados del benchmark final** ([`docs/resultados/`](docs/resultados/README.md)): 26 escenarios y 140 ejecuciones, todas OK. Incluye el peor caso Extreme (1000 clientes), que se resuelve en 4,50 s de 5 con 33 MB de memoria. La búsqueda local iterada queda primera en todas las categorías, con un gap medio menor a 1 %.
+
 ---
 
 ## 3. Arquitectura del Repositorio
@@ -39,7 +41,8 @@ GeoDroneChallenge/
 ├── .gitignore                  # Exclusiones de build, binarios y editores
 ├── README.md                   # Documentación técnica del sistema
 ├── docs/
-│   └── decisiones.md           # Decisiones de diseño, alcance y pendientes
+│   ├── decisiones.md           # Decisiones de diseño, alcance y pendientes
+│   └── resultados/             # Benchmark final: CSV, ranking, rutas de ejemplo y hallazgos
 ├── data/
 │   └── adversarial/            # Casos adversariales hechos a mano (ver su README)
 ├── src/
@@ -141,9 +144,9 @@ El programa se ejecuta desde la raíz del proyecto, porque las rutas por defecto
 
 | Opción | Qué hace |
 | --- | --- |
-| 1. Generar datasets | Crea las semillas 1..N de cada categoría en `data/generated/`, con la batería calculada por búsqueda binaria. |
+| 1. Generar datasets | Crea las semillas 1..N de cada categoría y el peor caso `extreme_max` en `data/generated/`, con la batería calculada por búsqueda binaria. |
 | 2. Resolver un escenario | Lee un escenario, deja elegir el algoritmo, muestra costo, recargas, excluidos, tiempo y memoria, y exporta la ruta en `output/`. |
-| 3. Ejecutar juez y benchmark | Corre todos los algoritmos sobre los escenarios de una carpeta (y los adversariales), verifica cada ruta, da veredictos OK/WA/TLE/MLE, calcula el gap y muestra el ranking por categoría. Guarda `output/judge/results.csv`, `output/judge/ranking.csv` y las rutas. |
+| 3. Ejecutar juez y benchmark | Corre todos los algoritmos sobre los escenarios de una carpeta (y los adversariales), verifica cada ruta, da veredictos OK/WA/TLE/MLE, calcula el gap y muestra el ranking por categoría. Guarda `output/judge/results.csv`, `output/judge/ranking.csv` y las rutas. Para que la memoria sea por caso, debe ser lo primero que se ejecuta al abrir el programa. |
 | 4. Analizar red de recarga | Muestra estaciones alcanzables, estaciones críticas (puntos de articulación), red mínima de soporte y autonomía mínima. |
 
 Con MinGW el ejecutable se enlaza estático, así que funciona en otra PC con Windows sin instalar nada.

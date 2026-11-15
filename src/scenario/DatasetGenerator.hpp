@@ -43,6 +43,9 @@ public:
 
     static CategorySpec specFor(DatasetCategory category);
 
+    // Los mismos rangos con cada cantidad fija en su máximo: el peor caso de la categoría.
+    static CategorySpec worstCaseSpecFor(DatasetCategory category);
+
     /**
      * @brief Genera un escenario completo de la categoría dada (SMALL, MEDIUM, LARGE o EXTREME):
      * la geometría de generateLayout más la batería de batteryFor.
@@ -69,9 +72,12 @@ public:
 
     /**
      * @brief Genera las semillas 1..seedsPerCategory de cada categoría y las guarda en folder
-     * como "<categoria>_<semilla>.txt". Devuelve las rutas creadas, de menor a mayor categoría.
+     * como "<categoria>_<semilla>.txt". Con includeWorstCase agrega "extreme_max.txt": un Extreme
+     * con todos los rangos en su máximo (semilla 1), para comprobar que el peor caso cabe en el
+     * límite. Devuelve las rutas creadas, de menor a mayor categoría.
      */
-    static std::vector<std::string> generateBenchmarkSet(const std::string& folder, int seedsPerCategory = 5);
+    static std::vector<std::string> generateBenchmarkSet(const std::string& folder, int seedsPerCategory = 5,
+                                                         bool includeWorstCase = true);
 };
 
 } // namespace geodrone

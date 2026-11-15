@@ -23,6 +23,10 @@ using namespace geodrone;
 // valores por defecto y el menú termina en lugar de quedar en un bucle.
 bool inputClosed = false;
 
+// La memoria pico del proceso nunca baja: si antes del juez se hizo otro trabajo en esta
+// sesión, la memoria de cada caso queda tapada por ese pico anterior.
+bool sessionUsedMemory = false;
+
 std::string trim(const std::string& text) {
     size_t first = text.find_first_not_of(" \t\r\n");
     if (first == std::string::npos) return "";
@@ -221,6 +225,11 @@ void runJudge() {
     }
 
     const std::string output = "output/judge";
+    if (sessionUsedMemory) {
+        std::cout << "  Aviso: en esta sesion ya se uso memoria (pico actual " << std::fixed << std::setprecision(1)
+                  << peakMemoryMB() << " MB). La columna de memoria no sera por caso: para medirla,\n"
+                  << "  ejecute el juez como primera opcion al abrir el programa.\n";
+    }
     std::cout << "  Ejecutando " << files.size() << " escenarios de menor a mayor...\n" << std::flush;
     std::vector<JudgeRow> rows = Judge::run(files, output + "/routes", std::cout);
     std::vector<RankingRow> ranking = Judge::rank(rows);
@@ -334,6 +343,7 @@ int main() {
         } catch (const std::exception& error) {
             std::cout << "  [ERROR] " << error.what() << '\n';
         }
+        sessionUsedMemory = true;
         if (inputClosed) break;
     }
     std::cout << "Hasta luego.\n";

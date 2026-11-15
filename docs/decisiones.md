@@ -59,7 +59,7 @@ Heurísticas sobre el orden de visita (Release `-O3`, semillas 1 a 5 de cada cat
 | Extreme: gap contra la mejor | 19,3 % | 32,4 % | 4,2 % | 6,3 % | 0 % |
 | Extreme: peor tiempo | 0,6 ms | 1,9 ms | 3,7 ms | 4,1 ms | 589 ms |
 
-La búsqueda local iterada usa 200 iteraciones fijas, para que cada semilla dé siempre la misma ruta, y un límite de tiempo como resguardo. Más iteraciones mejoran poco y no caben en el peor caso Extreme (gap contra la cota, promedio de 3 semillas):
+La búsqueda local iterada usa 200 iteraciones fijas, para que cada semilla dé siempre la misma ruta, y un límite de tiempo como resguardo. El resguardo solo actúa en el peor caso `extreme_max`, cuyo costo puede variar levemente entre corridas (ver `docs/resultados/`). Más iteraciones mejoran poco y no caben en el peor caso Extreme (gap contra la cota, promedio de 3 semillas):
 
 | Iteraciones | 0 (solo 2-opt) | 50 | 200 | 500 | 1000 |
 | --- | --- | --- | --- | --- | --- |
@@ -101,7 +101,7 @@ Los escenarios generados usan como batería la autonomía mínima × 1,2, redond
 - El juez verifica cada ruta con código independiente de los solvers: ningún tramo cruza un obstáculo, la batería nunca baja de 0, se visitan todos los clientes alcanzables y la ruta empieza y termina en la base.
 - Veredictos: OK (ruta válida dentro del límite), WA (ruta inválida), TLE (excede el tiempo), MLE (excede la memoria).
 - Ranking por categoría: más casos OK, luego menor gap medio, luego menor tiempo medio.
-- El tiempo se mide con `<chrono>`. La memoria es el pico del proceso; el juez ejecuta los casos de menor a mayor para que la cifra corresponda al caso actual.
+- El tiempo se mide con `<chrono>`. La memoria es el pico del proceso; el juez ejecuta los casos de menor a mayor para que la cifra corresponda al caso actual. Por eso el juez debe ser lo primero que se ejecuta al abrir el programa; si antes se usó otra opción, el menú avisa que la memoria no será por caso.
 
 Detalles del juez:
 
@@ -193,6 +193,8 @@ Para que el peor caso Extreme cupiera (antes tardaba 3,4 s) se hicieron dos camb
 - Dijkstra no expande la base, las estaciones ni los clientes, porque un camino mínimo entre obstáculos solo dobla en vértices de obstáculos. Da las mismas distancias en la mitad de tiempo (de 1,77 s a 0,85 s en el peor caso Extreme).
 
 Los casos hechos a mano de `data/adversarial/` usan la categoría `ADVERSARIAL`, con los mismos límites que Small, y semilla 0.
+
+El set de benchmark incluye además `extreme_max`: un Extreme con todos los rangos en su máximo (1000 clientes, 25 estaciones, 150 obstáculos), para comprobar que el peor caso permitido cabe en el límite. En el benchmark final tardó 4,50 s de 5 con 33 MB de memoria. Los resultados completos están en [`docs/resultados/`](resultados/README.md).
 
 ## 8. Fuera de alcance
 
