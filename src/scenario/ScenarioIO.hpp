@@ -30,12 +30,14 @@ namespace ScenarioIO {
 
     /**
      * @brief Escribe un escenario en el mismo formato que read() acepta.
+     * Lanza std::invalid_argument si el nombre está vacío o tiene espacios.
      */
     void write(const Scenario& scenario, std::ostream& out);
 
     /**
      * @brief Guarda un escenario en un archivo, creando las carpetas que falten.
-     * Lanza std::runtime_error si no se puede escribir.
+     * Lanza std::invalid_argument si el nombre no es válido y std::runtime_error si no se
+     * puede escribir.
      */
     void save(const Scenario& scenario, const std::string& path);
 

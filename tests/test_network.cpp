@@ -70,7 +70,6 @@ void testPrim() {
 
     // Cuadrado de lado 1: el árbol usa tres lados (costo 3, arista mayor 1).
     const double r2 = std::sqrt(2.0);
-    const double INF = std::numeric_limits<double>::infinity();
     std::vector<std::vector<double>> dist = {
         {0, 1, r2, 1, INF},
         {1, 0, 1, r2, INF},

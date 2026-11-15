@@ -222,6 +222,42 @@ void testAdversarialFiles(const std::string& folder) {
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
+void testBomAndNames() {
+    std::cout << "[TEST] 6. Archivo con BOM UTF-8 y nombres con espacios..." << std::endl;
+
+    // El Bloc de notas puede anteponer un BOM (EF BB BF): se ignora y el archivo se lee igual.
+    Scenario withBom = readText("\xEF\xBB\xBF" + DECISIONS_EXAMPLE);
+    assert(withBom.name == "small_001" && withBom.numClients() == 3);
+
+    // Un nombre con espacios o vacío no se puede guardar, porque el archivo no se podría releer.
+    Scenario s = readText(DECISIONS_EXAMPLE);
+    for (const std::string& badName : {std::string("mi escenario"), std::string("")}) {
+        s.name = badName;
+        std::ostringstream out;
+        bool rejected = false;
+        try {
+            ScenarioIO::write(s, out);
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        assert(rejected && out.str().empty());
+    }
+
+    // save() valida antes de crear el archivo: no queda un archivo vacío.
+    const std::string path = "tmp_test_bad_name.txt";
+    std::filesystem::remove(path);
+    s.name = "con espacio";
+    bool rejected = false;
+    try {
+        ScenarioIO::save(s, path);
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected && !std::filesystem::exists(path));
+
+    std::cout << "  -> PASSED\n" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
@@ -238,6 +274,7 @@ int main(int argc, char* argv[]) {
     testSaveAndLoadFile();
     testErrors();
     testAdversarialFiles(adversarialFolder);
+    testBomAndNames();
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   TODAS LAS PRUEBAS DE ESCENARIOS PASARON CON EXITO     " << std::endl;

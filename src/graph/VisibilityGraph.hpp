@@ -30,12 +30,11 @@ struct Node {
     Point pt;
     NodeType type;
     int index;          // Índice global dentro del grafo |V|
-    int entityId;       // Identificador original de la entidad (ej. cliente #3)
     std::string name;
 
-    Node() : pt(), type(NodeType::OBSTACLE_VERTEX), index(-1), entityId(-1), name("") {}
-    Node(const Point& pt_, NodeType type_, int index_, int entityId_ = -1, const std::string& name_ = "")
-        : pt(pt_), type(type_), index(index_), entityId(entityId_), name(name_) {}
+    Node() : pt(), type(NodeType::OBSTACLE_VERTEX), index(-1), name("") {}
+    Node(const Point& pt_, NodeType type_, int index_, const std::string& name_ = "")
+        : pt(pt_), type(type_), index(index_), name(name_) {}
 
     bool isKeyNode() const {
         return type == NodeType::DEPOT || type == NodeType::CLIENT || type == NodeType::CHARGING_STATION;
@@ -111,7 +110,7 @@ public:
      */
     int setDepot(const Point& depotPt, const std::string& name = "Base Logistica D") {
         int idx = static_cast<int>(nodes_.size());
-        nodes_.emplace_back(depotPt, NodeType::DEPOT, idx, 0, name);
+        nodes_.emplace_back(depotPt, NodeType::DEPOT, idx, name);
         adj_.emplace_back();
         return idx;
     }
@@ -121,11 +120,7 @@ public:
      */
     int addClient(const Point& pt, const std::string& name = "") {
         int idx = static_cast<int>(nodes_.size());
-        int entityId = 1;
-        for (const auto& n : nodes_) {
-            if (n.type == NodeType::CLIENT) entityId++;
-        }
-        nodes_.emplace_back(pt, NodeType::CLIENT, idx, entityId, name);
+        nodes_.emplace_back(pt, NodeType::CLIENT, idx, name);
         adj_.emplace_back();
         return idx;
     }
@@ -135,11 +130,7 @@ public:
      */
     int addChargingStation(const Point& pt, const std::string& name = "") {
         int idx = static_cast<int>(nodes_.size());
-        int entityId = 1;
-        for (const auto& n : nodes_) {
-            if (n.type == NodeType::CHARGING_STATION) entityId++;
-        }
-        nodes_.emplace_back(pt, NodeType::CHARGING_STATION, idx, entityId, name);
+        nodes_.emplace_back(pt, NodeType::CHARGING_STATION, idx, name);
         adj_.emplace_back();
         return idx;
     }
@@ -150,10 +141,9 @@ public:
     void addObstacle(const Polygon& poly) {
         obstacles_.push_back(poly);
         obstacleBoxes_.push_back(boxOf(poly));
-        int polyIdx = static_cast<int>(obstacles_.size()) - 1;
         for (int i = 0; i < poly.size(); ++i) {
             int idx = static_cast<int>(nodes_.size());
-            nodes_.emplace_back(poly[i], NodeType::OBSTACLE_VERTEX, idx, polyIdx,
+            nodes_.emplace_back(poly[i], NodeType::OBSTACLE_VERTEX, idx,
                                 "Obs" + std::to_string(poly.id) + "_V" + std::to_string(i));
             adj_.emplace_back();
         }

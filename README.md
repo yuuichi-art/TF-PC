@@ -119,3 +119,12 @@ ctest --test-dir build --output-on-failure
 # 3. Ejecutar el programa principal
 ./build/geodrone
 ```
+
+Para depurar (por ejemplo en CLion o VS Code), compilar en Debug, que no optimiza:
+
+```bash
+cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-debug
+```
+
+Si no se indica `CMAKE_BUILD_TYPE`, se usa Release.

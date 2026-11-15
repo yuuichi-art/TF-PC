@@ -33,23 +33,7 @@ struct Segment {
         return b - a;
     }
 
-    // Comprueba si un punto P pertenece al segmento cerrado AB (incluyendo extremos)
-    // Asume que la colinealidad puede ser verificada con EPS
-    bool containsPoint(const Point& p) const {
-        // Colinealidad: producto cruz (B - A) x (P - A) == 0
-        Point ab = b - a;
-        Point ap = p - a;
-        if (std::abs(ab.cross(ap)) > EPS) {
-            return false;
-        }
-        // Caja delimitadora (Bounding Box)
-        double minX = std::min(a.x, b.x) - EPS;
-        double maxX = std::max(a.x, b.x) + EPS;
-        double minY = std::min(a.y, b.y) - EPS;
-        double maxY = std::max(a.y, b.y) + EPS;
-
-        return (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY);
-    }
+    // Para saber si un punto está sobre el segmento se usa GeometryUtils::onSegment.
 
     friend std::ostream& operator<<(std::ostream& os, const Segment& s) {
         os << "Segment[" << s.a << " -> " << s.b << "]";

@@ -32,7 +32,10 @@ public:
     // simulación este margen a favor.
     static constexpr double BATTERY_TOLERANCE = 1e-6;
 
+    // Guarda una referencia al grafo de misión, que debe seguir existiendo mientras se use la red.
     ChargingNetwork(const MissionGraph& mission, double battery);
+    // Prohibido con un grafo temporal: la referencia quedaría apuntando a un objeto destruido.
+    ChargingNetwork(MissionGraph&& mission, double battery) = delete;
 
     double battery() const { return battery_; }
 

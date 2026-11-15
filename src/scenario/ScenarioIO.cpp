@@ -1,5 +1,7 @@
 #include "ScenarioIO.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -28,6 +30,11 @@ public:
         int lineNumber = 0;
         while (std::getline(in, line)) {
             ++lineNumber;
+            // El Bloc de notas puede guardar "UTF-8 con BOM": tres bytes invisibles al inicio
+            // que, si no se quitan, se pegan a la primera etiqueta.
+            if (lineNumber == 1 && line.compare(0, 3, "\xEF\xBB\xBF") == 0) {
+                line.erase(0, 3);
+            }
             std::istringstream words(line);
             std::string word;
             while (words >> word) {
@@ -137,6 +144,15 @@ std::vector<Point> readPointBlock(TokenReader& reader, const std::string& label,
     return points;
 }
 
+// El nombre se lee como una sola palabra: con espacios el archivo no se podría volver a leer.
+void checkName(const std::string& name) {
+    bool valid = !name.empty() &&
+                 std::none_of(name.begin(), name.end(), [](unsigned char c) { return std::isspace(c) != 0; });
+    if (!valid) {
+        throw std::invalid_argument("el nombre del escenario no puede estar vacio ni tener espacios: '" + name + "'");
+    }
+}
+
 std::vector<Polygon> readObstacles(TokenReader& reader) {
     reader.expectLabel("OBSTACLES");
     int count = reader.readCount("la cantidad de obstaculos");
@@ -215,6 +231,8 @@ Scenario load(const std::string& path) {
 
 void write(const Scenario& scenario, std::ostream& out) {
     // 15 cifras significativas: los enteros se escriben sin decimales y los reales sin pérdida visible.
+    checkName(scenario.name);
+
     out << std::setprecision(15);
     out << "NAME " << scenario.name << '\n';
     out << "CATEGORY " << categoryName(scenario.category) << '\n';
@@ -244,6 +262,7 @@ void write(const Scenario& scenario, std::ostream& out) {
 }
 
 void save(const Scenario& scenario, const std::string& path) {
+    checkName(scenario.name);   // Antes de crear el archivo, para no dejarlo vacío
     std::filesystem::path filePath(path);
     if (filePath.has_parent_path()) {
         std::filesystem::create_directories(filePath.parent_path());

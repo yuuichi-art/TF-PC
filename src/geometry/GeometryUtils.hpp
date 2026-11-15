@@ -75,11 +75,15 @@ namespace GeometryUtils {
     /**
      * @brief Valida si una trayectoria entre u y v interseca o penetra el interior de un polígono de exclusión.
      * Requisito RF04: segmento(u, v) ∩ interior(poly) = ∅.
+     * Complejidad, con n vértices del polígono: O(n) en el caso común (el tramo no pasa por
+     * vértices); O(n^2) si pasa por vértices, porque se revisa un punto medio por cada tramo
+     * entre ellos y cada revisión es O(n). Espacio O(1) en el caso común, O(n) en el otro.
      */
     bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly);
 
     /**
      * @brief Valida si una trayectoria entre u y v es factible frente a una colección de obstáculos poligonales.
+     * Complejidad: O(M) en total, con M el número de aristas de todos los obstáculos (caso común).
      */
     bool isFlightPathClear(const Segment& seg, const std::vector<Polygon>& obstacles);
 

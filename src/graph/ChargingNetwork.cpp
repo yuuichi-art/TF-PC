@@ -1,14 +1,8 @@
 #include "ChargingNetwork.hpp"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
 
 namespace geodrone {
-
-namespace {
-const double INF = std::numeric_limits<double>::infinity();
-}
 
 ChargingNetwork::ChargingNetwork(const MissionGraph& mission, double battery)
     : mission_(mission), battery_(battery), rechargeCount_(mission.numStations() + 1) {

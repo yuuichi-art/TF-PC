@@ -24,7 +24,7 @@ MissionGraph::MissionGraph(const Scenario& scenario)
     // Un Dijkstra por nodo clave: da una fila de la matriz y los predecesores para
     // reconstruir los caminos reales desde ese nodo.
     int keyCount = numKeyNodes();
-    dist_.assign(keyCount, std::vector<double>(keyCount, Dijkstra::INF));
+    dist_.assign(keyCount, std::vector<double>(keyCount, INF));
     parent_.resize(keyCount);
     for (int a = 0; a < keyCount; ++a) {
         DijkstraResult result = Dijkstra::run(graph_, a, true);
@@ -61,7 +61,7 @@ std::vector<int> MissionGraph::unreachableClients() const {
 
 std::vector<int> MissionGraph::pathNodes(int fromKey, int toKey) const {
     std::vector<int> path;
-    if (dist_[fromKey][toKey] == Dijkstra::INF) return path;
+    if (dist_[fromKey][toKey] == INF) return path;
 
     for (int node = toKey; node != -1; node = parent_[fromKey][node]) {
         path.push_back(node);

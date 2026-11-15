@@ -11,10 +11,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Opciones de compilación optimizada según compilador
+# La optimización depende del tipo de compilación: Release usa -O3 -DNDEBUG (/O2 en MSVC)
+# y Debug compila sin optimizar, para poder depurar. Si no se indica tipo, se usa Release.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Tipo de compilacion" FORCE)
+endif()
+
+# Advertencias y opciones comunes a todas las configuraciones
 if(MSVC)
     add_compile_options(
-        /O2                 # Máxima optimización de velocidad
         /W4                 # Nivel alto de advertencias
         /utf-8              # Codificación UTF-8
         /permissive-        # Conformidad estricta con el estándar
@@ -22,7 +27,6 @@ if(MSVC)
     )
 else()
     add_compile_options(
-        -O3                 # Nivel de optimización 3
         -Wall               # Advertencias base
         -Wextra             # Advertencias adicionales
         -Wpedantic          # Adherencia rigurosa al estándar C++

@@ -1,32 +1,29 @@
 #include "RechargePlanner.hpp"
 
 #include <algorithm>
-#include <limits>
 
 namespace geodrone {
 
 namespace {
-const double INF = std::numeric_limits<double>::infinity();
 const double TOL = ChargingNetwork::BATTERY_TOLERANCE;
 }
 
 RechargePlanner::RechargePlanner(const MissionGraph& mission, const ChargingNetwork& network)
     : mission_(mission), network_(network) {}
 
-bool RechargePlanner::findRechargePath(int from, double battery, int target, std::vector<int>& path) const {
+std::vector<double> RechargePlanner::networkDistances(int from, double battery, std::vector<int>& previous) const {
     const std::vector<int>& points = network_.reachablePoints();
     int r = static_cast<int>(points.size());
-    double full = network_.battery();
-
-    // Dijkstra O(R^2) sobre la red de recarga. Orígenes: los puntos que se alcanzan desde
-    // `from` con la batería actual, con su distancia como costo inicial.
     std::vector<double> best(r, INF);
-    std::vector<int> previous(r, -1);
     std::vector<char> done(r, 0);
+    previous.assign(r, -1);
+
+    // Orígenes: los puntos alcanzables con la batería actual, con su distancia como costo inicial.
     for (int i = 0; i < r; ++i) {
         double d = mission_.distance(from, points[i]);
         if (d <= battery + TOL) best[i] = d;
     }
+    // Dijkstra sin cola de prioridad: con pocos nodos (R ≤ 26) basta buscar el mínimo en cada paso.
     for (int step = 0; step < r; ++step) {
         int u = -1;
         for (int i = 0; i < r; ++i) {
@@ -43,23 +40,35 @@ bool RechargePlanner::findRechargePath(int from, double battery, int target, std
             }
         }
     }
+    return best;
+}
 
-    // Último punto de recarga: desde él, con batería llena, el destino debe ser seguro.
-    int end = -1;
+int RechargePlanner::chooseLastRecharge(const std::vector<double>& best, int target) const {
+    const std::vector<int>& points = network_.reachablePoints();
+    int chosen = -1;
     double bestTotal = INF;
-    for (int i = 0; i < r; ++i) {
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         if (best[i] == INF) continue;
         double leg = mission_.distance(points[i], target);
-        if (full - leg + TOL < network_.distanceToRecharge(target)) continue;
-        if (best[i] + leg < bestTotal) {
+        bool safe = network_.battery() - leg + TOL >= network_.distanceToRecharge(target);
+        if (safe && best[i] + leg < bestTotal) {
             bestTotal = best[i] + leg;
-            end = i;
+            chosen = i;
         }
     }
-    if (end == -1) return false;
+    return chosen;
+}
 
+bool RechargePlanner::findRechargePath(int from, double battery, int target, std::vector<int>& path) const {
+    std::vector<int> previous;
+    std::vector<double> best = networkDistances(from, battery, previous);
+    int last = chooseLastRecharge(best, target);
+    if (last == -1) return false;
+
+    // Paso 3: reconstruir el camino de recargas siguiendo los predecesores.
+    const std::vector<int>& points = network_.reachablePoints();
     path.clear();
-    for (int i = end; i != -1; i = previous[i]) path.push_back(points[i]);
+    for (int i = last; i != -1; i = previous[i]) path.push_back(points[i]);
     std::reverse(path.begin(), path.end());
     // `from` o `target` pueden ser puntos de recarga: no se repiten como paradas.
     if (!path.empty() && path.front() == from) path.erase(path.begin());

@@ -1,7 +1,8 @@
 #ifndef GEODRONE_MST_HPP
 #define GEODRONE_MST_HPP
 
-#include <limits>
+#include "../geometry/Point.hpp"   // INF
+
 #include <vector>
 
 namespace geodrone {
@@ -30,7 +31,6 @@ struct MstResult {
  * quedan conectados con saltos que no la superan.
  */
 inline MstResult primMst(const std::vector<std::vector<double>>& dist, const std::vector<int>& nodes) {
-    const double INF = std::numeric_limits<double>::infinity();
     int k = static_cast<int>(nodes.size());
     MstResult result;
     result.parent.assign(k, -1);

@@ -4,7 +4,6 @@
 #include "VisibilityGraph.hpp"
 #include <vector>
 #include <queue>
-#include <limits>
 #include <algorithm>
 
 namespace geodrone {
@@ -16,8 +15,6 @@ struct DijkstraResult {
     int source;
     std::vector<double> dist;
     std::vector<int> parent;
-
-    static constexpr double INF = std::numeric_limits<double>::infinity();
 
     DijkstraResult(int n = 0, int src = -1)
         : source(src), dist(n, INF), parent(n, -1) {}
@@ -48,8 +45,6 @@ struct DijkstraResult {
  */
 class Dijkstra {
 public:
-    static constexpr double INF = std::numeric_limits<double>::infinity();
-
     /**
      * @brief Calcula las distancias mínimas y predecesores desde un nodo origen `source`
      * a todos los vértices del grafo de visibilidad.
