@@ -36,7 +36,7 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF12 Red mínima | Prim entre la base y las estaciones | Implementado |
 | RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Implementado |
 | RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Pendiente |
-| RF15 Exportación | TXT y CSV; SVG al final | Pendiente |
+| RF15 Exportación | TXT y CSV; SVG al final | Ruta TXT implementada; CSV y SVG pendientes |
 
 La red de recarga tiene como nodos la base y las estaciones. Dos nodos se conectan si su distancia de vuelo no supera la autonomía.
 
@@ -91,6 +91,11 @@ Los escenarios generados usan como batería la autonomía mínima × 1,2, redond
 
 - Un solo programa de consola, con un módulo para resolver escenarios y otro para el juez.
 - Se maneja con un menú interactivo: generar datasets, resolver un escenario, ejecutar el juez y analizar la red de recarga.
+- Se ejecuta desde la raíz del proyecto: las rutas por defecto (`data/generated/`, `output/`) son relativas a ella.
+- Con MinGW se enlaza estático, para que el `.exe` funcione en cualquier PC con Windows sin instalar MinGW.
+- Resolver un escenario prepara una sola vez el grafo de misión y la red de recarga, y luego aplica el algoritmo elegido. El tiempo informado es preparación + resolución.
+- La búsqueda local iterada se detiene antes de llegar al 90 % del tiempo límite de la categoría, descontando la preparación.
+- Algoritmos, con el nombre que aparece en los archivos: `branch_and_bound` (solo hasta 12 clientes atendibles), `nearest_neighbor`, `mst_approximation`, `nearest_neighbor_2opt`, `mst_approximation_2opt` e `iterated_local_search` (parte del vecino más cercano y usa la semilla del escenario).
 - El menú valida la entrada numérica, vacía la salida en cada mensaje (necesario con `cin.tie(NULL)`), lee rutas con `getline` y ofrece valores por defecto con Enter.
 - La opción del juez ejecuta todos los casos de una vez.
 - El juez verifica cada ruta con código independiente de los solvers: ningún tramo cruza un obstáculo, la batería nunca baja de 0, se visitan todos los clientes alcanzables y la ruta empieza y termina en la base.
@@ -121,21 +126,29 @@ OBSTACLES 2
 3  600 600  700 600  650 690
 ```
 
-Ruta exportada (TXT): resumen, orden de nodos clave y trayectoria completa. En `PATH`, cada punto lleva su etiqueta: `D` base, `C` cliente, `S` estación, `V` vértice de obstáculo.
+Ruta exportada (TXT, en `output/<escenario>_<algoritmo>.txt`): resumen, clientes excluidos, orden de nodos clave y trayectoria completa.
+
+- `STATUS` es `OK` o `INFEASIBLE`, y `COST` lleva 6 decimales.
+- `EXCLUDED` da la cantidad y luego una línea por cliente con su motivo: `OBSTACLES` (los obstáculos lo separan de la base) o `BATTERY` (2·dRecarga > B).
+- En `PATH`, cada punto lleva su etiqueta: `D0` base, `C3` cliente, `S1` estación, `V` vértice de obstáculo.
+- Una ruta sin clientes es solo `D0`: el dron no despega.
 
 ```text
-SCENARIO small_001
+SCENARIO adv_enclosed
 ALGORITHM branch_and_bound
 STATUS OK
-COST 3521.47
-RECHARGES 1
-EXCLUDED 0
-ORDER 6
-D0 C2 C1 S1 C3 D0
-PATH 9
-500 500 D0
-400 500 V
-...
+COST 293.416641
+RECHARGES 0
+EXCLUDED 1
+C1 OBSTACLES
+ORDER 4
+D0 C3 C2 D0
+PATH 5
+10 10 D0
+90 10 C3
+90 90 C2
+75 25 V
+10 10 D0
 ```
 
 Resultados del juez (CSV), una fila por escenario y algoritmo:

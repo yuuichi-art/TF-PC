@@ -1,0 +1,17 @@
+#ifndef GEODRONE_MEMORYUSAGE_HPP
+#define GEODRONE_MEMORYUSAGE_HPP
+
+namespace geodrone {
+
+/**
+ * @brief Memoria pico del proceso en MB: el máximo de memoria física (working set) que usó
+ * desde que empezó. En Windows se lee con GetProcessMemoryInfo; en otros sistemas devuelve 0.
+ *
+ * Es un máximo histórico que nunca baja: por eso el juez ejecuta los casos de menor a mayor,
+ * y así la cifra de cada caso corresponde al caso más grande ejecutado hasta ese momento.
+ */
+double peakMemoryMB();
+
+} // namespace geodrone
+
+#endif // GEODRONE_MEMORYUSAGE_HPP

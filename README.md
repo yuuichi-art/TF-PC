@@ -24,8 +24,8 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada) |
-| Pendiente | Juez y benchmark, exportación de rutas y resultados, menú interactivo |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada), resolución completa con exclusiones y trayectoria real, exportación de rutas en TXT y menú interactivo (generar, resolver, analizar la red) |
+| Pendiente | Juez y benchmark (verificación, veredictos, gap, ranking y CSV) y dibujo SVG |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
@@ -45,7 +45,7 @@ GeoDroneChallenge/
 ├── src/
 │   ├── geometry/               # Módulo de Geometría Computacional Propia
 │   │   ├── Point.hpp           # Vector 2D, aritmética, producto cruz, dot, dist, EPS
-│   │   ├── Segment.hpp         # Segmentos, longitud, midpoint, test de pertenencia
+│   │   ├── Segment.hpp         # Segmentos, longitud y punto medio
 │   │   ├── Polygon.hpp         # Polígonos de exclusión, aristas, área Shoelace
 │   │   ├── GeometryUtils.hpp   # Declaraciones de CCW, intersección y Ray Casting
 │   │   ├── GeometryUtils.cpp   # Implementaciones optimizadas sin dependencias externas
@@ -70,15 +70,25 @@ GeoDroneChallenge/
 │   │   ├── HeuristicSolver.hpp # Vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada
 │   │   ├── HeuristicSolver.cpp
 │   │   ├── RechargePlanner.hpp # Inserción de recargas sobre un orden de clientes
-│   │   └── RechargePlanner.cpp
-│   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
+│   │   ├── RechargePlanner.cpp
+│   │   ├── Route.hpp           # Ruta final: orden, trayectoria, excluidos y tiempos
+│   │   ├── MissionSolver.hpp   # Resolver un escenario completo con el algoritmo elegido
+│   │   └── MissionSolver.cpp
+│   ├── judge/                  # Juez y benchmark
+│   │   ├── MemoryUsage.hpp     # Memoria pico del proceso (GetProcessMemoryInfo)
+│   │   └── MemoryUsage.cpp
+│   ├── report/                 # Exportación de resultados
+│   │   ├── Exporter.hpp        # Ruta en TXT
+│   │   └── Exporter.cpp
+│   └── main.cpp                # Menú interactivo
 └── tests/
     ├── test_geometry.cpp       # Pruebas de geometría, trayectorias y envolvente convexa
     ├── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
     ├── test_generator.cpp      # Pruebas de reproducibilidad y validez del generador
     ├── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
     ├── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
-    └── test_solvers.cpp        # Pruebas del exacto contra fuerza bruta y de las heurísticas
+    ├── test_solvers.cpp        # Pruebas del exacto contra fuerza bruta y de las heurísticas
+    └── test_mission.cpp        # Pruebas de la misión completa y de la ruta exportada
 ```
 
 ---
@@ -118,9 +128,21 @@ cmake --build build
 # 2. Ejecutar las pruebas unitarias (los assert siguen activos en Release)
 ctest --test-dir build --output-on-failure
 
-# 3. Ejecutar el programa principal
+# 3. Ejecutar el programa principal desde la raíz del proyecto
 ./build/geodrone
 ```
+
+### Uso del menú
+
+El programa se ejecuta desde la raíz del proyecto, porque las rutas por defecto son relativas a ella. Cada pregunta muestra entre corchetes un valor por defecto que se acepta con Enter.
+
+| Opción | Qué hace |
+| --- | --- |
+| 1. Generar datasets | Crea las semillas 1..N de cada categoría en `data/generated/`, con la batería calculada por búsqueda binaria. |
+| 2. Resolver un escenario | Lee un escenario, deja elegir el algoritmo, muestra costo, recargas, excluidos, tiempo y memoria, y exporta la ruta en `output/`. |
+| 3. Analizar red de recarga | Muestra estaciones alcanzables, estaciones críticas (puntos de articulación), red mínima de soporte y autonomía mínima. |
+
+Con MinGW el ejecutable se enlaza estático, así que funciona en otra PC con Windows sin instalar nada.
 
 Para depurar (por ejemplo en CLion o VS Code), compilar en Debug, que no optimiza:
 

@@ -83,6 +83,12 @@ RechargePlan RechargePlanner::plan(const std::vector<int>& clientOrder) const {
     int position = mission_.depotKey();
     result.keySequence.push_back(position);
 
+    // Sin clientes el dron no despega: la ruta es solo la base.
+    if (clientOrder.empty()) {
+        result.feasible = true;
+        return result;
+    }
+
     auto flyTo = [&](int key) {
         double d = mission_.distance(position, key);
         result.cost += d;

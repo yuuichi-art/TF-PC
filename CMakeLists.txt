@@ -33,6 +33,12 @@ else()
     )
 endif()
 
+# Con MinGW, enlazar estático: así los .exe no dependen de libstdc++-6.dll ni de
+# libgcc_s_seh-1.dll y funcionan en cualquier PC con Windows, sin instalar MinGW.
+if(MINGW)
+    add_link_options(-static)
+endif()
+
 # Directorios de inclusión globales
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -62,11 +68,23 @@ add_library(geodrone_core STATIC
     src/solvers/HeuristicSolver.cpp
     src/solvers/RechargePlanner.hpp
     src/solvers/RechargePlanner.cpp
+    src/solvers/Route.hpp
+    src/solvers/MissionSolver.hpp
+    src/solvers/MissionSolver.cpp
+    src/judge/MemoryUsage.hpp
+    src/judge/MemoryUsage.cpp
+    src/report/Exporter.hpp
+    src/report/Exporter.cpp
 )
 
 target_include_directories(geodrone_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+# Memoria pico del proceso: GetProcessMemoryInfo está en psapi en Windows.
+if(WIN32)
+    target_link_libraries(geodrone_core PUBLIC psapi)
+endif()
 
 # 1. Ejecutable Principal / CLI
 add_executable(geodrone
@@ -110,6 +128,12 @@ add_executable(test_solvers
 )
 target_link_libraries(test_solvers PRIVATE geodrone_core)
 
+# 8. Pruebas de la misión completa (resolver, recargas, trayectoria y exportación)
+add_executable(test_mission
+    tests/test_mission.cpp
+)
+target_link_libraries(test_mission PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
@@ -118,3 +142,4 @@ add_test(NAME GeneratorTests COMMAND test_generator)
 add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME NetworkTests COMMAND test_network ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME SolverTests COMMAND test_solvers ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME MissionTests COMMAND test_mission ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
