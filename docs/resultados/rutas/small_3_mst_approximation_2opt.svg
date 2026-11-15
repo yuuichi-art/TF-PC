@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840.00" height="894.00" viewBox="0 0 840.00 894.00">
+<rect width="840.00" height="894.00" fill="#ffffff"/>
+<text x="20.00" y="26" font-family="sans-serif" font-size="15" fill="#111827"><tspan font-weight="bold">small_3</tspan>  mst_approximation_2opt  |  costo 4367.91  |  recargas 3  |  excluidos 0</text>
+<rect class="area" x="20.00" y="40.00" width="800.00" height="800.00" fill="#f9fafb" stroke="#d1d5db"/>
+<polygon class="obstacle" points="356.80,424.80 380.00,461.60 403.20,440.00 476.00,370.40 372.00,393.60" fill="#9ca3af" fill-opacity="0.6" stroke="#4b5563" stroke-width="1"/>
+<polyline class="route" points="388.00,508.00 772.80,767.20 558.40,506.40 388.00,508.00 521.60,300.80 697.60,150.40 290.40,108.00 340.00,57.60 111.20,482.40 54.40,338.40 28.00,799.20 192.00,636.80 388.00,508.00" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
+<circle class="client" cx="558.40" cy="506.40" r="4.00" fill="#111827"/>
+<text x="564.40" y="500.40" font-family="sans-serif" font-size="10" fill="#374151">C1</text>
+<circle class="client" cx="772.80" cy="767.20" r="4.00" fill="#111827"/>
+<text x="778.80" y="761.20" font-family="sans-serif" font-size="10" fill="#374151">C2</text>
+<circle class="client" cx="697.60" cy="150.40" r="4.00" fill="#111827"/>
+<text x="703.60" y="144.40" font-family="sans-serif" font-size="10" fill="#374151">C3</text>
+<circle class="client" cx="192.00" cy="636.80" r="4.00" fill="#111827"/>
+<text x="198.00" y="630.80" font-family="sans-serif" font-size="10" fill="#374151">C4</text>
+<circle class="client" cx="28.00" cy="799.20" r="4.00" fill="#111827"/>
+<text x="34.00" y="793.20" font-family="sans-serif" font-size="10" fill="#374151">C5</text>
+<circle class="client" cx="290.40" cy="108.00" r="4.00" fill="#111827"/>
+<text x="296.40" y="102.00" font-family="sans-serif" font-size="10" fill="#374151">C6</text>
+<circle class="client" cx="521.60" cy="300.80" r="4.00" fill="#111827"/>
+<text x="527.60" y="294.80" font-family="sans-serif" font-size="10" fill="#374151">C7</text>
+<circle class="client" cx="111.20" cy="482.40" r="4.00" fill="#111827"/>
+<text x="117.20" y="476.40" font-family="sans-serif" font-size="10" fill="#374151">C8</text>
+<polygon class="station" points="340.00,49.20 333.00,62.50 347.00,62.50" fill="#16a34a"/>
+<text x="346.00" y="51.60" font-family="sans-serif" font-size="10" fill="#374151">S1</text>
+<polygon class="station" points="54.40,330.00 47.40,343.30 61.40,343.30" fill="#16a34a"/>
+<text x="60.40" y="332.40" font-family="sans-serif" font-size="10" fill="#374151">S2</text>
+<rect class="depot" x="382.00" y="502.00" width="12" height="12" fill="#dc2626"/>
+<text x="394.00" y="502.00" font-family="sans-serif" font-size="10" fill="#374151">D0</text>
+<rect x="15.00" y="875.00" width="10" height="10" fill="#dc2626"/>
+<text x="34.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Base</text>
+<polygon  points="84.00,872.80 78.00,884.20 90.00,884.20" fill="#16a34a"/>
+<text x="98.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Estacion</text>
+<circle cx="180.00" cy="880.00" r="4" fill="#111827"/>
+<text x="194.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Cliente</text>
+<path  d="M263.00,875.00 L273.00,885.00 M263.00,885.00 L273.00,875.00" stroke="#dc2626" stroke-width="2"/>
+<text x="282.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Excluido</text>
+<line x1="357.00" y1="880.00" x2="371.00" y2="880.00" stroke="#2563eb" stroke-width="2"/>
+<text x="378.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Ruta</text>
+<rect x="422.00" y="874.00" width="12" height="12" fill="#9ca3af" stroke="#4b5563"/>
+<text x="442.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Obstaculo</text>
+</svg>

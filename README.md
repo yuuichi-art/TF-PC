@@ -24,8 +24,8 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada), resolución completa con exclusiones y trayectoria real, juez y benchmark (verificación independiente, veredictos OK/WA/TLE/MLE, gap, ranking), exportación de rutas en TXT y de resultados y ranking en CSV, y menú interactivo |
-| Pendiente | Dibujo de rutas en SVG (opcional) |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada), resolución completa con exclusiones y trayectoria real, juez y benchmark (verificación independiente, veredictos OK/WA/TLE/MLE, gap, ranking), exportación de rutas en TXT y de resultados y ranking en CSV, dibujo de rutas en SVG y menú interactivo |
+| Pendiente | Nada: los 15 requerimientos funcionales están implementados (ver la tabla de `docs/decisiones.md` §3) |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
@@ -83,7 +83,7 @@ GeoDroneChallenge/
 │   │   ├── Judge.hpp           # Verificación, veredictos, benchmark y ranking
 │   │   └── Judge.cpp
 │   ├── report/                 # Exportación de resultados
-│   │   ├── Exporter.hpp        # Ruta en TXT, resultados y ranking en CSV
+│   │   ├── Exporter.hpp        # Ruta en TXT y SVG, resultados y ranking en CSV
 │   │   └── Exporter.cpp
 │   └── main.cpp                # Menú interactivo
 └── tests/
@@ -145,7 +145,7 @@ El programa se ejecuta desde la raíz del proyecto, porque las rutas por defecto
 | Opción | Qué hace |
 | --- | --- |
 | 1. Generar datasets | Crea las semillas 1..N de cada categoría y el peor caso `extreme_max` en `data/generated/`, con la batería calculada por búsqueda binaria. |
-| 2. Resolver un escenario | Lee un escenario, deja elegir el algoritmo, muestra costo, recargas, excluidos, tiempo y memoria, y exporta la ruta en `output/`. |
+| 2. Resolver un escenario | Lee un escenario, deja elegir el algoritmo, muestra costo, recargas, excluidos, tiempo y memoria, y exporta la ruta en `output/` como TXT y como dibujo SVG, que se abre con cualquier navegador. |
 | 3. Ejecutar juez y benchmark | Corre todos los algoritmos sobre los escenarios de una carpeta (y los adversariales), verifica cada ruta, da veredictos OK/WA/TLE/MLE, calcula el gap y muestra el ranking por categoría. Guarda `output/judge/results.csv`, `output/judge/ranking.csv` y las rutas. Para que la memoria sea por caso, debe ser lo primero que se ejecuta al abrir el programa. |
 | 4. Analizar red de recarga | Muestra estaciones alcanzables, estaciones críticas (puntos de articulación), red mínima de soporte y autonomía mínima. |
 

@@ -1,5 +1,6 @@
 #include "Exporter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -94,6 +95,150 @@ void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out) 
 void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path) {
     std::ofstream file = openForWriting(path);
     writeRankingCsv(ranking, file);
+    if (!file) throw std::runtime_error("error al escribir el archivo " + path);
+}
+
+namespace {
+
+// Conversión de coordenadas del escenario a píxeles del dibujo.
+struct Canvas {
+    double scale;
+    double left;
+    double top;
+    double areaHeight;
+
+    double x(double value) const { return left + value * scale; }
+    double y(double value) const { return top + (areaHeight - value) * scale; }   // y crece hacia abajo en SVG
+};
+
+std::string escapeXml(const std::string& text) {
+    std::string result;
+    for (char c : text) {
+        if (c == '&') result += "&amp;";
+        else if (c == '<') result += "&lt;";
+        else if (c == '>') result += "&gt;";
+        else if (c == '"') result += "&quot;";
+        else result += c;
+    }
+    return result;
+}
+
+void writePoints(std::ostream& out, const Canvas& canvas, const std::vector<Point>& points) {
+    for (size_t i = 0; i < points.size(); ++i) {
+        out << (i > 0 ? " " : "") << canvas.x(points[i].x) << ',' << canvas.y(points[i].y);
+    }
+}
+
+void writeStation(std::ostream& out, double x, double y, double size, const std::string& attributes) {
+    out << "<polygon " << attributes << " points=\"" << x << ',' << y - size * 1.2 << ' ' << x - size << ','
+        << y + size * 0.7 << ' ' << x + size << ',' << y + size * 0.7 << "\" fill=\"#16a34a\"/>\n";
+}
+
+void writeCross(std::ostream& out, double x, double y, double size, const std::string& attributes) {
+    out << "<path " << attributes << " d=\"M" << x - size << ',' << y - size << " L" << x + size << ',' << y + size
+        << " M" << x - size << ',' << y + size << " L" << x + size << ',' << y - size
+        << "\" stroke=\"#dc2626\" stroke-width=\"2\"/>\n";
+}
+
+void writeLabel(std::ostream& out, double x, double y, const std::string& text) {
+    out << "<text x=\"" << x + 6 << "\" y=\"" << y - 6 << "\" font-family=\"sans-serif\" font-size=\"10\" "
+        << "fill=\"#374151\">" << escapeXml(text) << "</text>\n";
+}
+
+} // namespace
+
+void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
+    const double mapSize = 800.0, margin = 20.0, header = 40.0, footer = 34.0;
+    double scale = mapSize / std::max(scenario.areaWidth, scenario.areaHeight);
+    Canvas canvas{scale, margin, header, scenario.areaHeight};
+    double width = scenario.areaWidth * scale + 2 * margin;
+    double height = header + scenario.areaHeight * scale + margin + footer;
+
+    // Con muchos clientes los puntos se achican y se omiten las etiquetas para que se lea.
+    bool withLabels = scenario.numClients() <= 40;
+    double radius = scenario.numClients() > 200 ? 2.5 : 4.0;
+
+    out << std::fixed << std::setprecision(2);
+    out << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height
+        << "\" viewBox=\"0 0 " << width << ' ' << height << "\">\n";
+    out << "<rect width=\"" << width << "\" height=\"" << height << "\" fill=\"#ffffff\"/>\n";
+    out << "<text x=\"" << margin << "\" y=\"26\" font-family=\"sans-serif\" font-size=\"15\" fill=\"#111827\">"
+        << "<tspan font-weight=\"bold\">" << escapeXml(route.scenario) << "</tspan>  " << escapeXml(route.algorithm)
+        << "  |  costo " << route.cost << "  |  recargas " << route.recharges << "  |  excluidos "
+        << route.excluded.size() << (route.feasible ? "" : "  |  INFACTIBLE") << "</text>\n";
+
+    // Área del escenario y obstáculos.
+    out << "<rect class=\"area\" x=\"" << canvas.x(0) << "\" y=\"" << canvas.y(scenario.areaHeight) << "\" width=\""
+        << scenario.areaWidth * scale << "\" height=\"" << scenario.areaHeight * scale
+        << "\" fill=\"#f9fafb\" stroke=\"#d1d5db\"/>\n";
+    for (const Polygon& poly : scenario.obstacles) {
+        out << "<polygon class=\"obstacle\" points=\"";
+        writePoints(out, canvas, poly.vertices);
+        out << "\" fill=\"#9ca3af\" fill-opacity=\"0.6\" stroke=\"#4b5563\" stroke-width=\"1\"/>\n";
+    }
+
+    // Trayectoria volada.
+    std::vector<Point> path;
+    for (const RoutePoint& p : route.path) path.push_back(p.point);
+    out << "<polyline class=\"route\" points=\"";
+    writePoints(out, canvas, path);
+    out << "\" fill=\"none\" stroke=\"#2563eb\" stroke-width=\"1.5\" stroke-linejoin=\"round\" opacity=\"0.9\"/>\n";
+
+    // Clientes: círculo si se atiende, cruz roja si se excluyó.
+    std::vector<std::string> excluded;
+    for (const ExcludedClient& client : route.excluded) excluded.push_back(client.label);
+    for (int c = 0; c < scenario.numClients(); ++c) {
+        std::string label = "C" + std::to_string(c + 1);
+        double x = canvas.x(scenario.clients[c].x), y = canvas.y(scenario.clients[c].y);
+        if (std::find(excluded.begin(), excluded.end(), label) != excluded.end()) {
+            writeCross(out, x, y, radius + 1, "class=\"excluded\"");
+        } else {
+            out << "<circle class=\"client\" cx=\"" << x << "\" cy=\"" << y << "\" r=\"" << radius
+                << "\" fill=\"#111827\"/>\n";
+        }
+        if (withLabels) writeLabel(out, x, y, label);
+    }
+
+    // Estaciones (triángulos) y base (cuadrado).
+    for (int s = 0; s < scenario.numStations(); ++s) {
+        double x = canvas.x(scenario.stations[s].x), y = canvas.y(scenario.stations[s].y);
+        writeStation(out, x, y, radius + 3, "class=\"station\"");
+        if (withLabels) writeLabel(out, x, y, "S" + std::to_string(s + 1));
+    }
+    double depotX = canvas.x(scenario.depot.x), depotY = canvas.y(scenario.depot.y);
+    out << "<rect class=\"depot\" x=\"" << depotX - 6 << "\" y=\"" << depotY - 6
+        << "\" width=\"12\" height=\"12\" fill=\"#dc2626\"/>\n";
+    if (withLabels) writeLabel(out, depotX, depotY, "D0");
+
+    // Leyenda (sin clases, para no confundirse con los elementos del mapa).
+    double ly = height - 14;
+    double lx = margin;
+    auto legendText = [&](const std::string& text) {
+        out << "<text x=\"" << lx + 14 << "\" y=\"" << ly + 4 << "\" font-family=\"sans-serif\" font-size=\"12\" "
+            << "fill=\"#374151\">" << text << "</text>\n";
+        lx += 14 + 8.0 * static_cast<double>(text.size()) + 18;
+    };
+    out << "<rect x=\"" << lx - 5 << "\" y=\"" << ly - 5 << "\" width=\"10\" height=\"10\" fill=\"#dc2626\"/>\n";
+    legendText("Base");
+    writeStation(out, lx, ly, 6, "");
+    legendText("Estacion");
+    out << "<circle cx=\"" << lx << "\" cy=\"" << ly << "\" r=\"4\" fill=\"#111827\"/>\n";
+    legendText("Cliente");
+    writeCross(out, lx, ly, 5, "");
+    legendText("Excluido");
+    out << "<line x1=\"" << lx - 7 << "\" y1=\"" << ly << "\" x2=\"" << lx + 7 << "\" y2=\"" << ly
+        << "\" stroke=\"#2563eb\" stroke-width=\"2\"/>\n";
+    legendText("Ruta");
+    out << "<rect x=\"" << lx - 6 << "\" y=\"" << ly - 6 << "\" width=\"12\" height=\"12\" fill=\"#9ca3af\" "
+        << "stroke=\"#4b5563\"/>\n";
+    legendText("Obstaculo");
+
+    out << "</svg>\n";
+}
+
+void saveSvg(const Scenario& scenario, const Route& route, const std::string& path) {
+    std::ofstream file = openForWriting(path);
+    writeSvg(scenario, route, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
 

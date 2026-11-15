@@ -36,7 +36,7 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF12 Red mínima | Prim entre la base y las estaciones | Implementado |
 | RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Implementado |
 | RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Implementado |
-| RF15 Exportación | TXT y CSV; SVG al final | TXT y CSV implementados; SVG pendiente |
+| RF15 Exportación | TXT y CSV; SVG al final | Implementado |
 
 La red de recarga tiene como nodos la base y las estaciones. Dos nodos se conectan si su distancia de vuelo no supera la autonomía.
 
@@ -167,6 +167,10 @@ PATH 5
 Resultados del juez (CSV), una fila por escenario y algoritmo:
 
 `escenario,categoria,clientes,algoritmo,veredicto,costo,recargas,excluidos,tiempo_ms,memoria_mb,gap_mejor,gap_cota`
+
+Ranking del juez (CSV): `categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms`.
+
+Dibujo de la ruta (SVG, junto al TXT al resolver un escenario desde el menú). Muestra obstáculos en gris, la trayectoria en azul, la base como cuadrado rojo, las estaciones como triángulos verdes, los clientes como puntos y los excluidos como cruces rojas, con título y leyenda. Con más de 40 clientes se omiten las etiquetas para que se lea. Es solo visualización: la validación oficial es la del juez.
 
 ## 7. Datasets y límites
 

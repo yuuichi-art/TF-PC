@@ -185,9 +185,11 @@ void solveScenario() {
     std::cout << "  Orden:     ";
     printLabels(route.order);
 
-    std::string output = "output/" + route.scenario + "_" + route.algorithm + ".txt";
-    Exporter::saveRoute(route, output);
-    std::cout << "  Ruta completa (" << route.path.size() << " puntos) exportada en " << output << "\n";
+    std::string output = "output/" + route.scenario + "_" + route.algorithm;
+    Exporter::saveRoute(route, output + ".txt");
+    Exporter::saveSvg(scenario, route, output + ".svg");
+    std::cout << "  Ruta completa (" << route.path.size() << " puntos) exportada en " << output << ".txt\n"
+              << "  Dibujo de la ruta en " << output << ".svg (se abre con cualquier navegador)\n";
 }
 
 // ---------------------------------------------------------------------------------------------

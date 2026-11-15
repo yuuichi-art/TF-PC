@@ -8,6 +8,7 @@
 #include "../src/scenario/ScenarioIO.hpp"
 #include "../src/geometry/GeometryUtils.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <filesystem>
@@ -196,6 +197,62 @@ void testNoClients() {
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
+size_t countOf(const std::string& text, const std::string& fragment) {
+    size_t count = 0;
+    for (size_t pos = text.find(fragment); pos != std::string::npos; pos = text.find(fragment, pos + 1)) ++count;
+    return count;
+}
+
+std::string svgOf(const Scenario& s, const Route& route) {
+    std::ostringstream out;
+    Exporter::writeSvg(s, route, out);
+    return out.str();
+}
+
+void testSvg(const std::string& folder) {
+    std::cout << "[TEST] 6. Dibujo SVG del escenario y la ruta..." << std::endl;
+
+    // Ruta a mano: un SVG completo con un elemento de cada tipo y la trayectoria de 5 puntos.
+    Scenario hand = handScenario();
+    MissionSolver handSolver(hand);
+    std::string svg = svgOf(hand, handSolver.solve(Algorithm::BRANCH_AND_BOUND));
+    assert(svg.rfind("<svg xmlns=\"http://www.w3.org/2000/svg\"", 0) == 0);
+    assert(svg.size() >= 7 && svg.compare(svg.size() - 7, 7, "</svg>\n") == 0);
+    assert(countOf(svg, "class=\"route\"") == 1 && countOf(svg, "class=\"depot\"") == 1);
+    assert(countOf(svg, "class=\"station\"") == 1 && countOf(svg, "class=\"client\"") == 1);
+    assert(countOf(svg, "class=\"obstacle\"") == 0 && countOf(svg, "class=\"excluded\"") == 0);
+    size_t start = svg.find("points=\"", svg.find("class=\"route\"")) + 8;
+    std::string points = svg.substr(start, svg.find('"', start) - start);
+    assert(std::count(points.begin(), points.end(), ' ') + 1 == 5);
+    // Área de 1000 x 1000 en 800 px (escala 0,8), margen 20 y encabezado 40: la base (0,0) queda
+    // en el píxel (20, 840) y su cuadrado de 12 px empieza en (14, 834). El eje y se invierte.
+    assert(svg.find("class=\"depot\" x=\"14.00\" y=\"834.00\"") != std::string::npos);
+    assert(svg.find(">C1</text>") != std::string::npos && svg.find("costo 32.00") != std::string::npos);
+
+    // Cliente encerrado: 4 obstáculos, el excluido como cruz y los otros dos como círculos.
+    Scenario enclosed = ScenarioIO::load(folder + "/adv_enclosed.txt");
+    MissionSolver enclosedSolver(enclosed);
+    svg = svgOf(enclosed, enclosedSolver.solve(Algorithm::BRANCH_AND_BOUND));
+    assert(countOf(svg, "class=\"obstacle\"") == 4);
+    assert(countOf(svg, "class=\"excluded\"") == 1 && countOf(svg, "class=\"client\"") == 2);
+
+    // Con más de 40 clientes se omiten las etiquetas para que el dibujo se lea.
+    Scenario large = DatasetGenerator::generate(DatasetCategory::LARGE, 1);
+    MissionSolver largeSolver(large);
+    svg = svgOf(large, largeSolver.solve(Algorithm::NEAREST_NEIGHBOR));
+    assert(countOf(svg, "class=\"client\"") == static_cast<size_t>(large.numClients()));
+    assert(svg.find(">C1</text>") == std::string::npos);
+
+    // saveSvg crea la carpeta y el archivo.
+    const std::string folderOut = "tmp_test_svg";
+    std::filesystem::remove_all(folderOut);
+    Exporter::saveSvg(hand, handSolver.solve(Algorithm::NEAREST_NEIGHBOR), folderOut + "/ruta.svg");
+    assert(std::filesystem::file_size(folderOut + "/ruta.svg") > 500);
+    std::filesystem::remove_all(folderOut);
+
+    std::cout << "  -> PASSED\n" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
@@ -212,6 +269,7 @@ int main(int argc, char* argv[]) {
     testExclusions(adversarialFolder);
     testExactAvailability();
     testNoClients();
+    testSvg(adversarialFolder);
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   TODAS LAS PRUEBAS DE LA MISION PASARON CON EXITO      " << std::endl;

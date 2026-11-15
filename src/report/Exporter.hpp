@@ -2,6 +2,7 @@
 #define GEODRONE_EXPORTER_HPP
 
 #include "../judge/Judge.hpp"
+#include "../scenario/Scenario.hpp"
 #include "../solvers/Route.hpp"
 
 #include <ostream>
@@ -40,6 +41,15 @@ namespace Exporter {
      */
     void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out);
     void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path);
+
+    /**
+     * @brief Dibujo del escenario y la ruta en SVG, que se abre en cualquier navegador: obstáculos,
+     * trayectoria, base, estaciones y clientes atendidos o excluidos, con título y leyenda.
+     * Es solo visualización (opcional según la guía): la validación oficial es la del juez.
+     * El eje y se invierte, porque en SVG crece hacia abajo. O(puntos + vértices de obstáculos).
+     */
+    void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out);
+    void saveSvg(const Scenario& scenario, const Route& route, const std::string& path);
 
 } // namespace Exporter
 

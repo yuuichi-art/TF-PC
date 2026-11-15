@@ -81,10 +81,13 @@ En los adversariales todas las técnicas empatan con gap 0 (tienen de 3 a 5 clie
 
 ## Rutas de ejemplo (`rutas/`)
 
-| Archivo | Qué muestra |
+Cada ruta está en TXT (formato de `docs/decisiones.md` §6) y dibujada en SVG, que se abre con cualquier navegador y se puede insertar en Word o PowerPoint. Los dibujos sirven para el anexo "Capturas y representaciones de rutas" y para la exposición.
+
+| Ruta | Qué muestra |
 | --- | --- |
-| `adv_concave_trap_branch_and_bound.txt` | Rodeo de la trampa cóncava por los vértices de la U. |
-| `adv_enclosed_branch_and_bound.txt` | Cliente encerrado excluido por obstáculos. |
-| `adv_unreachable_battery_branch_and_bound.txt` | Cliente excluido por batería y una recarga en la estación. |
-| `small_3_branch_and_bound.txt` y `small_3_mst_approximation_2opt.txt` | El hallazgo 4: orden óptimo frente a ruta final más corta. |
-| `medium_1_iterated_local_search.txt` | Ruta con varias recargas en estaciones y en la base. |
+| `adv_concave_trap_branch_and_bound` | Rodeo de la trampa cóncava: entra al hueco de la U por la abertura y la rodea por fuera. |
+| `adv_enclosed_branch_and_bound` | Cliente encerrado, excluido por obstáculos (cruz roja). |
+| `adv_unreachable_battery_branch_and_bound` | Cliente excluido por batería y una recarga en la estación. |
+| `small_3_branch_and_bound` y `small_3_mst_approximation_2opt` | El hallazgo 4: el orden óptimo vuelve a la base a mitad de ruta y hace una ida y vuelta hasta C2; la otra ruta evita ese desvío. |
+| `medium_1_iterated_local_search` | Ruta con varias recargas en estaciones y en la base. |
+| `extreme_1_iterated_local_search` | 529 clientes: se ven los desvíos hacia las estaciones en forma de estrella. |
