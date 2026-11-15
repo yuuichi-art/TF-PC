@@ -41,6 +41,9 @@ add_library(geodrone_core STATIC
     src/geometry/GeometryUtils.cpp
     src/graph/VisibilityGraph.hpp
     src/graph/Dijkstra.hpp
+    src/scenario/Scenario.hpp
+    src/scenario/ScenarioIO.hpp
+    src/scenario/ScenarioIO.cpp
     src/solvers/ExactSolver.hpp
     src/solvers/HeuristicSolver.hpp
     src/judge/DatasetGenerator.hpp
@@ -62,6 +65,13 @@ add_executable(test_geometry
 )
 target_link_libraries(test_geometry PRIVATE geodrone_core)
 
+# 3. Pruebas de lectura y escritura de escenarios
+add_executable(test_scenario
+    tests/test_scenario.cpp
+)
+target_link_libraries(test_scenario PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
+add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)

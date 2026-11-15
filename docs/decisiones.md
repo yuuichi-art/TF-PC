@@ -116,6 +116,8 @@ Resultados del juez (CSV), una fila por escenario y algoritmo:
 
 La tabla de categorías del README es tentativa. Los tamaños y límites finales se fijan después de medir tiempos reales.
 
+Los casos hechos a mano de `data/adversarial/` usan la categoría `ADVERSARIAL`, con los mismos límites que Small, y semilla 0.
+
 ## 8. Fuera de alcance
 
 - Varios drones.

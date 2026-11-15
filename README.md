@@ -24,9 +24,9 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), grafo de visibilidad, Dijkstra y matriz de distancias entre nodos clave |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), grafo de visibilidad, Dijkstra y matriz de distancias entre nodos clave, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano |
 | Solo declarado, sin implementación | Solver exacto, solver heurístico, generador de datasets |
-| Pendiente | Gestión de recargas, búsqueda binaria de autonomía, DFS y puntos de articulación, árbol de expansión mínima, juez y benchmark, lectura y exportación de archivos |
+| Pendiente | Gestión de recargas, búsqueda binaria de autonomía, DFS y puntos de articulación, árbol de expansión mínima, juez y benchmark, exportación de rutas y resultados |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
@@ -41,6 +41,8 @@ GeoDroneChallenge/
 ├── README.md                   # Documentación técnica del sistema
 ├── docs/
 │   └── decisiones.md           # Decisiones de diseño, alcance y pendientes
+├── data/
+│   └── adversarial/            # Casos adversariales hechos a mano (ver su README)
 ├── src/
 │   ├── geometry/               # Módulo de Geometría Computacional Propia
 │   │   ├── Point.hpp           # Vector 2D, aritmética, producto cruz, dot, dist, EPS
@@ -51,6 +53,10 @@ GeoDroneChallenge/
 │   ├── graph/                  # Módulo de Grafos y Navegación
 │   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
 │   │   └── Dijkstra.hpp        # SSSP con std::priority_queue y Matriz Reducida
+│   ├── scenario/               # Escenarios de misión
+│   │   ├── Scenario.hpp        # Escenario, categorías y límites competitivos
+│   │   ├── ScenarioIO.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
+│   │   └── ScenarioIO.cpp
 │   ├── solvers/                # Motores de optimización (solo declaraciones por ahora)
 │   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small)
 │   │   └── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme)
@@ -58,7 +64,8 @@ GeoDroneChallenge/
 │   │   └── DatasetGenerator.hpp# Generador pseudoaleatorio reproducible (mt19937_64)
 │   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
 └── tests/
-    └── test_geometry.cpp       # Suite exhaustiva de pruebas unitarias con assert()
+    ├── test_geometry.cpp       # Pruebas de geometría y validación de trayectorias
+    └── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
 ```
 
 ---
