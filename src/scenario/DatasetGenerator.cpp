@@ -116,7 +116,11 @@ CategorySpec DatasetGenerator::specFor(DatasetCategory category) {
 }
 
 Scenario DatasetGenerator::generate(DatasetCategory category, uint64_t seed, double width, double height) {
-    CategorySpec spec = specFor(category);
+    return generate(specFor(category), category, seed, width, height);
+}
+
+Scenario DatasetGenerator::generate(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
+                                    double width, double height) {
     std::mt19937_64 rng(seed);
 
     Scenario scenario;

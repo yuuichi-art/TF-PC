@@ -22,7 +22,7 @@ enum class DatasetCategory {
 };
 
 /**
- * @brief Límites competitivos de una categoría (tentativos hasta medir, ver README).
+ * @brief Límites competitivos de una categoría (confirmados con mediciones, ver docs/decisiones.md §7).
  */
 struct CategoryLimits {
     double timeLimitSeconds;

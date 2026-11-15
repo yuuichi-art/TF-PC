@@ -106,7 +106,7 @@ void runDemonstration() {
 }
 
 void printDatasetsTable() {
-    std::cout << "--- CATEGORIAS DE DATASETS Y LIMITES COMPETITIVOS (TENTATIVOS) ---\n";
+    std::cout << "--- CATEGORIAS DE DATASETS Y LIMITES COMPETITIVOS ---\n";
     std::cout << "| Categoria | Clientes (N) | Obstaculos (M) | Vertices Obs | TL (s) | ML (MB) |\n";
     std::cout << "|-----------|--------------|----------------|--------------|--------|---------|\n";
     std::cout << "| Small     |  1 <= N <= 10|    1 <= M <= 5 |    <= 30     | 1.0 s  |  256 MB |\n";

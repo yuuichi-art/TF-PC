@@ -26,15 +26,15 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | Requerimiento | Algoritmo | Estado |
 | --- | --- | --- |
 | RF03, RF04 Geometría y validación | Producto cruz, intersección de segmentos, punto en polígono | Implementado |
-| RF05 Grafo de navegación | Grafo de visibilidad por pares, con filtro por caja envolvente | Implementado, falta el filtro |
-| RF06 Caminos mínimos | Dijkstra desde cada nodo clave | Implementado |
+| RF05 Grafo de navegación | Grafo de visibilidad por pares, con filtro por caja envolvente | Implementado |
+| RF06 Caminos mínimos | Dijkstra desde cada nodo clave, sin expandir otros nodos clave | Implementado |
 | RF07 Exacto (Small) | Branch and bound con cota de árbol de expansión mínima | Pendiente |
 | RF08 Heurísticas | Vecino más cercano, 2-aproximación por árbol de expansión mínima, 2-opt, búsqueda local iterada | Pendiente |
 | RF09 Autonomía | Los solvers optimizan el orden; un paso común inserta las recargas (ver sección 4) | Pendiente |
 | RF10 Búsqueda binaria | Menor autonomía con la que la red de recarga permite atender a todos los clientes (ver sección 4) | Pendiente |
-| RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación en la red de recarga | Pendiente |
+| RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación en la red de recarga | Componentes implementado; articulación pendiente |
 | RF12 Red mínima | Prim sobre la red de recarga | Pendiente |
-| RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Pendiente |
+| RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Implementado |
 | RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Pendiente |
 | RF15 Exportación | TXT y CSV; SVG al final | Pendiente |
 
@@ -114,7 +114,27 @@ Resultados del juez (CSV), una fila por escenario y algoritmo:
 
 ## 7. Datasets y límites
 
-La tabla de categorías del README es tentativa. Los tamaños y límites finales se fijan después de medir tiempos reales.
+| Categoría | Clientes | Estaciones | Obstáculos | Vértices de obstáculos | Tiempo | Memoria |
+| --- | --- | --- | --- | --- | --- | --- |
+| Small | 1–10 | 1–3 | 1–5 | ≤ 30 | 1 s | 256 MB |
+| Medium | 11–40 | 3–6 | 5–15 | ≤ 100 | 2 s | 256 MB |
+| Large | 41–200 | 6–12 | 15–50 | ≤ 400 | 3 s | 512 MB |
+| Extreme | 201–1000 | 12–25 | 50–150 | ≤ 1500 | 5 s | 512 MB |
+
+Los rangos tentativos se mantienen porque cumplen la regla acordada: construir el grafo de misión (grafo de visibilidad y matriz de distancias) usa como máximo la mitad del tiempo límite, incluso en el peor caso.
+
+Medición del grafo de misión (Release `-O3`, equipo de desarrollo). El peor caso usa todos los rangos en su máximo:
+
+| Caso | Nodos | Aristas | Grafo + matriz |
+| --- | --- | --- | --- |
+| Large, peor caso | 445 | 21 554 | 0,08 s |
+| Extreme, semillas 1 y 2 | 871–1 005 | 86 096–108 135 | 0,38–0,55 s |
+| Extreme, peor caso | 1 735 | 198 915 | 2,2 s |
+
+Para que el peor caso Extreme cupiera (antes tardaba 3,4 s) se hicieron dos cambios, sin alterar los resultados:
+
+- La validación de tramos ya no crea vectores en cada llamada; se llama millones de veces al construir el grafo.
+- Dijkstra no expande la base, las estaciones ni los clientes, porque un camino mínimo entre obstáculos solo dobla en vértices de obstáculos. Da las mismas distancias en la mitad de tiempo (de 1,77 s a 0,85 s en el peor caso Extreme).
 
 Los casos hechos a mano de `data/adversarial/` usan la categoría `ADVERSARIAL`, con los mismos límites que Small, y semilla 0.
 
@@ -129,4 +149,4 @@ Los casos hechos a mano de `data/adversarial/` usan la categoría `ADVERSARIAL`,
 
 ## 9. Por definir
 
-- Tamaños y límites finales de cada categoría (se fijan tras medir).
+Nada por ahora.

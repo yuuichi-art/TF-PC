@@ -6,6 +6,7 @@
 #include "../geometry/Polygon.hpp"
 #include "../geometry/GeometryUtils.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -53,6 +54,19 @@ struct GraphEdge {
 };
 
 /**
+ * @brief Caja envolvente alineada a los ejes: el rectángulo mínimo que contiene una figura.
+ */
+struct BoundingBox {
+    double minX, minY, maxX, maxY;
+
+    // Dos cajas son disjuntas si una queda completamente a un lado de la otra.
+    bool isDisjointFrom(const BoundingBox& o) const {
+        return maxX < o.minX - EPS || o.maxX < minX - EPS ||
+               maxY < o.minY - EPS || o.maxY < minY - EPS;
+    }
+};
+
+/**
  * @brief Grafo de Visibilidad Euclidiano G = (V, E) libre de colisiones.
  * Transforma el espacio continuo 2D en un grafo ponderado discreto conectando nodos
  * visibles cuyos trayectos no intersecan el interior de ningún polígono obstáculo.
@@ -61,8 +75,33 @@ class VisibilityGraph {
 private:
     std::vector<Node> nodes_;
     std::vector<Polygon> obstacles_;
+    std::vector<BoundingBox> obstacleBoxes_;   // Caja envolvente de cada obstáculo
     std::vector<std::vector<GraphEdge>> adj_;
     int edgeCount_ = 0;
+
+    // Un tramo es válido si no atraviesa el interior de ningún obstáculo. Con el filtro activo,
+    // los obstáculos cuya caja no toca la caja del tramo se descartan sin revisar sus aristas:
+    // si las cajas no se tocan, el tramo no puede entrar al polígono.
+    bool isSegmentClear(const Segment& seg, bool useBoundingBoxFilter) const {
+        BoundingBox segBox{std::min(seg.a.x, seg.b.x), std::min(seg.a.y, seg.b.y),
+                           std::max(seg.a.x, seg.b.x), std::max(seg.a.y, seg.b.y)};
+        for (size_t k = 0; k < obstacles_.size(); ++k) {
+            if (useBoundingBoxFilter && segBox.isDisjointFrom(obstacleBoxes_[k])) continue;
+            if (GeometryUtils::segmentIntersectsPolygonInterior(seg, obstacles_[k])) return false;
+        }
+        return true;
+    }
+
+    static BoundingBox boxOf(const Polygon& poly) {
+        BoundingBox box{poly[0].x, poly[0].y, poly[0].x, poly[0].y};
+        for (const Point& v : poly.vertices) {
+            box.minX = std::min(box.minX, v.x);
+            box.minY = std::min(box.minY, v.y);
+            box.maxX = std::max(box.maxX, v.x);
+            box.maxY = std::max(box.maxY, v.y);
+        }
+        return box;
+    }
 
 public:
     VisibilityGraph() = default;
@@ -110,6 +149,7 @@ public:
      */
     void addObstacle(const Polygon& poly) {
         obstacles_.push_back(poly);
+        obstacleBoxes_.push_back(boxOf(poly));
         int polyIdx = static_cast<int>(obstacles_.size()) - 1;
         for (int i = 0; i < poly.size(); ++i) {
             int idx = static_cast<int>(nodes_.size());
@@ -121,9 +161,14 @@ public:
 
     /**
      * @brief Construye las aristas de visibilidad evaluando todos los pares de nodos (u, v).
-     * Complejidad: O(|V|^2 * M), donde M es el número total de aristas de obstáculos.
+     * Complejidad: O(|V|^2 * M) en el peor caso, donde M es el número total de aristas de
+     * obstáculos. El filtro por caja envolvente no cambia el peor caso, pero en la práctica
+     * descarta casi todos los obstáculos lejanos con 4 comparaciones cada uno.
+     * Espacio: O(|V| + |E|).
+     * @param useBoundingBoxFilter Se desactiva solo en las pruebas, para comprobar que el
+     *        filtro produce exactamente las mismas aristas.
      */
-    void buildVisibilityEdges() {
+    void buildVisibilityEdges(bool useBoundingBoxFilter = true) {
         int n = static_cast<int>(nodes_.size());
         edgeCount_ = 0;
         for (int i = 0; i < n; ++i) {
@@ -133,7 +178,7 @@ public:
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
                 Segment seg(nodes_[i].pt, nodes_[j].pt);
-                if (GeometryUtils::isFlightPathClear(seg, obstacles_)) {
+                if (isSegmentClear(seg, useBoundingBoxFilter)) {
                     double dist = nodes_[i].pt.dist(nodes_[j].pt);
                     adj_[i].emplace_back(j, dist);
                     adj_[j].emplace_back(i, dist);

@@ -53,8 +53,12 @@ public:
     /**
      * @brief Calcula las distancias mínimas y predecesores desde un nodo origen `source`
      * a todos los vértices del grafo de visibilidad.
+     * @param keyNodesAsEndpoints Si es true, la base, las estaciones y los clientes (salvo el
+     *        origen) se alcanzan pero no se expanden. Las distancias no cambian: un camino mínimo
+     *        entre obstáculos solo dobla en vértices de obstáculos, porque doblar en otro punto
+     *        se puede acortar. Así se ahorra trabajo y los caminos no cruzan otros clientes.
      */
-    static DijkstraResult run(const VisibilityGraph& graph, int source) {
+    static DijkstraResult run(const VisibilityGraph& graph, int source, bool keyNodesAsEndpoints = false) {
         int n = graph.numVertices();
         DijkstraResult res(n, source);
         if (source < 0 || source >= n) return res;
@@ -74,6 +78,9 @@ public:
 
             // Descartar entradas obsoletas (lazy deletion en heap)
             if (d > res.dist[u] + EPS) {
+                continue;
+            }
+            if (keyNodesAsEndpoints && u != source && graph.getNode(u).isKeyNode()) {
                 continue;
             }
 

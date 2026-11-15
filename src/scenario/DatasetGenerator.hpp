@@ -10,7 +10,7 @@
 namespace geodrone {
 
 /**
- * @brief Rangos de tamaño de una categoría (tentativos hasta medir, ver README).
+ * @brief Rangos de tamaño de una categoría (confirmados con mediciones, ver docs/decisiones.md §7).
  * El generador elige cada cantidad al azar dentro de su rango.
  */
 struct CategorySpec {
@@ -49,6 +49,13 @@ public:
      * Lanza std::invalid_argument con ADVERSARIAL: esos casos se escriben a mano.
      */
     static Scenario generate(DatasetCategory category, uint64_t seed,
+                             double width = 1000.0, double height = 1000.0);
+
+    /**
+     * @brief Igual que generate(category, seed), pero con rangos de tamaño propios.
+     * Sirve para medir el peor caso de una categoría (todos los rangos en su máximo).
+     */
+    static Scenario generate(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
                              double width = 1000.0, double height = 1000.0);
 
     /**

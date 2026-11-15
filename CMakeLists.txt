@@ -42,6 +42,8 @@ add_library(geodrone_core STATIC
     src/geometry/ConvexHull.hpp
     src/graph/VisibilityGraph.hpp
     src/graph/Dijkstra.hpp
+    src/graph/MissionGraph.hpp
+    src/graph/MissionGraph.cpp
     src/scenario/Scenario.hpp
     src/scenario/ScenarioIO.hpp
     src/scenario/ScenarioIO.cpp
@@ -79,8 +81,15 @@ add_executable(test_generator
 )
 target_link_libraries(test_generator PRIVATE geodrone_core)
 
+# 5. Pruebas del grafo de misión (visibilidad, Dijkstra, caminos y DFS)
+add_executable(test_graph
+    tests/test_graph.cpp
+)
+target_link_libraries(test_graph PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
 add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME GeneratorTests COMMAND test_generator)
+add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
