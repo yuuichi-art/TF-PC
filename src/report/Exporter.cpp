@@ -1,5 +1,6 @@
 #include "Exporter.hpp"
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -58,6 +59,42 @@ void saveRoute(const Route& route, const std::string& path) {
     if (!file) {
         throw std::runtime_error("error al escribir el archivo " + path);
     }
+}
+
+void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
+    out << "escenario,categoria,clientes,algoritmo,veredicto,costo,recargas,excluidos,tiempo_ms,memoria_mb,"
+           "gap_mejor,gap_cota\n";
+    out << std::fixed << std::setprecision(3);
+    for (const JudgeRow& row : rows) {
+        out << row.scenario << ',' << categoryName(row.category) << ',' << row.clients << ',' << row.algorithm << ','
+            << row.verdict << ',' << row.cost << ',' << row.recharges << ',' << row.excluded << ',' << row.timeMs
+            << ',' << row.memoryMB << ',';
+        if (!std::isnan(row.gapBest)) out << row.gapBest;
+        out << ',';
+        if (!std::isnan(row.gapBound)) out << row.gapBound;
+        out << '\n';
+    }
+}
+
+void saveResultsCsv(const std::vector<JudgeRow>& rows, const std::string& path) {
+    std::ofstream file = openForWriting(path);
+    writeResultsCsv(rows, file);
+    if (!file) throw std::runtime_error("error al escribir el archivo " + path);
+}
+
+void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out) {
+    out << "categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms\n";
+    out << std::fixed << std::setprecision(3);
+    for (const RankingRow& row : ranking) {
+        out << categoryName(row.category) << ',' << row.position << ',' << row.algorithm << ',' << row.okCases
+            << ',' << row.cases << ',' << row.meanGap << ',' << row.meanTimeMs << '\n';
+    }
+}
+
+void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path) {
+    std::ofstream file = openForWriting(path);
+    writeRankingCsv(ranking, file);
+    if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
 
 } // namespace Exporter

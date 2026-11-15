@@ -1,5 +1,6 @@
 #include "graph/ChargingNetwork.hpp"
 #include "graph/MissionGraph.hpp"
+#include "judge/Judge.hpp"
 #include "judge/MemoryUsage.hpp"
 #include "report/Exporter.hpp"
 #include "scenario/DatasetGenerator.hpp"
@@ -186,7 +187,63 @@ void solveScenario() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Opción 3: analizar la red de recarga (RF10, RF11, RF12)
+// Opción 3: juez y benchmark (RF14, RF15)
+// ---------------------------------------------------------------------------------------------
+
+void printRanking(const std::vector<RankingRow>& ranking) {
+    int category = -1;
+    for (const RankingRow& row : ranking) {
+        if (static_cast<int>(row.category) != category) {
+            category = static_cast<int>(row.category);
+            std::cout << "\n  " << categoryName(row.category) << "\n"
+                      << "    #  algoritmo                 OK/casos   gap medio   tiempo medio\n";
+        }
+        std::cout << "    " << row.position << "  " << std::left << std::setw(26) << row.algorithm << std::right
+                  << std::setw(3) << row.okCases << "/" << std::left << std::setw(6) << row.cases << std::right
+                  << std::fixed << std::setprecision(2) << std::setw(8) << row.meanGap << " %"
+                  << std::setw(12) << row.meanTimeMs << " ms\n";
+    }
+}
+
+void runJudge() {
+    std::cout << "\n--- JUEZ Y BENCHMARK ---\n";
+    std::string folder = askText("Carpeta de escenarios", "data/generated");
+    std::string adversarial = askText("Incluir los casos de data/adversarial (s/n)", "s");
+
+    std::vector<std::string> files = Judge::findScenarioFiles(folder);
+    if (!adversarial.empty() && (adversarial[0] == 's' || adversarial[0] == 'S')) {
+        std::vector<std::string> extra = Judge::findScenarioFiles("data/adversarial");
+        files.insert(files.end(), extra.begin(), extra.end());
+    }
+    if (files.empty()) {
+        std::cout << "  No hay escenarios en " << folder << ". Genere datasets con la opcion 1.\n";
+        return;
+    }
+
+    const std::string output = "output/judge";
+    std::cout << "  Ejecutando " << files.size() << " escenarios de menor a mayor...\n" << std::flush;
+    std::vector<JudgeRow> rows = Judge::run(files, output + "/routes", std::cout);
+    std::vector<RankingRow> ranking = Judge::rank(rows);
+    Exporter::saveResultsCsv(rows, output + "/results.csv");
+    Exporter::saveRankingCsv(ranking, output + "/ranking.csv");
+
+    int ok = 0, wa = 0, tle = 0, mle = 0;
+    for (const JudgeRow& row : rows) {
+        ok += row.verdict == "OK";
+        wa += row.verdict == "WA";
+        tle += row.verdict == "TLE";
+        mle += row.verdict == "MLE";
+    }
+    std::cout << "\n  Veredictos: " << ok << " OK, " << wa << " WA, " << tle << " TLE, " << mle << " MLE (de "
+              << rows.size() << " ejecuciones)\n";
+    std::cout << "  Ranking por categoria (mas casos OK, luego menor gap medio, luego menor tiempo):";
+    printRanking(ranking);
+    std::cout << "\n  Resultados en " << output << "/results.csv, ranking en " << output
+              << "/ranking.csv y rutas en " << output << "/routes/\n";
+}
+
+// ---------------------------------------------------------------------------------------------
+// Opción 4: analizar la red de recarga (RF10, RF11, RF12)
 // ---------------------------------------------------------------------------------------------
 
 void analyzeNetwork() {
@@ -264,14 +321,16 @@ int main() {
         std::cout << "\n=== MENU ===\n"
                   << "  1. Generar datasets\n"
                   << "  2. Resolver un escenario\n"
-                  << "  3. Analizar red de recarga\n"
+                  << "  3. Ejecutar juez y benchmark\n"
+                  << "  4. Analizar red de recarga\n"
                   << "  0. Salir\n";
-        int option = askNumber("Opcion", 0, 0, 3);
+        int option = askNumber("Opcion", 0, 0, 4);
         if (option == 0) break;
         try {
             if (option == 1) generateDatasets();
             if (option == 2) solveScenario();
-            if (option == 3) analyzeNetwork();
+            if (option == 3) runJudge();
+            if (option == 4) analyzeNetwork();
         } catch (const std::exception& error) {
             std::cout << "  [ERROR] " << error.what() << '\n';
         }

@@ -24,8 +24,8 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada), resolución completa con exclusiones y trayectoria real, exportación de rutas en TXT y menú interactivo (generar, resolver, analizar la red) |
-| Pendiente | Juez y benchmark (verificación, veredictos, gap, ranking y CSV) y dibujo SVG |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada), resolución completa con exclusiones y trayectoria real, juez y benchmark (verificación independiente, veredictos OK/WA/TLE/MLE, gap, ranking), exportación de rutas en TXT y de resultados y ranking en CSV, y menú interactivo |
+| Pendiente | Dibujo de rutas en SVG (opcional) |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
@@ -76,9 +76,11 @@ GeoDroneChallenge/
 │   │   └── MissionSolver.cpp
 │   ├── judge/                  # Juez y benchmark
 │   │   ├── MemoryUsage.hpp     # Memoria pico del proceso (GetProcessMemoryInfo)
-│   │   └── MemoryUsage.cpp
+│   │   ├── MemoryUsage.cpp
+│   │   ├── Judge.hpp           # Verificación, veredictos, benchmark y ranking
+│   │   └── Judge.cpp
 │   ├── report/                 # Exportación de resultados
-│   │   ├── Exporter.hpp        # Ruta en TXT
+│   │   ├── Exporter.hpp        # Ruta en TXT, resultados y ranking en CSV
 │   │   └── Exporter.cpp
 │   └── main.cpp                # Menú interactivo
 └── tests/
@@ -88,7 +90,8 @@ GeoDroneChallenge/
     ├── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
     ├── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
     ├── test_solvers.cpp        # Pruebas del exacto contra fuerza bruta y de las heurísticas
-    └── test_mission.cpp        # Pruebas de la misión completa y de la ruta exportada
+    ├── test_mission.cpp        # Pruebas de la misión completa y de la ruta exportada
+    └── test_judge.cpp          # Pruebas del verificador, veredictos, ranking y benchmark
 ```
 
 ---
@@ -140,7 +143,8 @@ El programa se ejecuta desde la raíz del proyecto, porque las rutas por defecto
 | --- | --- |
 | 1. Generar datasets | Crea las semillas 1..N de cada categoría en `data/generated/`, con la batería calculada por búsqueda binaria. |
 | 2. Resolver un escenario | Lee un escenario, deja elegir el algoritmo, muestra costo, recargas, excluidos, tiempo y memoria, y exporta la ruta en `output/`. |
-| 3. Analizar red de recarga | Muestra estaciones alcanzables, estaciones críticas (puntos de articulación), red mínima de soporte y autonomía mínima. |
+| 3. Ejecutar juez y benchmark | Corre todos los algoritmos sobre los escenarios de una carpeta (y los adversariales), verifica cada ruta, da veredictos OK/WA/TLE/MLE, calcula el gap y muestra el ranking por categoría. Guarda `output/judge/results.csv`, `output/judge/ranking.csv` y las rutas. |
+| 4. Analizar red de recarga | Muestra estaciones alcanzables, estaciones críticas (puntos de articulación), red mínima de soporte y autonomía mínima. |
 
 Con MinGW el ejecutable se enlaza estático, así que funciona en otra PC con Windows sin instalar nada.
 

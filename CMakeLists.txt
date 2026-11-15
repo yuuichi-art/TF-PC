@@ -73,6 +73,8 @@ add_library(geodrone_core STATIC
     src/solvers/MissionSolver.cpp
     src/judge/MemoryUsage.hpp
     src/judge/MemoryUsage.cpp
+    src/judge/Judge.hpp
+    src/judge/Judge.cpp
     src/report/Exporter.hpp
     src/report/Exporter.cpp
 )
@@ -134,6 +136,12 @@ add_executable(test_mission
 )
 target_link_libraries(test_mission PRIVATE geodrone_core)
 
+# 9. Pruebas del juez (verificador, veredictos, ranking y benchmark)
+add_executable(test_judge
+    tests/test_judge.cpp
+)
+target_link_libraries(test_judge PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
@@ -143,3 +151,4 @@ add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adv
 add_test(NAME NetworkTests COMMAND test_network ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME SolverTests COMMAND test_solvers ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME MissionTests COMMAND test_mission ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME JudgeTests COMMAND test_judge ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)

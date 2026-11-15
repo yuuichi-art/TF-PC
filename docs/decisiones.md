@@ -35,8 +35,8 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación (Tarjan) en la red de recarga | Implementado |
 | RF12 Red mínima | Prim entre la base y las estaciones | Implementado |
 | RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Implementado |
-| RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Pendiente |
-| RF15 Exportación | TXT y CSV; SVG al final | Ruta TXT implementada; CSV y SVG pendientes |
+| RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Implementado |
+| RF15 Exportación | TXT y CSV; SVG al final | TXT y CSV implementados; SVG pendiente |
 
 La red de recarga tiene como nodos la base y las estaciones. Dos nodos se conectan si su distancia de vuelo no supera la autonomía.
 
@@ -102,6 +102,19 @@ Los escenarios generados usan como batería la autonomía mínima × 1,2, redond
 - Veredictos: OK (ruta válida dentro del límite), WA (ruta inválida), TLE (excede el tiempo), MLE (excede la memoria).
 - Ranking por categoría: más casos OK, luego menor gap medio, luego menor tiempo medio.
 - El tiempo se mide con `<chrono>`. La memoria es el pico del proceso; el juez ejecuta los casos de menor a mayor para que la cifra corresponda al caso actual.
+
+Detalles del juez:
+
+- Menú: 1 generar datasets, 2 resolver un escenario, 3 ejecutar el juez, 4 analizar la red de recarga.
+- Toma los `.txt` de una carpeta (por defecto `data/generated/`) y, si se pide, los de `data/adversarial/`.
+- El exacto corre en Small y en los adversariales; las demás técnicas, en todos los casos.
+- El grafo de misión se prepara una vez por caso; el tiempo de cada ruta es preparación + resolución.
+- La verificación usa solo la ruta, el escenario y la geometría, y comprueba además que cada punto etiquetado está en las coordenadas del escenario y que el costo y las recargas informados coinciden. Cada exclusión se confirma con el grafo de misión (DFS para `OBSTACLES`, 2·dRecarga > B para `BATTERY`).
+- Precedencia de veredictos: WA si la ruta no es válida; si es válida, TLE si excede el tiempo, MLE si excede la memoria y OK en otro caso.
+- `gap_mejor` es el porcentaje sobre la ruta OK más corta del caso. `gap_cota` es el porcentaje sobre el árbol de expansión mínima de la base y los clientes atendibles, que nunca supera al óptimo; es un máximo garantizado de cuánto se aleja la ruta del óptimo.
+- Salidas: `output/judge/results.csv`, `output/judge/ranking.csv` y una ruta por caso y algoritmo en `output/judge/routes/`.
+
+Consecuencia observada de la decisión 5 (orden primero, recargas después): el orden óptimo del exacto no siempre da la ruta más corta una vez insertadas las recargas. En `small_3`, el exacto queda en 4583,81 y la 2-aproximación + 2-opt en 4367,91: su orden, algo más largo, necesita desvíos más cortos para recargar.
 
 ## 6. Formatos de archivo
 
