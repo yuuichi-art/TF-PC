@@ -6,7 +6,7 @@
 #include "graph/Dijkstra.hpp"
 #include "solvers/ExactSolver.hpp"
 #include "solvers/HeuristicSolver.hpp"
-#include "judge/DatasetGenerator.hpp"
+#include "scenario/DatasetGenerator.hpp"
 
 #include <iostream>
 #include <iomanip>

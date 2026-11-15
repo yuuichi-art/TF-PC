@@ -39,14 +39,16 @@ add_library(geodrone_core STATIC
     src/geometry/Polygon.hpp
     src/geometry/GeometryUtils.hpp
     src/geometry/GeometryUtils.cpp
+    src/geometry/ConvexHull.hpp
     src/graph/VisibilityGraph.hpp
     src/graph/Dijkstra.hpp
     src/scenario/Scenario.hpp
     src/scenario/ScenarioIO.hpp
     src/scenario/ScenarioIO.cpp
+    src/scenario/DatasetGenerator.hpp
+    src/scenario/DatasetGenerator.cpp
     src/solvers/ExactSolver.hpp
     src/solvers/HeuristicSolver.hpp
-    src/judge/DatasetGenerator.hpp
 )
 
 target_include_directories(geodrone_core PUBLIC
@@ -71,7 +73,14 @@ add_executable(test_scenario
 )
 target_link_libraries(test_scenario PRIVATE geodrone_core)
 
+# 4. Pruebas del generador de datasets
+add_executable(test_generator
+    tests/test_generator.cpp
+)
+target_link_libraries(test_generator PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
 add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME GeneratorTests COMMAND test_generator)

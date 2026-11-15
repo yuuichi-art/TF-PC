@@ -5,7 +5,9 @@
 #include "../src/geometry/Segment.hpp"
 #include "../src/geometry/Polygon.hpp"
 #include "../src/geometry/GeometryUtils.hpp"
+#include "../src/geometry/ConvexHull.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <cmath>
@@ -181,6 +183,38 @@ void testTrajectoryValidation() {
     std::cout << "  -> PASSED: Validacion de trayectorias verificada exitosamente.\n" << std::endl;
 }
 
+void testConvexHull() {
+    std::cout << "[TEST] 6. Envolvente convexa (monotone chain)..." << std::endl;
+
+    // Cuadrado con puntos interiores, puntos colineales en los bordes y un duplicado.
+    std::vector<Point> points = {
+        Point(0, 0), Point(4, 0), Point(4, 4), Point(0, 4),   // Esquinas
+        Point(2, 2), Point(1, 3), Point(3, 1),                // Interiores
+        Point(2, 0), Point(4, 2), Point(0, 2),                // Colineales sobre bordes
+        Point(4, 4)                                           // Duplicado
+    };
+    std::vector<Point> hull = convexHull(points);
+    assert(hull.size() == 4);
+
+    // Las cuatro esquinas, en sentido antihorario: el área con signo es positiva.
+    Polygon hullPoly(1, hull);
+    assert(std::abs(hullPoly.signedArea() - 16.0) < EPS);
+    for (const Point& corner : {Point(0, 0), Point(4, 0), Point(4, 4), Point(0, 4)}) {
+        assert(std::find(hull.begin(), hull.end(), corner) != hull.end());
+    }
+
+    // Todos los puntos de entrada quedan dentro o sobre el borde de la envolvente.
+    for (const Point& p : points) {
+        assert(GeometryUtils::isPointInsideOrBoundary(p, hullPoly));
+    }
+
+    // Casos degenerados: puntos colineales o menos de 3 puntos no forman polígono.
+    assert(convexHull({Point(0, 0), Point(1, 1), Point(2, 2), Point(3, 3)}).size() < 3);
+    assert(convexHull({Point(5, 5), Point(5, 5), Point(6, 7)}).size() < 3);
+
+    std::cout << "  -> PASSED: Envolvente convexa verificada exitosamente.\n" << std::endl;
+}
+
 int main() {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
@@ -195,6 +229,7 @@ int main() {
     testPointInPolygon();
     testPolygonMetrics();
     testTrajectoryValidation();
+    testConvexHull();
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   ¡TODAS LAS PRUEBAS GEOMETRICAS PASARON CON EXITO!    " << std::endl;

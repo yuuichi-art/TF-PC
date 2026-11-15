@@ -24,8 +24,8 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), grafo de visibilidad, Dijkstra y matriz de distancias entre nodos clave, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano |
-| Solo declarado, sin implementación | Solver exacto, solver heurístico, generador de datasets |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), grafo de visibilidad, Dijkstra y matriz de distancias entre nodos clave, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, envolvente convexa y generador de datasets por semilla |
+| Solo declarado, sin implementación | Solver exacto, solver heurístico |
 | Pendiente | Gestión de recargas, búsqueda binaria de autonomía, DFS y puntos de articulación, árbol de expansión mínima, juez y benchmark, exportación de rutas y resultados |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
@@ -49,23 +49,25 @@ GeoDroneChallenge/
 │   │   ├── Segment.hpp         # Segmentos, longitud, midpoint, test de pertenencia
 │   │   ├── Polygon.hpp         # Polígonos de exclusión, aristas, área Shoelace
 │   │   ├── GeometryUtils.hpp   # Declaraciones de CCW, intersección y Ray Casting
-│   │   └── GeometryUtils.cpp   # Implementaciones optimizadas sin dependencias externas
+│   │   ├── GeometryUtils.cpp   # Implementaciones optimizadas sin dependencias externas
+│   │   └── ConvexHull.hpp      # Envolvente convexa (monotone chain)
 │   ├── graph/                  # Módulo de Grafos y Navegación
 │   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
 │   │   └── Dijkstra.hpp        # SSSP con std::priority_queue y Matriz Reducida
 │   ├── scenario/               # Escenarios de misión
 │   │   ├── Scenario.hpp        # Escenario, categorías y límites competitivos
 │   │   ├── ScenarioIO.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
-│   │   └── ScenarioIO.cpp
+│   │   ├── ScenarioIO.cpp
+│   │   ├── DatasetGenerator.hpp# Generador reproducible por semilla (mt19937_64)
+│   │   └── DatasetGenerator.cpp
 │   ├── solvers/                # Motores de optimización (solo declaraciones por ahora)
 │   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small)
 │   │   └── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme)
-│   ├── judge/                  # Juez y benchmark (solo declaraciones por ahora)
-│   │   └── DatasetGenerator.hpp# Generador pseudoaleatorio reproducible (mt19937_64)
 │   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
 └── tests/
-    ├── test_geometry.cpp       # Pruebas de geometría y validación de trayectorias
-    └── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
+    ├── test_geometry.cpp       # Pruebas de geometría, trayectorias y envolvente convexa
+    ├── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
+    └── test_generator.cpp      # Pruebas de reproducibilidad y validez del generador
 ```
 
 ---
@@ -81,10 +83,12 @@ GeoDroneChallenge/
    ```
 4. **Reproducibilidad:** Generador determinista basado en `std::mt19937_64` con semillas fijadas por parámetro.
 5. **Categorías de Datasets (límites tentativos, se ajustarán tras medir tiempos reales):**
-   - **Small:** $1 \le N \le 10$, $1 \le M \le 5$, $\sum |P_k| \le 30$ | TL: 1.0s, ML: 256 MB.
-   - **Medium:** $11 \le N \le 40$, $5 \le M \le 15$, $\sum |P_k| \le 100$ | TL: 2.0s, ML: 256 MB.
-   - **Large:** $41 \le N \le 200$, $15 \le M \le 50$, $\sum |P_k| \le 400$ | TL: 3.0s, ML: 512 MB.
-   - **Extreme:** $201 \le N \le 1000$, $50 \le M \le 150$, $\sum |P_k| \le 1500$ | TL: 5.0s, ML: 512 MB.
+   - **Small:** $1 \le N \le 10$, $1 \le S \le 3$, $1 \le M \le 5$, $\sum |P_k| \le 30$ | TL: 1.0s, ML: 256 MB.
+   - **Medium:** $11 \le N \le 40$, $3 \le S \le 6$, $5 \le M \le 15$, $\sum |P_k| \le 100$ | TL: 2.0s, ML: 256 MB.
+   - **Large:** $41 \le N \le 200$, $6 \le S \le 12$, $15 \le M \le 50$, $\sum |P_k| \le 400$ | TL: 3.0s, ML: 512 MB.
+   - **Extreme:** $201 \le N \le 1000$, $12 \le S \le 25$, $50 \le M \le 150$, $\sum |P_k| \le 1500$ | TL: 5.0s, ML: 512 MB.
+
+   $N$ = clientes, $S$ = estaciones, $M$ = obstáculos, $\sum |P_k|$ = total de vértices de obstáculos.
 
 ---
 
