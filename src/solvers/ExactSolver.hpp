@@ -1,84 +1,53 @@
 #ifndef GEODRONE_EXACTSOLVER_HPP
 #define GEODRONE_EXACTSOLVER_HPP
 
-#include "../graph/VisibilityGraph.hpp"
 #include <vector>
-#include <string>
-#include <chrono>
 
 namespace geodrone {
 
 /**
- * @brief Registro con el resultado de la optimización de la misión.
+ * @brief Resultado del solver exacto.
  */
-struct MissionResult {
-    bool feasible = false;
-    double totalCost = 0.0;
-    std::vector<int> tour;          // Secuencia ordenada de índices de nodos visitados
-    std::vector<Point> fullPath;    // Trayectoria continua punto a punto en el plano R^2
-    double executionTimeMs = 0.0;
-    double peakMemoryMB = 0.0;
-    std::string solverName = "";
-    std::string message = "";
+struct ExactResult {
+    std::vector<int> order;         // Claves de los clientes en el orden de visita óptimo
+    double cost = 0.0;              // Costo del ciclo base -> clientes -> base, sin recargas
+    long long nodesExplored = 0;    // Nodos del árbol de búsqueda visitados
+    long long nodesPruned = 0;      // Ramas descartadas por la cota
 };
 
 /**
- * @brief Parámetros operativos y restricciones para el solver.
- */
-struct MissionConstraints {
-    double maxBattery = 1000.0;     // Autonomía máxima normalizada Bmax
-    double consumptionRate = 1.0;   // Factor de consumo alfa (unidades de batería / unidad de distancia)
-    double timeLimitSeconds = 1.0;  // Tiempo límite competitivo (TL)
-};
-
-/**
- * @brief Solver exacto para instancias Small (1 <= N <= 10 clientes).
- * Implementa Branch & Bound con poda agresiva por cota inferior (MST / 1-Tree)
- * y alternativa DP con máscara de bits (Held-Karp).
- * Complejidad: O(2^N * N^2) en el peor caso con DP, o factorial podado O(N!).
+ * @brief Solver exacto para instancias Small: branch and bound sobre el orden de visita (RF07).
+ *
+ * Recorre en profundidad el árbol de órdenes posibles: cada nivel elige el siguiente cliente.
+ * En cada nodo calcula una cota inferior del costo que falta y descarta la rama si
+ * costo acumulado + cota ≥ mejor ruta conocida.
+ *
+ * Cota inferior: árbol de expansión mínima (Prim) de {posición actual, clientes pendientes,
+ * base}. Lo que falta recorrer es un camino que une exactamente esos nodos, y todo camino es
+ * un árbol, así que nunca cuesta menos que el árbol mínimo.
+ *
+ * Para encontrar pronto una buena ruta, y así podar más, los hijos se exploran del cliente
+ * más cercano al más lejano.
+ *
+ * Optimiza el orden sobre la matriz de distancias (decisión 5): las recargas se insertan
+ * después, así que el óptimo es el del orden, no el de la ruta con recargas.
+ *
+ * Complejidad: O(n! · n^2) en el peor caso (n! órdenes, Prim O(n^2) por nodo); la poda reduce
+ * muchísimo los nodos visitados en la práctica (ver nodesExplored). Espacio O(n) de recursión.
+ * Límite práctico: MAX_CLIENTS.
  */
 class ExactSolver {
-private:
-    MissionConstraints constraints_;
-
 public:
-    explicit ExactSolver(const MissionConstraints& constraints = MissionConstraints())
-        : constraints_(constraints) {}
+    static constexpr int MAX_CLIENTS = 12;
 
     /**
-     * @brief Resuelve exactamente la misión de entrega minimizando la distancia euclidiana total.
-     * @param costMatrix Matriz reducida de distancias |K| x |K| entre nodos clave.
-     * @param keyNodeIndices Mapeo de índices clave hacia los índices del grafo de visibilidad.
-     * @param clientCount Cantidad de clientes N a visitar obligatoriamente.
-     * @param depotKeyIdx Índice del depósito en la matriz de distancias (típicamente 0).
-     * @return MissionResult con el tour óptimo global o infactibilidad.
+     * @param dist     Matriz de distancias entre nodos clave (la del grafo de misión).
+     * @param depot    Clave de la base.
+     * @param clients  Claves de los clientes a visitar. Deben ser alcanzables desde la base.
+     * Lanza std::invalid_argument si hay más de MAX_CLIENTS clientes.
      */
-    MissionResult solve(
-        const std::vector<std::vector<double>>& costMatrix,
-        const std::vector<int>& keyNodeIndices,
-        int clientCount,
-        int depotKeyIdx = 0);
-
-    /**
-     * @brief Actualiza los parámetros de misión.
-     */
-    void setConstraints(const MissionConstraints& constraints) {
-        constraints_ = constraints;
-    }
-
-    const MissionConstraints& getConstraints() const {
-        return constraints_;
-    }
-
-private:
-    /**
-     * @brief Calcula la cota inferior (Lower Bound) para el subconjunto de nodos no visitados mediante MST.
-     */
-    double computeMSTLowerBound(
-        const std::vector<std::vector<double>>& costMatrix,
-        const std::vector<int>& unvisited,
-        int currentKeyNode,
-        int depotKeyIdx);
+    static ExactResult solve(const std::vector<std::vector<double>>& dist, int depot,
+                             const std::vector<int>& clients);
 };
 
 } // namespace geodrone

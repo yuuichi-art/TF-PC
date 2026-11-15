@@ -24,8 +24,7 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima) e inserción de recargas |
-| Solo declarado, sin implementación | Solver exacto, solver heurístico |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima), inserción de recargas, solver exacto (branch and bound con cota de árbol de expansión mínima) y heurísticas (vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada) |
 | Pendiente | Juez y benchmark, exportación de rutas y resultados, menú interactivo |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
@@ -66,8 +65,10 @@ GeoDroneChallenge/
 │   │   ├── DatasetGenerator.hpp# Generador reproducible por semilla (mt19937_64)
 │   │   └── DatasetGenerator.cpp
 │   ├── solvers/                # Motores de optimización
-│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small; solo declarado)
-│   │   ├── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme; solo declarado)
+│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small, hasta 12 clientes)
+│   │   ├── ExactSolver.cpp
+│   │   ├── HeuristicSolver.hpp # Vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada
+│   │   ├── HeuristicSolver.cpp
 │   │   ├── RechargePlanner.hpp # Inserción de recargas sobre un orden de clientes
 │   │   └── RechargePlanner.cpp
 │   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
@@ -76,7 +77,8 @@ GeoDroneChallenge/
     ├── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
     ├── test_generator.cpp      # Pruebas de reproducibilidad y validez del generador
     ├── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
-    └── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
+    ├── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
+    └── test_solvers.cpp        # Pruebas del exacto contra fuerza bruta y de las heurísticas
 ```
 
 ---

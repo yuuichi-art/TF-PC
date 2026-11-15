@@ -4,9 +4,6 @@
 #include "geometry/GeometryUtils.hpp"
 #include "graph/VisibilityGraph.hpp"
 #include "graph/Dijkstra.hpp"
-#include "solvers/ExactSolver.hpp"
-#include "solvers/HeuristicSolver.hpp"
-#include "scenario/DatasetGenerator.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -37,8 +34,10 @@ void printSystemStatus() {
     std::cout << "  [OK] Fast I/O: std::ios_base::sync_with_stdio(false); cin.tie(NULL)\n";
     std::cout << "  [OK] Tolerancia Geometrica: EPS = " << EPS << "\n";
     std::cout << "  [OK] Modulo Geometrico: Point, Segment, Polygon, CCW, Ray Casting\n";
-    std::cout << "  [OK] Modulo de Grafos: VisibilityGraph G=(V,E), Dijkstra SSSP\n";
-    std::cout << "  [--] Pendiente: solvers, recargas, generador de datasets y juez\n\n";
+    std::cout << "  [OK] Modulo de Grafos: VisibilityGraph G=(V,E), Dijkstra SSSP, red de recarga\n";
+    std::cout << "  [OK] Generador de datasets, recargas y solver exacto (branch and bound)\n";
+    std::cout << "  [OK] Heuristicas: vecino mas cercano, 2-aproximacion, 2-opt y busqueda local iterada\n";
+    std::cout << "  [--] Pendiente: juez y menu\n\n";
 }
 
 void runDemonstration() {

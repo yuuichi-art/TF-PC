@@ -28,8 +28,8 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF03, RF04 Geometría y validación | Producto cruz, intersección de segmentos, punto en polígono | Implementado |
 | RF05 Grafo de navegación | Grafo de visibilidad por pares, con filtro por caja envolvente | Implementado |
 | RF06 Caminos mínimos | Dijkstra desde cada nodo clave, sin expandir otros nodos clave | Implementado |
-| RF07 Exacto (Small) | Branch and bound con cota de árbol de expansión mínima | Pendiente |
-| RF08 Heurísticas | Vecino más cercano, 2-aproximación por árbol de expansión mínima, 2-opt, búsqueda local iterada | Pendiente |
+| RF07 Exacto (Small) | Branch and bound con cota de árbol de expansión mínima | Implementado |
+| RF08 Heurísticas | Vecino más cercano, 2-aproximación por árbol de expansión mínima, 2-opt, búsqueda local iterada | Implementado |
 | RF09 Autonomía | Los solvers optimizan el orden; un paso común inserta las recargas (ver sección 4) | Implementado |
 | RF10 Búsqueda binaria | Menor autonomía con la que la red de recarga permite atender a todos los clientes (ver sección 4) | Implementado |
 | RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación (Tarjan) en la red de recarga | Implementado |
@@ -39,6 +39,33 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF15 Exportación | TXT y CSV; SVG al final | Pendiente |
 
 La red de recarga tiene como nodos la base y las estaciones. Dos nodos se conectan si su distancia de vuelo no supera la autonomía.
+
+El solver exacto admite hasta 12 clientes. Medición (Release `-O3`, peor de 10 instancias por fila; el árbol completo con 10 clientes tiene más de 3,6 millones de hojas):
+
+| Instancia | Clientes | Peor tiempo | Peores nodos visitados |
+| --- | --- | --- | --- |
+| Small generados con obstáculos (50 escenarios) | 10 | 24 ms | 35 997 |
+| Puntos uniformes | 10 / 12 | 14 ms / 49 ms | 21 159 / 54 231 |
+| Puntos en racimos | 10 / 12 | 12 ms / 75 ms | 14 742 / 99 401 |
+| Puntos en círculo o cuadrícula | 12 | menos de 1 ms | menos de 1 000 |
+
+Heurísticas sobre el orden de visita (Release `-O3`, semillas 1 a 5 de cada categoría, sin recargas). El gap contra la mejor ruta encontrada compara las técnicas entre sí; el gap contra la cota es un máximo garantizado, porque el árbol de expansión mínima nunca cuesta más que el óptimo:
+
+| Categoría | Vecino más cercano | 2-aproximación | Vecino + 2-opt | 2-aproximación + 2-opt | Búsqueda local iterada (200) |
+| --- | --- | --- | --- | --- | --- |
+| Small: gap contra el óptimo | 6,6 % | 14,5 % | 1,2 % | 1,5 % | 0 % |
+| Medium: gap contra la mejor | 14,4 % | 29,3 % | 3,8 % | 1,0 % | 0 % |
+| Large: gap contra la mejor | 19,9 % | 34,1 % | 7,3 % | 6,3 % | 0 % |
+| Extreme: gap contra la mejor | 19,3 % | 32,4 % | 4,2 % | 6,3 % | 0 % |
+| Extreme: peor tiempo | 0,6 ms | 1,9 ms | 3,7 ms | 4,1 ms | 589 ms |
+
+La búsqueda local iterada usa 200 iteraciones fijas, para que cada semilla dé siempre la misma ruta, y un límite de tiempo como resguardo. Más iteraciones mejoran poco y no caben en el peor caso Extreme (gap contra la cota, promedio de 3 semillas):
+
+| Iteraciones | 0 (solo 2-opt) | 50 | 200 | 500 | 1000 |
+| --- | --- | --- | --- | --- | --- |
+| Large | 27,3 % | 18,6 % | 17,7 % | 17,3 % | 16,6 % |
+| Extreme | 21,6 % | 18,2 % | 16,3 % | 15,5 % | 14,9 % |
+| Extreme: peor tiempo | 4 ms | 0,14 s | 0,58 s | 1,35 s | 2,90 s |
 
 ## 4. Recargas y búsqueda binaria
 

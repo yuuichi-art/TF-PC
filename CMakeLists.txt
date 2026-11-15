@@ -57,7 +57,9 @@ add_library(geodrone_core STATIC
     src/scenario/DatasetGenerator.hpp
     src/scenario/DatasetGenerator.cpp
     src/solvers/ExactSolver.hpp
+    src/solvers/ExactSolver.cpp
     src/solvers/HeuristicSolver.hpp
+    src/solvers/HeuristicSolver.cpp
     src/solvers/RechargePlanner.hpp
     src/solvers/RechargePlanner.cpp
 )
@@ -102,6 +104,12 @@ add_executable(test_network
 )
 target_link_libraries(test_network PRIVATE geodrone_core)
 
+# 7. Pruebas de los solvers (exacto contra fuerza bruta)
+add_executable(test_solvers
+    tests/test_solvers.cpp
+)
+target_link_libraries(test_solvers PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
@@ -109,3 +117,4 @@ add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/da
 add_test(NAME GeneratorTests COMMAND test_generator)
 add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME NetworkTests COMMAND test_network ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME SolverTests COMMAND test_solvers ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
