@@ -1,3 +1,6 @@
+// Las pruebas usan assert; se anula NDEBUG para que sigan activas al compilar en Release.
+#undef NDEBUG
+
 #include "../src/geometry/Point.hpp"
 #include "../src/geometry/Segment.hpp"
 #include "../src/geometry/Polygon.hpp"
@@ -162,9 +165,18 @@ void testTrajectoryValidation() {
     Segment validPath(Point(0.0, 0.0), Point(8.0, 0.0));
     assert(GeometryUtils::segmentIntersectsPolygonInterior(validPath, obstacle) == false);
 
-    // 5.3 Trayectoria tangencial que roza exactamente un vértice por el exterior
-    Segment tangentPath(Point(0.0, 2.0), Point(2.0, 0.0));
+    // 5.3 Trayectoria tangencial que roza exactamente el vértice (2,2) por el exterior (Factible)
+    Segment tangentPath(Point(0.0, 4.0), Point(4.0, 0.0));
     assert(GeometryUtils::segmentIntersectsPolygonInterior(tangentPath, obstacle) == false);
+
+    // 5.4 Diagonal que entra y sale por los vértices (2,2) y (6,6): no cruza ninguna arista
+    // en forma propia, pero recorre el interior (Infactible)
+    Segment diagonalPath(Point(0.0, 0.0), Point(8.0, 8.0));
+    assert(GeometryUtils::segmentIntersectsPolygonInterior(diagonalPath, obstacle) == true);
+
+    // 5.5 Trayectoria que vuela sobre el borde izquierdo x = 2 (Factible: tocar el borde está permitido)
+    Segment edgePath(Point(2.0, 0.0), Point(2.0, 8.0));
+    assert(GeometryUtils::segmentIntersectsPolygonInterior(edgePath, obstacle) == false);
 
     std::cout << "  -> PASSED: Validacion de trayectorias verificada exitosamente.\n" << std::endl;
 }

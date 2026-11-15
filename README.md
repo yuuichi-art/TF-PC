@@ -89,13 +89,13 @@ GeoDroneChallenge/
 
 ### Instrucciones de Compilación
 ```bash
-# 1. Programa principal (Release, -O3)
+# 1. Configurar y compilar (Release, -O3)
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/geodrone
 
-# 2. Pruebas unitarias (Debug: en Release los assert quedan desactivados)
-cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-debug
-ctest --test-dir build-debug --output-on-failure
+# 2. Ejecutar las pruebas unitarias (los assert siguen activos en Release)
+ctest --test-dir build --output-on-failure
+
+# 3. Ejecutar el programa principal
+./build/geodrone
 ```

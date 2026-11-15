@@ -74,7 +74,7 @@ namespace GeometryUtils {
 
     /**
      * @brief Valida si una trayectoria entre u y v interseca o penetra el interior de un polígono de exclusión.
-     * Requisito operativo RF04 / Sec 1.1: segmento(u, v) ∩ interior(poly) = ∅.
+     * Requisito RF04: segmento(u, v) ∩ interior(poly) = ∅.
      */
     bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly);
 

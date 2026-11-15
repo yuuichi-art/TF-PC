@@ -11,7 +11,7 @@
 namespace geodrone {
 
 /**
- * @brief Categorías oficiales de evaluación según la Tabla 1 del diseño técnico.
+ * @brief Categorías de evaluación (límites tentativos, ver README).
  */
 enum class DatasetCategory {
     SMALL,      // 1 <= N <= 10, 1 <= M <= 5, TL = 1.0s, ML = 256MB
@@ -65,7 +65,7 @@ public:
 
     /**
      * @brief Genera un escenario adversarial con trampas cóncavas (edificios en forma de U / C),
-     * desafiando la heurística euclidiana directa (Sec. 5.2).
+     * desafiando la heurística euclidiana directa.
      */
     static Scenario generateAdversarialConcaveTrap(
         uint64_t seed = 1337ULL,

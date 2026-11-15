@@ -38,8 +38,7 @@ void printSystemStatus() {
     std::cout << "  [OK] Tolerancia Geometrica: EPS = " << EPS << "\n";
     std::cout << "  [OK] Modulo Geometrico: Point, Segment, Polygon, CCW, Ray Casting\n";
     std::cout << "  [OK] Modulo de Grafos: VisibilityGraph G=(V,E), Dijkstra SSSP\n";
-    std::cout << "  [OK] Modulo de Solvers: Exact (Branch & Bound), Heuristic (NN + 2-Opt)\n";
-    std::cout << "  [OK] Juez y Benchmarking: Generador de datasets reproducible (mt19937_64)\n\n";
+    std::cout << "  [--] Pendiente: solvers, recargas, generador de datasets y juez\n\n";
 }
 
 void runDemonstration() {
@@ -51,8 +50,8 @@ void runDemonstration() {
     std::cout << "Base registrada: " << g.getNode(depotIdx).name << " en (0.0, 5.0)\n";
 
     // 2. Clientes
-    g.addClient(Point(10.0, 5.0), 1.0, "Cliente C1");
-    g.addClient(Point(10.0, 10.0), 1.0, "Cliente C2");
+    g.addClient(Point(10.0, 5.0), "Cliente C1");
+    g.addClient(Point(10.0, 10.0), "Cliente C2");
     std::cout << "Clientes registrados: C1 en (10.0, 5.0), C2 en (10.0, 10.0)\n";
 
     // 3. Estación de recarga
@@ -107,7 +106,7 @@ void runDemonstration() {
 }
 
 void printDatasetsTable() {
-    std::cout << "--- CATEGORIAS DE DATASETS Y LIMITES COMPETITIVOS (TABLA 1) ---\n";
+    std::cout << "--- CATEGORIAS DE DATASETS Y LIMITES COMPETITIVOS (TENTATIVOS) ---\n";
     std::cout << "| Categoria | Clientes (N) | Obstaculos (M) | Vertices Obs | TL (s) | ML (MB) |\n";
     std::cout << "|-----------|--------------|----------------|--------------|--------|---------|\n";
     std::cout << "| Small     |  1 <= N <= 10|    1 <= M <= 5 |    <= 30     | 1.0 s  |  256 MB |\n";
@@ -127,6 +126,6 @@ int main() {
     printDatasetsTable();
     runDemonstration();
 
-    std::cout << "Ejecucion completada con exito. Sistema listo para Hitos 2 y 3.\n";
+    std::cout << "Ejecucion completada con exito.\n";
     return 0;
 }
