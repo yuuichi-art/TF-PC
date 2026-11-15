@@ -2,6 +2,8 @@
 #include "ScenarioIO.hpp"
 #include "../geometry/ConvexHull.hpp"
 #include "../geometry/GeometryUtils.hpp"
+#include "../graph/ChargingNetwork.hpp"
+#include "../graph/MissionGraph.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -116,11 +118,19 @@ CategorySpec DatasetGenerator::specFor(DatasetCategory category) {
 }
 
 Scenario DatasetGenerator::generate(DatasetCategory category, uint64_t seed, double width, double height) {
-    return generate(specFor(category), category, seed, width, height);
+    Scenario scenario = generateLayout(specFor(category), category, seed, width, height);
+    scenario.battery = batteryFor(scenario);
+    return scenario;
 }
 
-Scenario DatasetGenerator::generate(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
-                                    double width, double height) {
+double DatasetGenerator::batteryFor(const Scenario& layout) {
+    MissionGraph mission(layout);
+    double minimum = ChargingNetwork::minimumAutonomy(mission);
+    return std::max(1.0, std::ceil(minimum * BATTERY_MARGIN));
+}
+
+Scenario DatasetGenerator::generateLayout(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
+                                          double width, double height) {
     std::mt19937_64 rng(seed);
 
     Scenario scenario;
@@ -129,7 +139,7 @@ Scenario DatasetGenerator::generate(const CategorySpec& spec, DatasetCategory ca
     scenario.name = lowercase(categoryName(category)) + "_" + std::to_string(seed);
     scenario.areaWidth = width;
     scenario.areaHeight = height;
-    scenario.battery = PROVISIONAL_BATTERY;
+    scenario.battery = 0.0;   // Sin calcular: lo completa batteryFor
 
     // El orden de los sorteos es fijo: cambiarlo cambia los escenarios de cada semilla.
     int clientCount = static_cast<int>(randomInt(rng, spec.minClients, spec.maxClients));

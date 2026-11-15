@@ -37,14 +37,15 @@ struct CategorySpec {
  */
 class DatasetGenerator {
 public:
-    // Batería provisional: alcanza para cualquier tramo directo dentro del área de 1000 x 1000.
-    // Se reemplazará por la autonomía mínima calculada con búsqueda binaria.
-    static constexpr double PROVISIONAL_BATTERY = 2000.0;
+    // Margen sobre la autonomía mínima: con 1,2 todos los clientes se pueden atender y aun
+    // así hacen falta recargas, que es lo que se quiere poner a prueba.
+    static constexpr double BATTERY_MARGIN = 1.2;
 
     static CategorySpec specFor(DatasetCategory category);
 
     /**
-     * @brief Genera un escenario de la categoría dada (SMALL, MEDIUM, LARGE o EXTREME).
+     * @brief Genera un escenario completo de la categoría dada (SMALL, MEDIUM, LARGE o EXTREME):
+     * la geometría de generateLayout más la batería de batteryFor.
      * El nombre es "<categoria>_<semilla>", por ejemplo "small_3".
      * Lanza std::invalid_argument con ADVERSARIAL: esos casos se escriben a mano.
      */
@@ -52,11 +53,19 @@ public:
                              double width = 1000.0, double height = 1000.0);
 
     /**
-     * @brief Igual que generate(category, seed), pero con rangos de tamaño propios.
-     * Sirve para medir el peor caso de una categoría (todos los rangos en su máximo).
+     * @brief Solo la geometría: obstáculos, base, estaciones y clientes, con batería 0 (sin
+     * calcular). Es rápida porque no construye el grafo de misión; la usan las pruebas y la
+     * medición del peor caso (con todos los rangos en su máximo).
      */
-    static Scenario generate(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
-                             double width = 1000.0, double height = 1000.0);
+    static Scenario generateLayout(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
+                                   double width = 1000.0, double height = 1000.0);
+
+    /**
+     * @brief Batería del escenario: la autonomía mínima (búsqueda binaria, RF10) por
+     * BATTERY_MARGIN, redondeada hacia arriba a un entero. Al menos 1.
+     * Construye el grafo de misión, así que cuesta lo mismo que prepararlo para resolver.
+     */
+    static double batteryFor(const Scenario& layout);
 
     /**
      * @brief Genera las semillas 1..seedsPerCategory de cada categoría y las guarda en folder

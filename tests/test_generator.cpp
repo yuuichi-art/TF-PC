@@ -26,6 +26,12 @@ std::string toText(const Scenario& scenario) {
     return out.str();
 }
 
+// Solo la geometría: las pruebas de este archivo no necesitan la batería, que construye el
+// grafo de misión completo y haría lentas las pruebas con muchos escenarios Extreme.
+Scenario layout(DatasetCategory category, uint64_t seed) {
+    return DatasetGenerator::generateLayout(DatasetGenerator::specFor(category), category, seed);
+}
+
 bool isInteger(double value) {
     return value == std::floor(value);
 }
@@ -50,12 +56,12 @@ void testSameSeedSameScenario() {
 
     for (DatasetCategory category : GENERATED_CATEGORIES) {
         for (uint64_t seed : {1ULL, 7ULL, 123456789ULL}) {
-            std::string first = toText(DatasetGenerator::generate(category, seed));
-            std::string second = toText(DatasetGenerator::generate(category, seed));
+            std::string first = toText(layout(category, seed));
+            std::string second = toText(layout(category, seed));
             assert(first == second);
         }
         // Semillas distintas dan escenarios distintos.
-        assert(toText(DatasetGenerator::generate(category, 1)) != toText(DatasetGenerator::generate(category, 2)));
+        assert(toText(layout(category, 1)) != toText(layout(category, 2)));
     }
 
     std::cout << "  -> PASSED\n" << std::endl;
@@ -69,7 +75,7 @@ void testSizesWithinCategory() {
     for (DatasetCategory category : GENERATED_CATEGORIES) {
         CategorySpec spec = DatasetGenerator::specFor(category);
         for (uint64_t seed = 1; seed <= 10; ++seed) {
-            Scenario s = DatasetGenerator::generate(category, seed);
+            Scenario s = layout(category, seed);
             assert(s.category == category && s.seed == seed);
             assert(s.numClients() >= spec.minClients && s.numClients() <= spec.maxClients);
             assert(s.numStations() >= spec.minStations && s.numStations() <= spec.maxStations);
@@ -90,7 +96,7 @@ void testGeometryIsValid() {
 
     for (DatasetCategory category : GENERATED_CATEGORIES) {
         for (uint64_t seed = 1; seed <= 5; ++seed) {
-            Scenario s = DatasetGenerator::generate(category, seed);
+            Scenario s = layout(category, seed);
 
             // Obstáculos: convexos (antihorarios, sin giros a la derecha), dentro del área,
             // con coordenadas enteras y sin tocarse entre sí.
@@ -148,14 +154,22 @@ void testBenchmarkSet() {
     const std::string folder = "tmp_test_generator";
     std::filesystem::remove_all(folder);
 
-    std::vector<std::string> paths = DatasetGenerator::generateBenchmarkSet(folder, 2);
-    assert(paths.size() == 8);
+    // Una semilla por categoría: cada escenario completo construye su grafo de misión.
+    std::vector<std::string> paths = DatasetGenerator::generateBenchmarkSet(folder, 1);
+    assert(paths.size() == 4);
     assert(paths.front() == folder + "/small_1.txt");
-    assert(paths.back() == folder + "/extreme_2.txt");
+    assert(paths.back() == folder + "/extreme_1.txt");
 
-    // Lo guardado es exactamente lo que genera la semilla.
-    Scenario fromFile = ScenarioIO::load(folder + "/medium_2.txt");
-    assert(toText(fromFile) == toText(DatasetGenerator::generate(DatasetCategory::MEDIUM, 2)));
+    // Lo guardado es exactamente lo que genera la semilla, y tiene batería calculada.
+    Scenario fromFile = ScenarioIO::load(folder + "/medium_1.txt");
+    assert(toText(fromFile) == toText(DatasetGenerator::generate(DatasetCategory::MEDIUM, 1)));
+    assert(fromFile.battery >= 1.0 && isInteger(fromFile.battery));
+
+    // La geometría del escenario completo es la misma que la de generateLayout.
+    Scenario full = DatasetGenerator::generate(DatasetCategory::SMALL, 3);
+    Scenario onlyLayout = layout(DatasetCategory::SMALL, 3);
+    onlyLayout.battery = full.battery;
+    assert(toText(full) == toText(onlyLayout));
 
     std::filesystem::remove_all(folder);
 

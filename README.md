@@ -24,9 +24,9 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 | Estado | Módulos |
 | --- | --- |
-| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad) |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), envolvente convexa, lectura y escritura de escenarios en TXT, casos adversariales hechos a mano, generador de datasets por semilla, grafo de misión (grafo de visibilidad con filtro por caja envolvente, matriz de distancias con Dijkstra, caminos reales y DFS de conectividad), red de recarga (Prim, puntos de articulación con Tarjan, búsqueda binaria de la autonomía mínima) e inserción de recargas |
 | Solo declarado, sin implementación | Solver exacto, solver heurístico |
-| Pendiente | Gestión de recargas, búsqueda binaria de autonomía, puntos de articulación, árbol de expansión mínima, juez y benchmark, exportación de rutas y resultados |
+| Pendiente | Juez y benchmark, exportación de rutas y resultados, menú interactivo |
 
 Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
 
@@ -55,22 +55,28 @@ GeoDroneChallenge/
 │   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
 │   │   ├── Dijkstra.hpp        # SSSP con std::priority_queue y Matriz Reducida
 │   │   ├── MissionGraph.hpp    # Grafo de misión: matriz, caminos reales y DFS desde la base
-│   │   └── MissionGraph.cpp
+│   │   ├── MissionGraph.cpp
+│   │   ├── Mst.hpp             # Árbol de expansión mínima (Prim sobre matriz)
+│   │   ├── ChargingNetwork.hpp # Red de recarga: Tarjan, red mínima y autonomía mínima
+│   │   └── ChargingNetwork.cpp
 │   ├── scenario/               # Escenarios de misión
 │   │   ├── Scenario.hpp        # Escenario, categorías y límites competitivos
 │   │   ├── ScenarioIO.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
 │   │   ├── ScenarioIO.cpp
 │   │   ├── DatasetGenerator.hpp# Generador reproducible por semilla (mt19937_64)
 │   │   └── DatasetGenerator.cpp
-│   ├── solvers/                # Motores de optimización (solo declaraciones por ahora)
-│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small)
-│   │   └── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme)
+│   ├── solvers/                # Motores de optimización
+│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small; solo declarado)
+│   │   ├── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme; solo declarado)
+│   │   ├── RechargePlanner.hpp # Inserción de recargas sobre un orden de clientes
+│   │   └── RechargePlanner.cpp
 │   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
 └── tests/
     ├── test_geometry.cpp       # Pruebas de geometría, trayectorias y envolvente convexa
     ├── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
     ├── test_generator.cpp      # Pruebas de reproducibilidad y validez del generador
-    └── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
+    ├── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
+    └── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
 ```
 
 ---

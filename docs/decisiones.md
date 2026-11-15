@@ -30,10 +30,10 @@ Registro de las decisiones acordadas por el grupo. Si una decisión cambia, se a
 | RF06 Caminos mínimos | Dijkstra desde cada nodo clave, sin expandir otros nodos clave | Implementado |
 | RF07 Exacto (Small) | Branch and bound con cota de árbol de expansión mínima | Pendiente |
 | RF08 Heurísticas | Vecino más cercano, 2-aproximación por árbol de expansión mínima, 2-opt, búsqueda local iterada | Pendiente |
-| RF09 Autonomía | Los solvers optimizan el orden; un paso común inserta las recargas (ver sección 4) | Pendiente |
-| RF10 Búsqueda binaria | Menor autonomía con la que la red de recarga permite atender a todos los clientes (ver sección 4) | Pendiente |
-| RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación en la red de recarga | Componentes implementado; articulación pendiente |
-| RF12 Red mínima | Prim sobre la red de recarga | Pendiente |
+| RF09 Autonomía | Los solvers optimizan el orden; un paso común inserta las recargas (ver sección 4) | Implementado |
+| RF10 Búsqueda binaria | Menor autonomía con la que la red de recarga permite atender a todos los clientes (ver sección 4) | Implementado |
+| RF11 Análisis estructural | DFS: componentes conexas (clientes inalcanzables) y puntos de articulación (Tarjan) en la red de recarga | Implementado |
+| RF12 Red mínima | Prim entre la base y las estaciones | Implementado |
 | RF13 Datasets | Generador con semilla, casos aleatorios y adversariales | Implementado |
 | RF14 Juez | Verificación de rutas, tiempo, memoria y gap | Pendiente |
 | RF15 Exportación | TXT y CSV; SVG al final | Pendiente |
@@ -47,15 +47,18 @@ La red de recarga tiene como nodos la base y las estaciones. Dos nodos se conect
 Inserción de recargas, recorriendo el orden que entrega el solver:
 
 1. Si con la batería actual se llega al siguiente destino y al llegar queda al menos `dRecarga(destino)`, se vuela directo.
-2. Si no, se desvía al punto de recarga alcanzable que minimiza `d(actual, s) + d(s, destino)` y deja el viaje seguro.
-3. Si ningún punto de recarga basta, se encadenan estaciones con Dijkstra sobre la red de recarga.
-4. Si tampoco hay camino, la ruta se marca como infactible.
+2. Si no, se busca el desvío más corto por la red de recarga: un Dijkstra sobre los puntos de recarga, que parte de los alcanzables con la batería actual y termina en uno desde el cual el destino es seguro con la batería llena. Desviarse a una sola estación es el caso de un salto; si hace falta, el camino encadena varias.
+3. Si no existe ese camino, la ruta se marca como infactible.
 
 Búsqueda binaria de la autonomía mínima `B`:
 
 - `B` es factible si, en la red de recarga con aristas de longitud ≤ `B`, cada cliente `c` tiene un punto de recarga alcanzable `s` con `d(s, c) + dRecarga(c) ≤ B`.
+- Como el mejor `s` es la recarga más cercana, la condición se reduce a `2 · dRecarga(c) ≤ B`: llegar desde una recarga y volver a una recarga.
 - La condición es monótona y coincide con la condición bajo la cual la inserción de recargas siempre encuentra ruta.
-- Se busca sobre reales, entre 0 y la mayor distancia de la matriz, con un número fijo de iteraciones.
+- Se busca sobre reales, entre 0 y el doble de la mayor distancia de la matriz, con 60 iteraciones fijas. Hace falta el doble porque un cliente lejano puede exigir ir y volver.
+- La red compara de forma exacta. La tolerancia de 1e-6 solo se usa al simular la batería tramo a tramo, en el planificador y en el juez; así la autonomía mínima siempre deja ese margen a la simulación.
+
+Los escenarios generados usan como batería la autonomía mínima × 1,2, redondeada hacia arriba: todos los clientes se pueden atender y aun así hacen falta recargas.
 
 ## 5. Programa y juez
 

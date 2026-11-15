@@ -44,6 +44,9 @@ add_library(geodrone_core STATIC
     src/graph/Dijkstra.hpp
     src/graph/MissionGraph.hpp
     src/graph/MissionGraph.cpp
+    src/graph/Mst.hpp
+    src/graph/ChargingNetwork.hpp
+    src/graph/ChargingNetwork.cpp
     src/scenario/Scenario.hpp
     src/scenario/ScenarioIO.hpp
     src/scenario/ScenarioIO.cpp
@@ -51,6 +54,8 @@ add_library(geodrone_core STATIC
     src/scenario/DatasetGenerator.cpp
     src/solvers/ExactSolver.hpp
     src/solvers/HeuristicSolver.hpp
+    src/solvers/RechargePlanner.hpp
+    src/solvers/RechargePlanner.cpp
 )
 
 target_include_directories(geodrone_core PUBLIC
@@ -87,9 +92,16 @@ add_executable(test_graph
 )
 target_link_libraries(test_graph PRIVATE geodrone_core)
 
+# 6. Pruebas de la red de recarga (Prim, Tarjan, búsqueda binaria e inserción de recargas)
+add_executable(test_network
+    tests/test_network.cpp
+)
+target_link_libraries(test_network PRIVATE geodrone_core)
+
 # Habilitar suite de tests con CTest
 enable_testing()
 add_test(NAME GeometryUnitTests COMMAND test_geometry)
 add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
 add_test(NAME GeneratorTests COMMAND test_generator)
 add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME NetworkTests COMMAND test_network ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
