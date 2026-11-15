@@ -20,13 +20,27 @@ El sistema resuelve el ruteo sin colisiones sorteando polígonos de exclusión $
 
 ---
 
-## 2. Arquitectura del Repositorio
+## 2. Estado actual
+
+| Estado | Módulos |
+| --- | --- |
+| Implementado y probado | Geometría (orientación, intersección de segmentos, punto en polígono, validación de trayectorias), grafo de visibilidad, Dijkstra y matriz de distancias entre nodos clave |
+| Solo declarado, sin implementación | Solver exacto, solver heurístico, generador de datasets |
+| Pendiente | Gestión de recargas, búsqueda binaria de autonomía, DFS y puntos de articulación, árbol de expansión mínima, juez y benchmark, lectura y exportación de archivos |
+
+Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/decisiones.md).
+
+---
+
+## 3. Arquitectura del Repositorio
 
 ```text
 GeoDroneChallenge/
 ├── CMakeLists.txt              # Configuración modular de compilación C++17 (-O3, CTest)
 ├── .gitignore                  # Exclusiones de build, binarios y editores
 ├── README.md                   # Documentación técnica del sistema
+├── docs/
+│   └── decisiones.md           # Decisiones de diseño, alcance y pendientes
 ├── src/
 │   ├── geometry/               # Módulo de Geometría Computacional Propia
 │   │   ├── Point.hpp           # Vector 2D, aritmética, producto cruz, dot, dist, EPS
@@ -37,29 +51,29 @@ GeoDroneChallenge/
 │   ├── graph/                  # Módulo de Grafos y Navegación
 │   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
 │   │   └── Dijkstra.hpp        # SSSP con std::priority_queue y Matriz Reducida
-│   ├── solvers/                # Motores de Optimización (Preparación Avances 2 y 3)
-│   │   ├── ExactSolver.hpp     # Branch & Bound con poda MST / DP Bitmask (Small)
-│   │   └── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt local search (Medium-Extreme)
-│   ├── judge/                  # Entorno de Evaluación y Benchmarking
+│   ├── solvers/                # Motores de optimización (solo declaraciones por ahora)
+│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small)
+│   │   └── HeuristicSolver.hpp # Nearest Neighbor + 2-Opt (Medium-Extreme)
+│   ├── judge/                  # Juez y benchmark (solo declaraciones por ahora)
 │   │   └── DatasetGenerator.hpp# Generador pseudoaleatorio reproducible (mt19937_64)
-│   └── main.cpp                # CLI interactivo, validación y demostración en vivo
+│   └── main.cpp                # Demostración del grafo de visibilidad y Dijkstra
 └── tests/
     └── test_geometry.cpp       # Suite exhaustiva de pruebas unitarias con assert()
 ```
 
 ---
 
-## 3. Restricciones y Prácticas Competitivas Implementadas
+## 4. Restricciones y Prácticas Competitivas Implementadas
 
 1. **Cero Dependencias Externas:** Exclusivamente la STL estándar de C++ (`<vector>`, `<queue>`, `<cmath>`, `<algorithm>`, `<chrono>`, `<random>`).
-2. **Precisión Numérica y Robustez:** Aritmética de punto flotante de doble precisión (`double`) gobernada por una tolerancia épsilon `EPS = 1e-9`.
+2. **Precisión Numérica y Robustez:** Aritmética de punto flotante de doble precisión (`double`) gobernada por una tolerancia épsilon `EPS = 1e-9`. Los datasets usan coordenadas enteras en un rango acotado, de modo que los productos cruz se calculan sin error de redondeo.
 3. **I/O Rápido:**
    ```cpp
    std::ios_base::sync_with_stdio(false);
    std::cin.tie(NULL);
    ```
 4. **Reproducibilidad:** Generador determinista basado en `std::mt19937_64` con semillas fijadas por parámetro.
-5. **Categorías de Datasets (Límites de Evaluación):**
+5. **Categorías de Datasets (límites tentativos, se ajustarán tras medir tiempos reales):**
    - **Small:** $1 \le N \le 10$, $1 \le M \le 5$, $\sum |P_k| \le 30$ | TL: 1.0s, ML: 256 MB.
    - **Medium:** $11 \le N \le 40$, $5 \le M \le 15$, $\sum |P_k| \le 100$ | TL: 2.0s, ML: 256 MB.
    - **Large:** $41 \le N \le 200$, $15 \le M \le 50$, $\sum |P_k| \le 400$ | TL: 3.0s, ML: 512 MB.
@@ -67,26 +81,21 @@ GeoDroneChallenge/
 
 ---
 
-## 4. Compilación y Ejecución
+## 5. Compilación y Ejecución
 
 ### Prerrequisitos
 - Compilador con soporte C++17 o superior (GCC, Clang o MSVC).
 - CMake $\ge 3.16$.
 
-### Instrucciones de Compilación (Release -O3)
+### Instrucciones de Compilación
 ```bash
-# 1. Configuración de CMake
+# 1. Programa principal (Release, -O3)
 cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-# 2. Compilar todos los ejecutables
-cmake --build build --config Release
-
-# 3. Ejecutar las pruebas unitarias geométricas
-./build/test_geometry
-
-# O mediante CTest:
-ctest --test-dir build --output-on-failure
-
-# 4. Ejecutar el programa principal
+cmake --build build
 ./build/geodrone
+
+# 2. Pruebas unitarias (Debug: en Release los assert quedan desactivados)
+cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-debug
+ctest --test-dir build-debug --output-on-failure
 ```
