@@ -87,8 +87,8 @@ void probarCasosBorde() {
     std::cout << "[TEST] 2. Casos borde: sin clientes, un cliente y demasiados clientes..." << std::endl;
 
     Matriz distancias = matrizEuclidiana({Punto(0, 0), Punto(3, 4)});
-    ResultadoExacto empty = SolverExacto::resolver(distancias, 0, {});
-    assert(empty.orden.empty() && empty.costo == 0.0);
+    ResultadoExacto vacio = SolverExacto::resolver(distancias, 0, {});
+    assert(vacio.orden.empty() && vacio.costo == 0.0);
 
     ResultadoExacto unico = SolverExacto::resolver(distancias, 0, {1});
     assert(unico.orden == std::vector<int>{1} && std::abs(unico.costo - 10.0) < TOLERANCIA);
@@ -300,11 +300,11 @@ void probarBusquedaLocalIterada() {
         std::vector<int> optimoLocal = inicio;
         SolverHeuristico::aplicar2Opt(caso.distancias, caso.base, optimoLocal);
 
-        SolverHeuristico::ResultadoBusquedaIterada first = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
-        SolverHeuristico::ResultadoBusquedaIterada second = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
-        assert(first.orden == second.orden);
-        assert(first.iteraciones == SolverHeuristico::ITERACIONES_POR_DEFECTO);
-        assert(SolverHeuristico::costoCiclo(caso.distancias, caso.base, first.orden) <=
+        SolverHeuristico::ResultadoBusquedaIterada primera = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
+        SolverHeuristico::ResultadoBusquedaIterada segunda = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
+        assert(primera.orden == segunda.orden);
+        assert(primera.iteraciones == SolverHeuristico::ITERACIONES_POR_DEFECTO);
+        assert(SolverHeuristico::costoCiclo(caso.distancias, caso.base, primera.orden) <=
                SolverHeuristico::costoCiclo(caso.distancias, caso.base, optimoLocal) + TOLERANCIA);
     }
 

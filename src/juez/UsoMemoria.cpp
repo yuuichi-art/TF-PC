@@ -7,11 +7,11 @@
 
 namespace geodrone {
 
-double peakMemoryMB() {
+double memoriaPicoMB() {
 #ifdef _WIN32
-    PROCESS_MEMORY_COUNTERS counters;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters))) {
-        return static_cast<double>(counters.PeakWorkingSetSize) / (1024.0 * 1024.0);
+    PROCESS_MEMORY_COUNTERS contadores;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &contadores, sizeof(contadores))) {
+        return static_cast<double>(contadores.PeakWorkingSetSize) / (1024.0 * 1024.0);
     }
 #endif
     return 0.0;

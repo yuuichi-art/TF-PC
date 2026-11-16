@@ -10,7 +10,7 @@ namespace geodrone {
  * Es un máximo histórico que nunca baja: por eso el juez ejecuta los casos de menor a mayor,
  * y así la cifra de cada caso corresponde al caso más grande ejecutado hasta ese momento.
  */
-double peakMemoryMB();
+double memoriaPicoMB();
 
 } // namespace geodrone
 

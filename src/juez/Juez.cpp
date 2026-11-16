@@ -13,96 +13,96 @@
 #include <map>
 
 namespace geodrone {
-namespace Judge {
+namespace Juez {
 
 namespace {
 
 const double TOL = RedRecarga::TOLERANCIA_BATERIA;
-const double NOT_AVAILABLE = std::numeric_limits<double>::quiet_NaN();   // Gap de una fila que no es OK
+const double NO_DISPONIBLE = std::numeric_limits<double>::quiet_NaN();   // Gap de una fila que no es OK
 
-VerificationResult fail(const std::string& problem) {
-    return {false, problem};
+ResultadoVerificacion falla(const std::string& problema) {
+    return {false, problema};
 }
 
 // Interpreta una etiqueta "D0", "S2" o "C5": tipo y número (1..S o 1..N; 0 para la base).
 // Devuelve false si no corresponde a ningún punto del escenario.
-bool parseLabel(const Escenario& s, const std::string& etiqueta, char& tipo, int& number) {
+bool interpretarEtiqueta(const Escenario& s, const std::string& etiqueta, char& tipo, int& numero) {
     if (etiqueta.size() < 2) return false;
     tipo = etiqueta[0];
     try {
-        size_t used = 0;
-        number = std::stoi(etiqueta.substr(1), &used);
-        if (used != etiqueta.size() - 1) return false;
+        size_t usados = 0;
+        numero = std::stoi(etiqueta.substr(1), &usados);
+        if (usados != etiqueta.size() - 1) return false;
     } catch (const std::exception&) {
         return false;
     }
-    if (tipo == 'D') return number == 0;
-    if (tipo == 'S') return number >= 1 && number <= s.numEstaciones();
-    if (tipo == 'C') return number >= 1 && number <= s.numClientes();
+    if (tipo == 'D') return numero == 0;
+    if (tipo == 'S') return numero >= 1 && numero <= s.numEstaciones();
+    if (tipo == 'C') return numero >= 1 && numero <= s.numClientes();
     return false;
 }
 
-// Coordenadas que el escenario asigna a la etiqueta (ya validada con parseLabel).
-Punto pointOf(const Escenario& s, char tipo, int number) {
+// Coordenadas que el escenario asigna a la etiqueta (ya validada con interpretarEtiqueta).
+Punto puntoDe(const Escenario& s, char tipo, int numero) {
     if (tipo == 'D') return s.base;
-    if (tipo == 'S') return s.estaciones[number - 1];
-    return s.clientes[number - 1];
+    if (tipo == 'S') return s.estaciones[numero - 1];
+    return s.clientes[numero - 1];
 }
 
-double percentOver(double value, double reference) {
-    return reference > 0 ? 100.0 * (value / reference - 1.0) : 0.0;
+double porcentajeSobre(double valor, double referencia) {
+    return referencia > 0 ? 100.0 * (valor / referencia - 1.0) : 0.0;
 }
 
 // Una exclusión es real si el grafo de misión la confirma.
-bool exclusionIsGenuine(const SolverMision& solver, int clientIndex, const std::string& motivo) {
-    int key = solver.mision().claveCliente(clientIndex);
-    bool connected = solver.mision().conectadoABase(key);
-    if (motivo == "OBSTACLES") return !connected;
-    if (motivo == "BATTERY") return connected && !solver.red().puedeAtender(key);
+bool exclusionEsReal(const SolverMision& solver, int indiceCliente, const std::string& motivo) {
+    int clave = solver.mision().claveCliente(indiceCliente);
+    bool conectado = solver.mision().conectadoABase(clave);
+    if (motivo == "OBSTACLES") return !conectado;
+    if (motivo == "BATTERY") return conectado && !solver.red().puedeAtender(clave);
     return false;
 }
 
 // Tamaño de un escenario para ordenarlos de menor a mayor.
-int sizeOf(const Escenario& s) {
+int tamanoDe(const Escenario& s) {
     return s.numClientes() + s.numEstaciones() + s.totalVerticesObstaculos();
 }
 
 } // namespace
 
-VerificationResult verifyRoute(const Escenario& escenario, const SolverMision& solver, const Ruta& ruta) {
-    if (!ruta.factible) return fail("el solver no encontro una ruta factible");
-    if (ruta.trayectoria.empty()) return fail("la trayectoria esta vacia");
+ResultadoVerificacion verificarRuta(const Escenario& escenario, const SolverMision& solver, const Ruta& ruta) {
+    if (!ruta.factible) return falla("el solver no encontro una ruta factible");
+    if (ruta.trayectoria.empty()) return falla("la trayectoria esta vacia");
     if (ruta.trayectoria.front().etiqueta != "D0" || ruta.trayectoria.back().etiqueta != "D0") {
-        return fail("la ruta no empieza y termina en la base");
+        return falla("la ruta no empieza y termina en la base");
     }
 
     double bateria = escenario.bateria;
-    double length = 0.0;
+    double longitud = 0.0;
     int recargas = 0;
-    std::vector<int> visits(escenario.numClientes(), 0);
-    std::vector<std::string> keyLabels;     // Nodos clave de la trayectoria, para compararlos con ORDER
+    std::vector<int> visitas(escenario.numClientes(), 0);
+    std::vector<std::string> etiquetasClave;     // Nodos clave de la trayectoria, para compararlos con ORDER
 
     for (size_t i = 0; i < ruta.trayectoria.size(); ++i) {
         const PuntoRuta& p = ruta.trayectoria[i];
         char tipo = 'V';
-        int number = 0;
+        int numero = 0;
         if (p.etiqueta != "V") {
-            if (!parseLabel(escenario, p.etiqueta, tipo, number)) return fail("etiqueta desconocida '" + p.etiqueta + "'");
-            if (p.punto != pointOf(escenario, tipo, number)) {
-                return fail(p.etiqueta + " no esta en las coordenadas del escenario");
+            if (!interpretarEtiqueta(escenario, p.etiqueta, tipo, numero)) return falla("etiqueta desconocida '" + p.etiqueta + "'");
+            if (p.punto != puntoDe(escenario, tipo, numero)) {
+                return falla(p.etiqueta + " no esta en las coordenadas del escenario");
             }
-            keyLabels.push_back(p.etiqueta);
+            etiquetasClave.push_back(p.etiqueta);
         }
         if (i == 0) continue;
 
-        Segmento leg(ruta.trayectoria[i - 1].punto, p.punto);
-        if (!Geometria::tramoLibre(leg, escenario.obstaculos)) {
-            return fail("el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ") cruza un obstaculo");
+        Segmento tramo(ruta.trayectoria[i - 1].punto, p.punto);
+        if (!Geometria::tramoLibre(tramo, escenario.obstaculos)) {
+            return falla("el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ") cruza un obstaculo");
         }
-        length += leg.longitud();
-        bateria -= leg.longitud();
+        longitud += tramo.longitud();
+        bateria -= tramo.longitud();
         if (bateria < -TOL) {
-            return fail("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ")");
+            return falla("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ")");
         }
 
         // Llegar a la base o a una estación llena la batería. La llegada final a la base no
@@ -110,187 +110,187 @@ VerificationResult verifyRoute(const Escenario& escenario, const SolverMision& s
         if (tipo == 'D' || tipo == 'S') {
             bateria = escenario.bateria;
             if (i + 1 < ruta.trayectoria.size()) ++recargas;
-        } else if (tipo == 'C' && ++visits[number - 1] > 1) {
-            return fail(p.etiqueta + " se visita mas de una vez");
+        } else if (tipo == 'C' && ++visitas[numero - 1] > 1) {
+            return falla(p.etiqueta + " se visita mas de una vez");
         }
     }
 
     std::vector<char> excluidos(escenario.numClientes(), 0);
-    for (const ClienteExcluido& client : ruta.excluidos) {
+    for (const ClienteExcluido& cliente : ruta.excluidos) {
         char tipo = 'V';
-        int number = 0;
-        if (!parseLabel(escenario, client.etiqueta, tipo, number) || tipo != 'C') {
-            return fail("excluido desconocido '" + client.etiqueta + "'");
+        int numero = 0;
+        if (!interpretarEtiqueta(escenario, cliente.etiqueta, tipo, numero) || tipo != 'C') {
+            return falla("excluido desconocido '" + cliente.etiqueta + "'");
         }
-        if (visits[number - 1] > 0) return fail(client.etiqueta + " esta excluido y tambien se visita");
-        if (!exclusionIsGenuine(solver, number - 1, client.motivo)) {
-            return fail(client.etiqueta + " se excluyo por " + client.motivo + " pero se puede atender");
+        if (visitas[numero - 1] > 0) return falla(cliente.etiqueta + " esta excluido y tambien se visita");
+        if (!exclusionEsReal(solver, numero - 1, cliente.motivo)) {
+            return falla(cliente.etiqueta + " se excluyo por " + cliente.motivo + " pero se puede atender");
         }
-        excluidos[number - 1] = 1;
+        excluidos[numero - 1] = 1;
     }
     for (int c = 0; c < escenario.numClientes(); ++c) {
-        if (visits[c] == 0 && !excluidos[c]) return fail("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
+        if (visitas[c] == 0 && !excluidos[c]) return falla("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
     }
 
-    if (std::abs(length - ruta.costo) > TOL * std::max(1.0, length)) {
-        return fail("el costo informado no coincide con la trayectoria");
+    if (std::abs(longitud - ruta.costo) > TOL * std::max(1.0, longitud)) {
+        return falla("el costo informado no coincide con la trayectoria");
     }
-    if (recargas != ruta.recargas) return fail("las recargas informadas no coinciden con la trayectoria");
-    if (keyLabels != ruta.orden) return fail("el orden informado no coincide con la trayectoria");
+    if (recargas != ruta.recargas) return falla("las recargas informadas no coinciden con la trayectoria");
+    if (etiquetasClave != ruta.orden) return falla("el orden informado no coincide con la trayectoria");
     return {};
 }
 
-std::string verdictFor(bool valid, double timeMs, double memoryMB, const LimitesCategoria& limits) {
-    if (!valid) return "WA";
-    if (timeMs > limits.limiteTiempoSegundos * 1000.0) return "TLE";
-    if (memoryMB > limits.limiteMemoriaMB) return "MLE";
+std::string veredictoPara(bool valida, double tiempoMs, double memoriaMB, const LimitesCategoria& limites) {
+    if (!valida) return "WA";
+    if (tiempoMs > limites.limiteTiempoSegundos * 1000.0) return "TLE";
+    if (memoriaMB > limites.limiteMemoriaMB) return "MLE";
     return "OK";
 }
 
-std::vector<std::string> findScenarioFiles(const std::string& folder) {
-    std::vector<std::string> files;
-    if (!std::filesystem::is_directory(folder)) return files;
-    for (const auto& entry : std::filesystem::directory_iterator(folder)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".txt") {
-            files.push_back(entry.path().generic_string());
+std::vector<std::string> buscarEscenarios(const std::string& carpeta) {
+    std::vector<std::string> archivos;
+    if (!std::filesystem::is_directory(carpeta)) return archivos;
+    for (const auto& entrada : std::filesystem::directory_iterator(carpeta)) {
+        if (entrada.is_regular_file() && entrada.path().extension() == ".txt") {
+            archivos.push_back(entrada.path().generic_string());
         }
     }
-    std::sort(files.begin(), files.end());
-    return files;
+    std::sort(archivos.begin(), archivos.end());
+    return archivos;
 }
 
 namespace {
 
 // Resuelve un escenario con cada algoritmo, guarda y verifica cada ruta, y le da veredicto y gap.
-std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& routesFolder) {
+std::vector<FilaJuez> juzgarEscenario(const Escenario& s, const std::string& carpetaRutas) {
     SolverMision solver(s);
-    bool smallCase = s.categoria == Categoria::SMALL || s.categoria == Categoria::ADVERSARIAL;
+    bool casoPequeno = s.categoria == Categoria::SMALL || s.categoria == Categoria::ADVERSARIAL;
 
-    std::vector<JudgeRow> rows;
-    std::vector<bool> valid;
+    std::vector<FilaJuez> filas;
+    std::vector<bool> validas;
     for (Algoritmo algoritmo : todosLosAlgoritmos()) {
-        if (algoritmo == Algoritmo::BRANCH_AND_BOUND && !(smallCase && solver.admiteExacto())) continue;
+        if (algoritmo == Algoritmo::BRANCH_AND_BOUND && !(casoPequeno && solver.admiteExacto())) continue;
         Ruta ruta = solver.resolver(algoritmo);
-        Exporter::saveRoute(ruta, routesFolder + "/" + ruta.escenario + "_" + ruta.algoritmo + ".txt");
-        VerificationResult check = verifyRoute(s, solver, ruta);
+        Exportador::guardarRuta(ruta, carpetaRutas + "/" + ruta.escenario + "_" + ruta.algoritmo + ".txt");
+        ResultadoVerificacion verificacion = verificarRuta(s, solver, ruta);
 
-        JudgeRow row;
-        row.escenario = s.nombre;
-        row.categoria = s.categoria;
-        row.clientes = s.numClientes();
-        row.algoritmo = ruta.algoritmo;
-        row.problem = check.problem;
-        row.costo = ruta.costo;
-        row.recargas = ruta.recargas;
-        row.excluidos = static_cast<int>(ruta.excluidos.size());
-        row.timeMs = ruta.totalMs();
-        rows.push_back(row);
-        valid.push_back(check.valid);
+        FilaJuez fila;
+        fila.escenario = s.nombre;
+        fila.categoria = s.categoria;
+        fila.clientes = s.numClientes();
+        fila.algoritmo = ruta.algoritmo;
+        fila.problema = verificacion.problema;
+        fila.costo = ruta.costo;
+        fila.recargas = ruta.recargas;
+        fila.excluidos = static_cast<int>(ruta.excluidos.size());
+        fila.tiempoMs = ruta.totalMs();
+        filas.push_back(fila);
+        validas.push_back(verificacion.valida);
     }
 
     // Memoria pico al terminar el caso; los veredictos se dan después de medirla.
-    double memory = peakMemoryMB();
-    LimitesCategoria limits = limitesDe(s.categoria);
-    double best = INF;
-    for (size_t i = 0; i < rows.size(); ++i) {
-        rows[i].memoryMB = memory;
-        rows[i].verdict = verdictFor(valid[i], rows[i].timeMs, memory, limits);
-        if (rows[i].verdict == "OK") best = std::min(best, rows[i].costo);
+    double memoria = memoriaPicoMB();
+    LimitesCategoria limites = limitesDe(s.categoria);
+    double mejor = INF;
+    for (size_t i = 0; i < filas.size(); ++i) {
+        filas[i].memoriaMB = memoria;
+        filas[i].veredicto = veredictoPara(validas[i], filas[i].tiempoMs, memoria, limites);
+        if (filas[i].veredicto == "OK") mejor = std::min(mejor, filas[i].costo);
     }
 
     // Gap contra la mejor ruta OK y contra la cota inferior: el árbol de expansión mínima de la
     // base y los clientes atendibles.
-    std::vector<int> nodes = {solver.mision().claveBase()};
-    nodes.insert(nodes.end(), solver.clientesAtendibles().begin(), solver.clientesAtendibles().end());
-    double bound = arbolMinimoPrim(solver.mision().distancias(), nodes).costo;
-    for (JudgeRow& row : rows) {
-        bool isOk = row.verdict == "OK";
-        row.gapBest = isOk ? percentOver(row.costo, best) : NOT_AVAILABLE;
-        row.gapBound = isOk ? percentOver(row.costo, bound) : NOT_AVAILABLE;
+    std::vector<int> nodos = {solver.mision().claveBase()};
+    nodos.insert(nodos.end(), solver.clientesAtendibles().begin(), solver.clientesAtendibles().end());
+    double cota = arbolMinimoPrim(solver.mision().distancias(), nodos).costo;
+    for (FilaJuez& fila : filas) {
+        bool esOk = fila.veredicto == "OK";
+        fila.gapMejor = esOk ? porcentajeSobre(fila.costo, mejor) : NO_DISPONIBLE;
+        fila.gapCota = esOk ? porcentajeSobre(fila.costo, cota) : NO_DISPONIBLE;
     }
-    return rows;
+    return filas;
 }
 
 // Avance en consola: una línea por caso y el motivo de cada ruta que no dio OK.
-void printCase(std::ostream& log, size_t number, size_t total, const Escenario& s, const std::vector<JudgeRow>& rows) {
+void imprimirCaso(std::ostream& registro, size_t numero, size_t total, const Escenario& s, const std::vector<FilaJuez>& filas) {
     int ok = 0;
-    double best = INF;
-    for (const JudgeRow& row : rows) {
-        if (row.verdict == "OK") {
+    double mejor = INF;
+    for (const FilaJuez& fila : filas) {
+        if (fila.veredicto == "OK") {
             ++ok;
-            best = std::min(best, row.costo);
+            mejor = std::min(mejor, fila.costo);
         }
     }
-    log << "  [" << std::setw(2) << number << "/" << total << "] " << std::left << std::setw(26) << s.nombre
-        << std::right << std::setw(5) << s.numClientes() << " clientes  " << ok << "/" << rows.size()
-        << " OK  mejor " << std::fixed << std::setprecision(2) << best << "\n" << std::flush;
-    for (const JudgeRow& row : rows) {
-        if (row.verdict != "OK") {
-            log << "         " << row.algoritmo << ": " << row.verdict
-                << (row.problem.empty() ? "" : " (" + row.problem + ")") << "\n";
+    registro << "  [" << std::setw(2) << numero << "/" << total << "] " << std::left << std::setw(26) << s.nombre
+        << std::right << std::setw(5) << s.numClientes() << " clientes  " << ok << "/" << filas.size()
+        << " OK  mejor " << std::fixed << std::setprecision(2) << mejor << "\n" << std::flush;
+    for (const FilaJuez& fila : filas) {
+        if (fila.veredicto != "OK") {
+            registro << "         " << fila.algoritmo << ": " << fila.veredicto
+                << (fila.problema.empty() ? "" : " (" + fila.problema + ")") << "\n";
         }
     }
 }
 
 } // namespace
 
-std::vector<JudgeRow> run(const std::vector<std::string>& scenarioFiles, const std::string& routesFolder,
-                          std::ostream& log) {
-    std::vector<Escenario> scenarios;
-    for (const std::string& file : scenarioFiles) scenarios.push_back(ArchivoEscenario::cargar(file));
-    std::stable_sort(scenarios.begin(), scenarios.end(),
-                     [](const Escenario& a, const Escenario& b) { return sizeOf(a) < sizeOf(b); });
+std::vector<FilaJuez> ejecutar(const std::vector<std::string>& archivosEscenario, const std::string& carpetaRutas,
+                          std::ostream& registro) {
+    std::vector<Escenario> escenarios;
+    for (const std::string& archivo : archivosEscenario) escenarios.push_back(ArchivoEscenario::cargar(archivo));
+    std::stable_sort(escenarios.begin(), escenarios.end(),
+                     [](const Escenario& a, const Escenario& b) { return tamanoDe(a) < tamanoDe(b); });
 
-    std::vector<JudgeRow> rows;
-    for (size_t i = 0; i < scenarios.size(); ++i) {
-        std::vector<JudgeRow> caseRows = judgeScenario(scenarios[i], routesFolder);
-        printCase(log, i + 1, scenarios.size(), scenarios[i], caseRows);
-        rows.insert(rows.end(), caseRows.begin(), caseRows.end());
+    std::vector<FilaJuez> filas;
+    for (size_t i = 0; i < escenarios.size(); ++i) {
+        std::vector<FilaJuez> filasCaso = juzgarEscenario(escenarios[i], carpetaRutas);
+        imprimirCaso(registro, i + 1, escenarios.size(), escenarios[i], filasCaso);
+        filas.insert(filas.end(), filasCaso.begin(), filasCaso.end());
     }
-    return rows;
+    return filas;
 }
 
-std::vector<RankingRow> rank(const std::vector<JudgeRow>& rows) {
+std::vector<FilaRanking> armarRanking(const std::vector<FilaJuez>& filas) {
     // Acumulados por categoría y algoritmo.
-    std::map<std::pair<int, std::string>, RankingRow> totals;
-    for (const JudgeRow& row : rows) {
-        RankingRow& total = totals[{static_cast<int>(row.categoria), row.algoritmo}];
-        total.categoria = row.categoria;
-        total.algoritmo = row.algoritmo;
-        ++total.cases;
-        if (row.verdict == "OK") {
-            ++total.okCases;
-            total.meanGap += row.gapBest;
-            total.meanTimeMs += row.timeMs;
+    std::map<std::pair<int, std::string>, FilaRanking> totales;
+    for (const FilaJuez& fila : filas) {
+        FilaRanking& total = totales[{static_cast<int>(fila.categoria), fila.algoritmo}];
+        total.categoria = fila.categoria;
+        total.algoritmo = fila.algoritmo;
+        ++total.casos;
+        if (fila.veredicto == "OK") {
+            ++total.casosOk;
+            total.gapMedio += fila.gapMejor;
+            total.tiempoMedioMs += fila.tiempoMs;
         }
     }
 
     // Promedios sobre los casos OK, agrupados por categoría para ordenarlos dentro de cada una.
-    std::map<int, std::vector<RankingRow>> byCategory;
-    for (auto& entry : totals) {
-        RankingRow& total = entry.second;
-        if (total.okCases > 0) {
-            total.meanGap /= total.okCases;
-            total.meanTimeMs /= total.okCases;
+    std::map<int, std::vector<FilaRanking>> porCategoria;
+    for (auto& entrada : totales) {
+        FilaRanking& total = entrada.second;
+        if (total.casosOk > 0) {
+            total.gapMedio /= total.casosOk;
+            total.tiempoMedioMs /= total.casosOk;
         }
-        byCategory[entry.first.first].push_back(total);
+        porCategoria[entrada.first.first].push_back(total);
     }
 
-    std::vector<RankingRow> ranking;
-    for (auto& entry : byCategory) {
-        std::vector<RankingRow>& list = entry.second;
-        std::sort(list.begin(), list.end(), [](const RankingRow& a, const RankingRow& b) {
-            if (a.okCases != b.okCases) return a.okCases > b.okCases;
-            if (a.meanGap != b.meanGap) return a.meanGap < b.meanGap;
-            return a.meanTimeMs < b.meanTimeMs;
+    std::vector<FilaRanking> ranking;
+    for (auto& entrada : porCategoria) {
+        std::vector<FilaRanking>& lista = entrada.second;
+        std::sort(lista.begin(), lista.end(), [](const FilaRanking& a, const FilaRanking& b) {
+            if (a.casosOk != b.casosOk) return a.casosOk > b.casosOk;
+            if (a.gapMedio != b.gapMedio) return a.gapMedio < b.gapMedio;
+            return a.tiempoMedioMs < b.tiempoMedioMs;
         });
-        for (size_t i = 0; i < list.size(); ++i) {
-            list[i].position = static_cast<int>(i) + 1;
-            ranking.push_back(list[i]);
+        for (size_t i = 0; i < lista.size(); ++i) {
+            lista[i].posicion = static_cast<int>(i) + 1;
+            ranking.push_back(lista[i]);
         }
     }
     return ranking;
 }
 
-} // namespace Judge
+} // namespace Juez
 } // namespace geodrone

@@ -21,46 +21,46 @@ using namespace geodrone;
 
 // Si la entrada se cierra (por ejemplo, al pasar las respuestas por tubería), se usan los
 // valores por defecto y el menú termina en lugar de quedar en un bucle.
-bool inputClosed = false;
+bool entradaCerrada = false;
 
 // La memoria pico del proceso nunca baja: si antes del juez se hizo otro trabajo en esta
 // sesión, la memoria de cada caso queda tapada por ese pico anterior.
-bool sessionUsedMemory = false;
+bool memoriaUsadaEnSesion = false;
 
-std::string trim(const std::string& text) {
-    size_t first = text.find_first_not_of(" \t\r\n");
-    if (first == std::string::npos) return "";
-    size_t last = text.find_last_not_of(" \t\r\n");
-    return text.substr(first, last - first + 1);
+std::string recortar(const std::string& texto) {
+    size_t primero = texto.find_first_not_of(" \t\r\n");
+    if (primero == std::string::npos) return "";
+    size_t ultimo = texto.find_last_not_of(" \t\r\n");
+    return texto.substr(primero, ultimo - primero + 1);
 }
 
 // Lee una línea completa (las rutas pueden tener espacios). Enter acepta el valor por defecto.
 // Con cin.tie(NULL) la pregunta no se mostraría antes de leer: por eso termina en flush.
-std::string askText(const std::string& question, const std::string& defaultValue) {
-    std::cout << question << " [" << defaultValue << "]: " << std::flush;
-    std::string line;
-    if (!std::getline(std::cin, line)) {
-        inputClosed = true;
+std::string preguntarTexto(const std::string& pregunta, const std::string& valorPorDefecto) {
+    std::cout << pregunta << " [" << valorPorDefecto << "]: " << std::flush;
+    std::string linea;
+    if (!std::getline(std::cin, linea)) {
+        entradaCerrada = true;
         std::cout << '\n';
-        return defaultValue;
+        return valorPorDefecto;
     }
-    line = trim(line);
-    return line.empty() ? defaultValue : line;
+    linea = recortar(linea);
+    return linea.empty() ? valorPorDefecto : linea;
 }
 
 // Pide un entero en [min, max] y repite la pregunta hasta recibir uno válido.
-int askNumber(const std::string& question, int defaultValue, int min, int max) {
+int preguntarNumero(const std::string& pregunta, int valorPorDefecto, int minimo, int maximo) {
     while (true) {
-        std::string text = askText(question, std::to_string(defaultValue));
+        std::string texto = preguntarTexto(pregunta, std::to_string(valorPorDefecto));
         try {
-            size_t used = 0;
-            int value = std::stoi(text, &used);
-            if (used == text.size() && value >= min && value <= max) return value;
+            size_t usados = 0;
+            int valor = std::stoi(texto, &usados);
+            if (usados == texto.size() && valor >= minimo && valor <= maximo) return valor;
         } catch (const std::exception&) {
             // Texto que no es un número: se vuelve a preguntar
         }
-        if (inputClosed) return defaultValue;
-        std::cout << "  Valor invalido: escriba un numero entre " << min << " y " << max << ".\n";
+        if (entradaCerrada) return valorPorDefecto;
+        std::cout << "  Valor invalido: escriba un numero entre " << minimo << " y " << maximo << ".\n";
     }
 }
 
@@ -68,7 +68,7 @@ int askNumber(const std::string& question, int defaultValue, int min, int max) {
 // Presentación
 // ---------------------------------------------------------------------------------------------
 
-void printBanner() {
+void imprimirPortada() {
     std::cout << "========================================================================\n";
     std::cout << "       UNIVERSIDAD SAN IGNACIO DE LOYOLA - FACULTAD DE INGENIERIA       \n";
     std::cout << "             PROGRAMACION COMPETITIVA (2026) - GRUPO 4                 \n";
@@ -84,21 +84,21 @@ void printBanner() {
     std::cout << "========================================================================\n";
 }
 
-void printScenarioSummary(const Escenario& s) {
+void imprimirResumenEscenario(const Escenario& s) {
     std::cout << "  Escenario " << s.nombre << " (" << nombreCategoria(s.categoria) << ", semilla " << s.semilla << "): "
               << "clientes " << s.numClientes() << ", estaciones " << s.numEstaciones() << ", obstaculos "
               << s.numObstaculos() << " (" << s.totalVerticesObstaculos() << " vertices), bateria " << s.bateria << "\n";
 }
 
 // Lista de etiquetas; si es muy larga muestra el inicio y el final.
-void printLabels(const std::vector<std::string>& labels) {
-    const size_t head = 15, tail = 5;
-    for (size_t i = 0; i < labels.size(); ++i) {
-        if (labels.size() > head + tail && i == head) {
-            std::cout << " ... (" << labels.size() - head - tail << " mas) ...";
-            i = labels.size() - tail;
+void imprimirEtiquetas(const std::vector<std::string>& etiquetas) {
+    const size_t primeros = 15, ultimos = 5;
+    for (size_t i = 0; i < etiquetas.size(); ++i) {
+        if (etiquetas.size() > primeros + ultimos && i == primeros) {
+            std::cout << " ... (" << etiquetas.size() - primeros - ultimos << " mas) ...";
+            i = etiquetas.size() - ultimos;
         }
-        std::cout << ' ' << labels[i];
+        std::cout << ' ' << etiquetas[i];
     }
     std::cout << '\n';
 }
@@ -107,160 +107,160 @@ void printLabels(const std::vector<std::string>& labels) {
 // Opción 1: generar datasets
 // ---------------------------------------------------------------------------------------------
 
-void generateDatasets() {
+void generarDatasets() {
     std::cout << "\n--- GENERAR DATASETS ---\n";
     std::cout << "  Categoria  Clientes   Estaciones  Obstaculos  Tiempo  Memoria\n";
     for (Categoria c : {Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE,
                               Categoria::EXTREME}) {
-        RangosCategoria spec = GeneradorDatasets::rangosDe(c);
-        LimitesCategoria limits = limitesDe(c);
+        RangosCategoria rangos = GeneradorDatasets::rangosDe(c);
+        LimitesCategoria limites = limitesDe(c);
         std::cout << "  " << std::left << std::setw(10) << nombreCategoria(c) << std::right
-                  << std::setw(5) << spec.minClientes << "-" << std::left << std::setw(6) << spec.maxClientes
-                  << std::right << std::setw(5) << spec.minEstaciones << "-" << std::left << std::setw(6) << spec.maxEstaciones
-                  << std::right << std::setw(5) << spec.minObstaculos << "-" << std::left << std::setw(6) << spec.maxObstaculos
-                  << std::right << std::setw(4) << limits.limiteTiempoSegundos << " s" << std::setw(6)
-                  << limits.limiteMemoriaMB << " MB\n";
+                  << std::setw(5) << rangos.minClientes << "-" << std::left << std::setw(6) << rangos.maxClientes
+                  << std::right << std::setw(5) << rangos.minEstaciones << "-" << std::left << std::setw(6) << rangos.maxEstaciones
+                  << std::right << std::setw(5) << rangos.minObstaculos << "-" << std::left << std::setw(6) << rangos.maxObstaculos
+                  << std::right << std::setw(4) << limites.limiteTiempoSegundos << " s" << std::setw(6)
+                  << limites.limiteMemoriaMB << " MB\n";
     }
 
-    std::string folder = askText("Carpeta de destino", "data/generated");
-    int seeds = askNumber("Semillas por categoria", 5, 1, 50);
+    std::string carpeta = preguntarTexto("Carpeta de destino", "data/generated");
+    int semillas = preguntarNumero("Semillas por categoria", 5, 1, 50);
     std::cout << "  Generando (cada escenario calcula su bateria con la busqueda binaria)...\n" << std::flush;
 
-    std::vector<std::string> paths = GeneradorDatasets::generarConjuntoBenchmark(folder, seeds);
-    for (const std::string& path : paths) {
-        printScenarioSummary(ArchivoEscenario::cargar(path));
+    std::vector<std::string> archivos = GeneradorDatasets::generarConjuntoBenchmark(carpeta, semillas);
+    for (const std::string& archivo : archivos) {
+        imprimirResumenEscenario(ArchivoEscenario::cargar(archivo));
     }
-    std::cout << "  " << paths.size() << " escenarios guardados en " << folder << "\n";
+    std::cout << "  " << archivos.size() << " escenarios guardados en " << carpeta << "\n";
 }
 
 // ---------------------------------------------------------------------------------------------
 // Opción 2: resolver un escenario
 // ---------------------------------------------------------------------------------------------
 
-void solveScenario() {
+void resolverEscenario() {
     std::cout << "\n--- RESOLVER UN ESCENARIO ---\n";
-    std::string path = askText("Archivo de escenario", "data/generated/small_1.txt");
-    Escenario escenario = ArchivoEscenario::cargar(path);
-    printScenarioSummary(escenario);
+    std::string archivo = preguntarTexto("Archivo de escenario", "data/generated/small_1.txt");
+    Escenario escenario = ArchivoEscenario::cargar(archivo);
+    imprimirResumenEscenario(escenario);
 
     SolverMision solver(escenario);
     std::cout << std::fixed << std::setprecision(2)
               << "  Grafo de mision y red de recarga listos en " << solver.preparacionMs() << " ms\n";
 
     // Opciones 1..count; el exacto solo está disponible con pocos clientes atendibles.
-    const std::vector<Algoritmo>& algorithms = todosLosAlgoritmos();
-    int count = static_cast<int>(algorithms.size());
-    auto available = [&](int option) {
-        return algorithms[option - 1] != Algoritmo::BRANCH_AND_BOUND || solver.admiteExacto();
+    const std::vector<Algoritmo>& algoritmos = todosLosAlgoritmos();
+    int cantidad = static_cast<int>(algoritmos.size());
+    auto disponible = [&](int opcion) {
+        return algoritmos[opcion - 1] != Algoritmo::BRANCH_AND_BOUND || solver.admiteExacto();
     };
-    for (int option = 1; option <= count; ++option) {
-        std::cout << "  " << option << ". " << nombreAlgoritmo(algorithms[option - 1])
-                  << (available(option) ? "" : "  (no disponible: demasiados clientes para el exacto)") << '\n';
+    for (int opcion = 1; opcion <= cantidad; ++opcion) {
+        std::cout << "  " << opcion << ". " << nombreAlgoritmo(algoritmos[opcion - 1])
+                  << (disponible(opcion) ? "" : "  (no disponible: demasiados clientes para el exacto)") << '\n';
     }
     // El valor por defecto siempre está disponible (el exacto o la búsqueda local iterada), así que el
-    // bucle termina aunque se cierre la entrada: askNumber devuelve entonces ese valor.
-    int defaultChoice = solver.admiteExacto() ? 1 : count;
-    int choice = askNumber("Algoritmo", defaultChoice, 1, count);
-    while (!available(choice)) {
+    // bucle termina aunque se cierre la entrada: preguntarNumero devuelve entonces ese valor.
+    int opcionPorDefecto = solver.admiteExacto() ? 1 : cantidad;
+    int eleccion = preguntarNumero("Algoritmo", opcionPorDefecto, 1, cantidad);
+    while (!disponible(eleccion)) {
         std::cout << "  El exacto no esta disponible para este escenario.\n";
-        choice = askNumber("Algoritmo", defaultChoice, 1, count);
+        eleccion = preguntarNumero("Algoritmo", opcionPorDefecto, 1, cantidad);
     }
 
-    Ruta ruta = solver.resolver(algorithms[choice - 1]);
-    LimitesCategoria limits = limitesDe(escenario.categoria);
+    Ruta ruta = solver.resolver(algoritmos[eleccion - 1]);
+    LimitesCategoria limites = limitesDe(escenario.categoria);
 
     std::cout << "\n  Algoritmo:  " << ruta.algoritmo << "\n";
     std::cout << "  Estado:     " << (ruta.factible ? "OK" : "INFACTIBLE") << "\n";
     std::cout << std::setprecision(2) << "  Costo:      " << ruta.costo << " (distancia volada, con recargas)\n";
     std::cout << "  Recargas:   " << ruta.recargas << "\n";
     std::cout << "  Excluidos:  " << ruta.excluidos.size();
-    for (const ClienteExcluido& client : ruta.excluidos) std::cout << "  " << client.etiqueta << " (" << client.motivo << ")";
+    for (const ClienteExcluido& cliente : ruta.excluidos) std::cout << "  " << cliente.etiqueta << " (" << cliente.motivo << ")";
     std::cout << '\n';
     std::cout << "  Tiempo:     " << ruta.totalMs() << " ms = " << ruta.preparacionMs << " de preparacion + "
-              << ruta.resolucionMs << " de resolucion (limite " << static_cast<int>(limits.limiteTiempoSegundos * 1000)
+              << ruta.resolucionMs << " de resolucion (limite " << static_cast<int>(limites.limiteTiempoSegundos * 1000)
               << " ms)\n";
-    std::cout << "  Memoria:    " << peakMemoryMB() << " MB pico del proceso (limite "
-              << static_cast<int>(limits.limiteMemoriaMB) << " MB)\n";
+    std::cout << "  Memoria:    " << memoriaPicoMB() << " MB pico del proceso (limite "
+              << static_cast<int>(limites.limiteMemoriaMB) << " MB)\n";
     std::cout << "  Orden:     ";
-    printLabels(ruta.orden);
+    imprimirEtiquetas(ruta.orden);
 
-    std::string output = "output/" + ruta.escenario + "_" + ruta.algoritmo;
-    Exporter::saveRoute(ruta, output + ".txt");
-    Exporter::saveSvg(escenario, ruta, output + ".svg");
-    std::cout << "  Ruta completa (" << ruta.trayectoria.size() << " puntos) exportada en " << output << ".txt\n"
-              << "  Dibujo de la ruta en " << output << ".svg (se abre con cualquier navegador)\n";
+    std::string salida = "output/" + ruta.escenario + "_" + ruta.algoritmo;
+    Exportador::guardarRuta(ruta, salida + ".txt");
+    Exportador::guardarSvg(escenario, ruta, salida + ".svg");
+    std::cout << "  Ruta completa (" << ruta.trayectoria.size() << " puntos) exportada en " << salida << ".txt\n"
+              << "  Dibujo de la ruta en " << salida << ".svg (se abre con cualquier navegador)\n";
 }
 
 // ---------------------------------------------------------------------------------------------
 // Opción 3: juez y benchmark (RF14, RF15)
 // ---------------------------------------------------------------------------------------------
 
-void printRanking(const std::vector<RankingRow>& ranking) {
+void imprimirRanking(const std::vector<FilaRanking>& ranking) {
     int categoria = -1;
-    for (const RankingRow& row : ranking) {
-        if (static_cast<int>(row.categoria) != categoria) {
-            categoria = static_cast<int>(row.categoria);
-            std::cout << "\n  " << nombreCategoria(row.categoria) << "\n"
+    for (const FilaRanking& fila : ranking) {
+        if (static_cast<int>(fila.categoria) != categoria) {
+            categoria = static_cast<int>(fila.categoria);
+            std::cout << "\n  " << nombreCategoria(fila.categoria) << "\n"
                       << "    #  algoritmo                 OK/casos   gap medio   tiempo medio\n";
         }
-        std::cout << "    " << row.position << "  " << std::left << std::setw(26) << row.algoritmo << std::right
-                  << std::setw(3) << row.okCases << "/" << std::left << std::setw(6) << row.cases << std::right
-                  << std::fixed << std::setprecision(2) << std::setw(8) << row.meanGap << " %"
-                  << std::setw(12) << row.meanTimeMs << " ms\n";
+        std::cout << "    " << fila.posicion << "  " << std::left << std::setw(26) << fila.algoritmo << std::right
+                  << std::setw(3) << fila.casosOk << "/" << std::left << std::setw(6) << fila.casos << std::right
+                  << std::fixed << std::setprecision(2) << std::setw(8) << fila.gapMedio << " %"
+                  << std::setw(12) << fila.tiempoMedioMs << " ms\n";
     }
 }
 
-void runJudge() {
+void ejecutarJuez() {
     std::cout << "\n--- JUEZ Y BENCHMARK ---\n";
-    std::string folder = askText("Carpeta de escenarios", "data/generated");
-    std::string adversarial = askText("Incluir los casos de data/adversarial (s/n)", "s");
+    std::string carpeta = preguntarTexto("Carpeta de escenarios", "data/generated");
+    std::string adversariales = preguntarTexto("Incluir los casos de data/adversarial (s/n)", "s");
 
-    std::vector<std::string> files = Judge::findScenarioFiles(folder);
-    if (!adversarial.empty() && (adversarial[0] == 's' || adversarial[0] == 'S')) {
-        std::vector<std::string> extra = Judge::findScenarioFiles("data/adversarial");
-        files.insert(files.end(), extra.begin(), extra.end());
+    std::vector<std::string> archivos = Juez::buscarEscenarios(carpeta);
+    if (!adversariales.empty() && (adversariales[0] == 's' || adversariales[0] == 'S')) {
+        std::vector<std::string> extra = Juez::buscarEscenarios("data/adversarial");
+        archivos.insert(archivos.end(), extra.begin(), extra.end());
     }
-    if (files.empty()) {
-        std::cout << "  No hay escenarios en " << folder << ". Genere datasets con la opcion 1.\n";
+    if (archivos.empty()) {
+        std::cout << "  No hay escenarios en " << carpeta << ". Genere datasets con la opcion 1.\n";
         return;
     }
 
-    const std::string output = "output/judge";
-    if (sessionUsedMemory) {
+    const std::string salida = "output/judge";
+    if (memoriaUsadaEnSesion) {
         std::cout << "  Aviso: en esta sesion ya se uso memoria (pico actual " << std::fixed << std::setprecision(1)
-                  << peakMemoryMB() << " MB). La columna de memoria no sera por caso: para medirla,\n"
+                  << memoriaPicoMB() << " MB). La columna de memoria no sera por caso: para medirla,\n"
                   << "  ejecute el juez como primera opcion al abrir el programa.\n";
     }
-    std::cout << "  Ejecutando " << files.size() << " escenarios de menor a mayor...\n" << std::flush;
-    std::vector<JudgeRow> rows = Judge::run(files, output + "/routes", std::cout);
-    std::vector<RankingRow> ranking = Judge::rank(rows);
-    Exporter::saveResultsCsv(rows, output + "/results.csv");
-    Exporter::saveRankingCsv(ranking, output + "/ranking.csv");
+    std::cout << "  Ejecutando " << archivos.size() << " escenarios de menor a mayor...\n" << std::flush;
+    std::vector<FilaJuez> filas = Juez::ejecutar(archivos, salida + "/routes", std::cout);
+    std::vector<FilaRanking> ranking = Juez::armarRanking(filas);
+    Exportador::guardarResultadosCsv(filas, salida + "/results.csv");
+    Exportador::guardarRankingCsv(ranking, salida + "/ranking.csv");
 
     int ok = 0, wa = 0, tle = 0, mle = 0;
-    for (const JudgeRow& row : rows) {
-        ok += row.verdict == "OK";
-        wa += row.verdict == "WA";
-        tle += row.verdict == "TLE";
-        mle += row.verdict == "MLE";
+    for (const FilaJuez& fila : filas) {
+        ok += fila.veredicto == "OK";
+        wa += fila.veredicto == "WA";
+        tle += fila.veredicto == "TLE";
+        mle += fila.veredicto == "MLE";
     }
     std::cout << "\n  Veredictos: " << ok << " OK, " << wa << " WA, " << tle << " TLE, " << mle << " MLE (de "
-              << rows.size() << " ejecuciones)\n";
+              << filas.size() << " ejecuciones)\n";
     std::cout << "  Ranking por categoria (mas casos OK, luego menor gap medio, luego menor tiempo):";
-    printRanking(ranking);
-    std::cout << "\n  Resultados en " << output << "/results.csv, ranking en " << output
-              << "/ranking.csv y rutas en " << output << "/routes/\n";
+    imprimirRanking(ranking);
+    std::cout << "\n  Resultados en " << salida << "/results.csv, ranking en " << salida
+              << "/ranking.csv y rutas en " << salida << "/routes/\n";
 }
 
 // ---------------------------------------------------------------------------------------------
 // Opción 4: analizar la red de recarga (RF10, RF11, RF12)
 // ---------------------------------------------------------------------------------------------
 
-void analyzeNetwork() {
+void analizarRed() {
     std::cout << "\n--- ANALIZAR RED DE RECARGA ---\n";
-    std::string path = askText("Archivo de escenario", "data/generated/medium_1.txt");
-    Escenario escenario = ArchivoEscenario::cargar(path);
-    printScenarioSummary(escenario);
+    std::string archivo = preguntarTexto("Archivo de escenario", "data/generated/medium_1.txt");
+    Escenario escenario = ArchivoEscenario::cargar(archivo);
+    imprimirResumenEscenario(escenario);
 
     // El solver prepara el grafo de misión y la red de recarga, y clasifica a los excluidos.
     SolverMision solver(escenario);
@@ -269,56 +269,56 @@ void analyzeNetwork() {
     std::cout << std::fixed << std::setprecision(2);
 
     // Alcance de la red con la batería del escenario (DFS desde la base).
-    std::vector<std::string> unreachable;
+    std::vector<std::string> sinConexion;
     for (int s = 0; s < mision.numEstaciones(); ++s) {
-        int key = mision.claveEstacion(s);
-        if (!red.esAlcanzable(key)) unreachable.push_back(mision.etiqueta(key));
+        int clave = mision.claveEstacion(s);
+        if (!red.esAlcanzable(clave)) sinConexion.push_back(mision.etiqueta(clave));
     }
-    std::cout << "  Estaciones alcanzables desde la base: " << mision.numEstaciones() - unreachable.size()
+    std::cout << "  Estaciones alcanzables desde la base: " << mision.numEstaciones() - sinConexion.size()
               << " de " << mision.numEstaciones() << '\n';
-    if (!unreachable.empty()) {
+    if (!sinConexion.empty()) {
         std::cout << "  Sin conexion con la base:";
-        printLabels(unreachable);
+        imprimirEtiquetas(sinConexion);
     }
 
     // Estaciones críticas: puntos de articulación (Tarjan).
-    std::vector<std::string> critical;
-    for (int key : red.estacionesCriticas()) critical.push_back(mision.etiqueta(key));
+    std::vector<std::string> criticas;
+    for (int clave : red.estacionesCriticas()) criticas.push_back(mision.etiqueta(clave));
     std::cout << "  Estaciones criticas (puntos de articulacion): ";
-    if (critical.empty()) {
+    if (criticas.empty()) {
         std::cout << "ninguna\n";
     } else {
-        printLabels(critical);
+        imprimirEtiquetas(criticas);
     }
 
     // Red mínima de soporte: árbol de expansión mínima entre la base y las estaciones (Prim).
-    std::vector<int> nodes;
-    ArbolMinimo tree = RedRecarga::arbolSoporte(mision, nodes);
-    std::cout << "  Red minima de soporte: costo " << tree.costo << ", tramo mas largo " << tree.aristaMaxima << '\n';
-    for (size_t i = 1; i < nodes.size(); ++i) {
-        if (tree.padre[i] < 0) continue;
-        int from = nodes[tree.padre[i]];
-        std::cout << "    " << mision.etiqueta(from) << " - " << mision.etiqueta(nodes[i])
-                  << "  " << mision.distancia(from, nodes[i]) << '\n';
+    std::vector<int> nodos;
+    ArbolMinimo arbol = RedRecarga::arbolSoporte(mision, nodos);
+    std::cout << "  Red minima de soporte: costo " << arbol.costo << ", tramo mas largo " << arbol.aristaMaxima << '\n';
+    for (size_t i = 1; i < nodos.size(); ++i) {
+        if (arbol.padre[i] < 0) continue;
+        int desde = nodos[arbol.padre[i]];
+        std::cout << "    " << mision.etiqueta(desde) << " - " << mision.etiqueta(nodos[i])
+                  << "  " << mision.distancia(desde, nodos[i]) << '\n';
     }
 
     // Autonomía mínima (búsqueda binaria) frente a la del escenario.
-    double minimum = RedRecarga::autonomiaMinima(mision);
-    std::cout << "  Autonomia minima para atender a todos los clientes: " << minimum
+    double minima = RedRecarga::autonomiaMinima(mision);
+    std::cout << "  Autonomia minima para atender a todos los clientes: " << minima
               << " (el escenario tiene " << escenario.bateria << ")\n";
 
-    std::vector<std::string> byObstacles, byBattery;
-    for (const ClienteExcluido& client : solver.excluidos()) {
-        if (client.motivo == "OBSTACLES") {
-            byObstacles.push_back(client.etiqueta);
+    std::vector<std::string> porObstaculos, porBateria;
+    for (const ClienteExcluido& cliente : solver.excluidos()) {
+        if (cliente.motivo == "OBSTACLES") {
+            porObstaculos.push_back(cliente.etiqueta);
         } else {
-            byBattery.push_back(client.etiqueta);
+            porBateria.push_back(cliente.etiqueta);
         }
     }
-    std::cout << "  Clientes separados por obstaculos: " << byObstacles.size();
-    if (!byObstacles.empty()) printLabels(byObstacles); else std::cout << '\n';
-    std::cout << "  Clientes fuera del alcance de la bateria: " << byBattery.size();
-    if (!byBattery.empty()) printLabels(byBattery); else std::cout << '\n';
+    std::cout << "  Clientes separados por obstaculos: " << porObstaculos.size();
+    if (!porObstaculos.empty()) imprimirEtiquetas(porObstaculos); else std::cout << '\n';
+    std::cout << "  Clientes fuera del alcance de la bateria: " << porBateria.size();
+    if (!porBateria.empty()) imprimirEtiquetas(porBateria); else std::cout << '\n';
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ int main() {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
 
-    printBanner();
+    imprimirPortada();
     while (true) {
         std::cout << "\n=== MENU ===\n"
                   << "  1. Generar datasets\n"
@@ -336,20 +336,20 @@ int main() {
                   << "  3. Ejecutar juez y benchmark\n"
                   << "  4. Analizar red de recarga\n"
                   << "  0. Salir\n";
-        int option = askNumber("Opcion", 0, 0, 4);
-        if (option == 0) break;
+        int opcion = preguntarNumero("Opcion", 0, 0, 4);
+        if (opcion == 0) break;
         // Cada opción empieza con el formato normal de números: las otras dejan std::fixed activo.
         std::cout << std::defaultfloat << std::setprecision(6);
         try {
-            if (option == 1) generateDatasets();
-            if (option == 2) solveScenario();
-            if (option == 3) runJudge();
-            if (option == 4) analyzeNetwork();
+            if (opcion == 1) generarDatasets();
+            if (opcion == 2) resolverEscenario();
+            if (opcion == 3) ejecutarJuez();
+            if (opcion == 4) analizarRed();
         } catch (const std::exception& error) {
             std::cout << "  [ERROR] " << error.what() << '\n';
         }
-        sessionUsedMemory = true;
-        if (inputClosed) break;
+        memoriaUsadaEnSesion = true;
+        if (entradaCerrada) break;
     }
     std::cout << "Hasta luego.\n";
     return 0;

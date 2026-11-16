@@ -14,33 +14,33 @@ namespace geodrone {
 /**
  * @brief Exportación de resultados (RF15) con los formatos de docs/decisiones.md §6.
  */
-namespace Exporter {
+namespace Exportador {
 
     /**
      * @brief Escribe la ruta: resumen, clientes excluidos con su motivo, orden de nodos clave y
      * trayectoria completa con la etiqueta de cada punto. O(longitud de la trayectoria).
      */
-    void writeRoute(const Ruta& ruta, std::ostream& out);
+    void escribirRuta(const Ruta& ruta, std::ostream& salida);
 
     /**
      * @brief Guarda la ruta en un archivo, creando las carpetas que falten.
      * Lanza std::runtime_error si no se puede escribir.
      */
-    void saveRoute(const Ruta& ruta, const std::string& path);
+    void guardarRuta(const Ruta& ruta, const std::string& nombreArchivo);
 
     /**
      * @brief Resultados del juez, una fila por escenario y algoritmo, con las columnas
      * escenario,categoria,clientes,algoritmo,veredicto,costo,recargas,excluidos,tiempo_ms,
      * memoria_mb,gap_mejor,gap_cota. Los gaps quedan vacíos si el veredicto no es OK.
      */
-    void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out);
-    void saveResultsCsv(const std::vector<JudgeRow>& rows, const std::string& path);
+    void escribirResultadosCsv(const std::vector<FilaJuez>& filas, std::ostream& salida);
+    void guardarResultadosCsv(const std::vector<FilaJuez>& filas, const std::string& nombreArchivo);
 
     /**
      * @brief Ranking por categoría: categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms.
      */
-    void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out);
-    void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path);
+    void escribirRankingCsv(const std::vector<FilaRanking>& ranking, std::ostream& salida);
+    void guardarRankingCsv(const std::vector<FilaRanking>& ranking, const std::string& nombreArchivo);
 
     /**
      * @brief Dibujo del escenario y la ruta en SVG, que se abre en cualquier navegador: obstáculos,
@@ -48,10 +48,10 @@ namespace Exporter {
      * Es solo visualización (opcional según la guía): la validación oficial es la del juez.
      * El eje y se invierte, porque en SVG crece hacia abajo. O(puntos + vértices de obstáculos).
      */
-    void writeSvg(const Escenario& escenario, const Ruta& ruta, std::ostream& out);
-    void saveSvg(const Escenario& escenario, const Ruta& ruta, const std::string& path);
+    void escribirSvg(const Escenario& escenario, const Ruta& ruta, std::ostream& salida);
+    void guardarSvg(const Escenario& escenario, const Ruta& ruta, const std::string& nombreArchivo);
 
-} // namespace Exporter
+} // namespace Exportador
 
 } // namespace geodrone
 

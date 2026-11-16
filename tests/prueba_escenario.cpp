@@ -124,7 +124,7 @@ void probarIdaYVuelta() {
 void probarGuardarYCargar() {
     std::cout << "[TEST] 3. Guardar en archivo (creando carpetas) y cargar..." << std::endl;
 
-    const std::string carpeta = "tmp_test_scenario";
+    const std::string carpeta = "tmp_prueba_scenario";
     const std::string ruta = carpeta + "/sub/escenario.txt";
     std::filesystem::remove_all(carpeta);
 
@@ -244,7 +244,7 @@ void probarBomYNombres() {
     }
 
     // guardar() valida antes de crear el archivo: no queda un archivo vacío.
-    const std::string ruta = "tmp_test_bad_name.txt";
+    const std::string ruta = "tmp_prueba_bad_name.txt";
     std::filesystem::remove(ruta);
     s.nombre = "con espacio";
     bool rechazado = false;

@@ -152,7 +152,7 @@ void probarAdversarialRechazado() {
 void probarConjuntoBenchmark() {
     std::cout << "[TEST] 5. Set de benchmark guardado y releido desde archivo..." << std::endl;
 
-    const std::string carpeta = "tmp_test_generator";
+    const std::string carpeta = "tmp_prueba_generator";
     std::filesystem::remove_all(carpeta);
 
     // Una semilla por categoría y sin el peor caso: cada escenario completo construye su grafo

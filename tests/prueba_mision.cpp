@@ -85,7 +85,7 @@ void probarRutaAManoYExportacion() {
     assert(std::abs(ruta.costo - 32.0) < TOLERANCIA && ruta.recargas == 2);
 
     std::ostringstream salida;
-    Exporter::writeRoute(ruta, salida);
+    Exportador::escribirRuta(ruta, salida);
     const std::string esperado =
         "SCENARIO hand\n"
         "ALGORITHM branch_and_bound\n"
@@ -103,10 +103,10 @@ void probarRutaAManoYExportacion() {
         "0 0 D0\n";
     assert(salida.str() == esperado);
 
-    // saveRoute crea la carpeta y escribe lo mismo.
-    const std::string carpeta = "tmp_test_mission";
+    // guardarRuta crea la carpeta y escribe lo mismo.
+    const std::string carpeta = "tmp_prueba_mission";
     std::filesystem::remove_all(carpeta);
-    Exporter::saveRoute(ruta, carpeta + "/ruta.txt");
+    Exportador::guardarRuta(ruta, carpeta + "/ruta.txt");
     std::ifstream archivo(carpeta + "/ruta.txt");
     std::stringstream contenido;
     contenido << archivo.rdbuf();
@@ -205,7 +205,7 @@ size_t contarApariciones(const std::string& texto, const std::string& fragmento)
 
 std::string svgDe(const Escenario& s, const Ruta& ruta) {
     std::ostringstream salida;
-    Exporter::writeSvg(s, ruta, salida);
+    Exportador::escribirSvg(s, ruta, salida);
     return salida.str();
 }
 
@@ -243,10 +243,10 @@ void probarSvg(const std::string& carpeta) {
     assert(contarApariciones(svg, "class=\"client\"") == static_cast<size_t>(grande.numClientes()));
     assert(svg.find(">C1</text>") == std::string::npos);
 
-    // saveSvg crea la carpeta y el archivo.
-    const std::string carpetaSalida = "tmp_test_svg";
+    // guardarSvg crea la carpeta y el archivo.
+    const std::string carpetaSalida = "tmp_prueba_svg";
     std::filesystem::remove_all(carpetaSalida);
-    Exporter::saveSvg(aMano, solverAMano.resolver(Algoritmo::VECINO_MAS_CERCANO), carpetaSalida + "/ruta.svg");
+    Exportador::guardarSvg(aMano, solverAMano.resolver(Algoritmo::VECINO_MAS_CERCANO), carpetaSalida + "/ruta.svg");
     assert(std::filesystem::file_size(carpetaSalida + "/ruta.svg") > 500);
     std::filesystem::remove_all(carpetaSalida);
 
