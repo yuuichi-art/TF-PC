@@ -101,6 +101,9 @@ bool twoOpt(const std::vector<std::vector<double>>& dist, int depot, std::vector
     tour.push_back(depot);
     int n = static_cast<int>(order.size());
 
+    // Se repiten pasadas sobre todos los pares (i, j) hasta que una pasada no mejore nada.
+    // Cada mejora se aplica en el momento y la pasada sigue con la ruta ya cambiada.
+    // finished pasa a false si se acaba el tiempo: la ruta queda como esté en ese momento.
     bool improved = true;
     bool finished = true;
     while (improved && finished) {

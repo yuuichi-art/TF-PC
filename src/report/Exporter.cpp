@@ -193,7 +193,9 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
         << "\" width=\"12\" height=\"12\" fill=\"#dc2626\"/>\n";
     if (withLabels) writeLabel(out, depotX, depotY, "D0");
 
-    // Leyenda (sin clases, para no confundirse con los elementos del mapa).
+    // Leyenda (sin clases, para no confundirse con los elementos del mapa). Es una fila de pares
+    // símbolo + texto: (lx, ly) es la posición del símbolo actual, y legendText escribe el texto a
+    // su derecha y corre lx hacia el siguiente par (unos 8 px por letra, más un espacio).
     double ly = height - 14;
     double lx = margin;
     auto legendText = [&](const std::string& text) {

@@ -105,6 +105,8 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
             return fail("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.label + ")");
         }
 
+        // Llegar a la base o a una estación llena la batería. La llegada final a la base no
+        // cuenta como recarga, porque ahí termina la misión.
         if (type == 'D' || type == 'S') {
             battery = scenario.battery;
             if (i + 1 < route.path.size()) ++recharges;
@@ -263,6 +265,7 @@ std::vector<RankingRow> rank(const std::vector<JudgeRow>& rows) {
         }
     }
 
+    // Promedios sobre los casos OK, agrupados por categoría para ordenarlos dentro de cada una.
     std::map<int, std::vector<RankingRow>> byCategory;
     for (auto& entry : totals) {
         RankingRow& total = entry.second;

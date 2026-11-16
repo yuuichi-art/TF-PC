@@ -101,6 +101,8 @@ RechargePlan RechargePlanner::plan(const std::vector<int>& clientOrder) const {
     targets.push_back(mission_.depotKey());   // Al final se vuelve a la base
 
     for (int target : targets) {
+        // Directo es seguro si, al llegar, queda batería para alcanzar la recarga más cercana del
+        // destino: así nunca se llega a un punto del que no se pueda salir.
         bool safeDirect = battery - mission_.distance(position, target) + TOL >= network_.distanceToRecharge(target);
         if (!safeDirect) {
             std::vector<int> recharges;
