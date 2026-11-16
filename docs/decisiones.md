@@ -96,7 +96,6 @@ Los escenarios generados usan como batería la autonomía mínima × 1,2, redond
 - Código en español, sin tildes ni ñ: `PascalCase` para tipos, `camelCase` para funciones y variables, y `MAYUSCULAS` para constantes. Los comentarios también van en español.
   - **Términos en inglés:** se mantienen los que la guía usa en inglés (*solver*, *dataset*, *benchmark*, *ranking*, *gap*, *branch and bound*, *2-opt*) y los nombres propios (Dijkstra, Prim, Tarjan).
   - **Formatos:** los de §6 no se traducen, porque son datos y no código.
-  - **Tabla de nombres:** está en [`glosario.md`](glosario.md), con los nombres anteriores en inglés. El renombrado se hizo por fases, y en cada una se comprobó que la salida del programa (rutas, CSV y menú) no cambiara.
 - Resolver un escenario prepara una sola vez el grafo de misión y la red de recarga, y luego aplica el algoritmo elegido. El tiempo informado es preparación + resolución.
 - La búsqueda local iterada se detiene antes de llegar al 90 % del tiempo límite de la categoría, descontando la preparación.
 - Algoritmos, con el nombre que aparece en los archivos: `branch_and_bound` (solo hasta 12 clientes atendibles), `nearest_neighbor`, `mst_approximation`, `nearest_neighbor_2opt`, `mst_approximation_2opt` e `iterated_local_search` (parte del vecino más cercano y usa la semilla del escenario).
