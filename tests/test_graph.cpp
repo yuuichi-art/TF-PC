@@ -34,9 +34,9 @@ std::vector<Scenario> sampleScenarios(const std::string& adversarialFolder) {
 
 VisibilityGraph buildGraph(const Scenario& s, bool useFilter) {
     VisibilityGraph g;
-    g.setDepot(s.depot);
-    for (const Point& p : s.stations) g.addChargingStation(p);
-    for (const Point& p : s.clients) g.addClient(p);
+    g.addNode(s.depot, NodeType::DEPOT, "D0");
+    for (const Point& p : s.stations) g.addNode(p, NodeType::CHARGING_STATION, "S");
+    for (const Point& p : s.clients) g.addNode(p, NodeType::CLIENT, "C");
     for (const Polygon& poly : s.obstacles) g.addObstacle(poly);
     g.buildVisibilityEdges(useFilter);
     return g;

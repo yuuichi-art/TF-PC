@@ -57,14 +57,15 @@ struct RankingRow {
 namespace Judge {
 
     /**
-     * @brief Verifica una ruta con código independiente de los solvers: solo usa la ruta, el
-     * escenario y la geometría. Comprueba que
+     * @brief Verifica una ruta con código independiente de los solvers: recorre la trayectoria
+     * exportada con el escenario y la geometría. Del solver solo usa el grafo de misión y la red
+     * de recarga, para confirmar las exclusiones. Comprueba que
      * - empieza y termina en la base, y cada punto etiquetado está donde dice el escenario;
      * - ningún tramo cruza un obstáculo;
      * - la batería simulada tramo a tramo nunca baja de 0 (se llena en la base y las estaciones);
      * - cada cliente se visita una vez o está excluido, y cada exclusión es real según el grafo
      *   de misión (separado por obstáculos o con 2·dRecarga > B);
-     * - el costo y las recargas informados coinciden con los recalculados.
+     * - el costo, las recargas y el orden informados coinciden con la trayectoria.
      * Complejidad: O(P · M) con P puntos de la trayectoria y M aristas de obstáculos.
      */
     VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& solver, const Route& route);

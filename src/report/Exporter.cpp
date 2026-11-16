@@ -1,31 +1,14 @@
 #include "Exporter.hpp"
+#include "../scenario/ScenarioIO.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <stdexcept>
 
 namespace geodrone {
 namespace Exporter {
-
-namespace {
-
-// Crea el archivo y sus carpetas; lanza std::runtime_error si no se puede.
-std::ofstream openForWriting(const std::string& path) {
-    std::filesystem::path filePath(path);
-    if (filePath.has_parent_path()) {
-        std::filesystem::create_directories(filePath.parent_path());
-    }
-    std::ofstream file(path);
-    if (!file) {
-        throw std::runtime_error("no se pudo crear el archivo " + path);
-    }
-    return file;
-}
-
-} // namespace
 
 void writeRoute(const Route& route, std::ostream& out) {
     out << "SCENARIO " << route.scenario << '\n';
@@ -55,7 +38,7 @@ void writeRoute(const Route& route, std::ostream& out) {
 }
 
 void saveRoute(const Route& route, const std::string& path) {
-    std::ofstream file = openForWriting(path);
+    std::ofstream file = ScenarioIO::openForWriting(path);
     writeRoute(route, file);
     if (!file) {
         throw std::runtime_error("error al escribir el archivo " + path);
@@ -78,7 +61,7 @@ void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
 }
 
 void saveResultsCsv(const std::vector<JudgeRow>& rows, const std::string& path) {
-    std::ofstream file = openForWriting(path);
+    std::ofstream file = ScenarioIO::openForWriting(path);
     writeResultsCsv(rows, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
@@ -93,7 +76,7 @@ void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out) 
 }
 
 void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path) {
-    std::ofstream file = openForWriting(path);
+    std::ofstream file = ScenarioIO::openForWriting(path);
     writeRankingCsv(ranking, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
@@ -210,7 +193,9 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
         << "\" width=\"12\" height=\"12\" fill=\"#dc2626\"/>\n";
     if (withLabels) writeLabel(out, depotX, depotY, "D0");
 
-    // Leyenda (sin clases, para no confundirse con los elementos del mapa).
+    // Leyenda (sin clases, para no confundirse con los elementos del mapa). Es una fila de pares
+    // símbolo + texto: (lx, ly) es la posición del símbolo actual, y legendText escribe el texto a
+    // su derecha y corre lx hacia el siguiente par (unos 8 px por letra, más un espacio).
     double ly = height - 14;
     double lx = margin;
     auto legendText = [&](const std::string& text) {
@@ -237,7 +222,7 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
 }
 
 void saveSvg(const Scenario& scenario, const Route& route, const std::string& path) {
-    std::ofstream file = openForWriting(path);
+    std::ofstream file = ScenarioIO::openForWriting(path);
     writeSvg(scenario, route, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }

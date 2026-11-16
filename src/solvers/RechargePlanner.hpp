@@ -19,7 +19,7 @@ struct RechargePlan {
 };
 
 /**
- * @brief Inserción de recargas sobre un orden de clientes ya decidido (decisión 5:
+ * @brief Inserción de recargas sobre un orden de clientes ya decidido (docs/decisiones.md §3:
  * los solvers deciden el orden y este paso común agrega las recargas).
  *
  * Regla greedy segura (docs/decisiones.md §4): antes de cada tramo se comprueba que, al

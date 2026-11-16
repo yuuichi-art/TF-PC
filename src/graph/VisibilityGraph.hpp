@@ -7,49 +7,40 @@
 #include "../geometry/GeometryUtils.hpp"
 
 #include <algorithm>
-#include <vector>
 #include <string>
-#include <iostream>
+#include <vector>
 
 namespace geodrone {
 
 /**
- * @brief Clasificación de nodos operacionales según la especificación del GeoDrone Challenge.
+ * @brief Tipo de nodo del grafo. Base, clientes y estaciones son los nodos clave.
  */
 enum class NodeType {
-    DEPOT,              // Base logística o centro de distribución (D)
-    CLIENT,             // Clientes con entrega obligatoria (C)
-    CHARGING_STATION,   // Estaciones de recarga rápida de batería (S)
-    OBSTACLE_VERTEX     // Vértices de polígonos de exclusión para sortear obstáculos
+    DEPOT,              // Base logística (D)
+    CLIENT,             // Cliente con entrega obligatoria (C)
+    CHARGING_STATION,   // Estación de recarga (S)
+    OBSTACLE_VERTEX     // Vértice de un obstáculo, para rodearlo
 };
 
 /**
- * @brief Representación de un nodo en el Grafo de Navegación G = (V, E).
+ * @brief Nodo del grafo de visibilidad G = (V, E).
  */
 struct Node {
     Point pt;
     NodeType type;
-    int index;          // Índice global dentro del grafo |V|
-    std::string name;
-
-    Node() : pt(), type(NodeType::OBSTACLE_VERTEX), index(-1), name("") {}
-    Node(const Point& pt_, NodeType type_, int index_, const std::string& name_ = "")
-        : pt(pt_), type(type_), index(index_), name(name_) {}
+    std::string name;   // "D0", "S1", "C3"... o "Obs2_V0" para un vértice de obstáculo
 
     bool isKeyNode() const {
-        return type == NodeType::DEPOT || type == NodeType::CLIENT || type == NodeType::CHARGING_STATION;
+        return type != NodeType::OBSTACLE_VERTEX;
     }
 };
 
 /**
- * @brief Arista ponderada en el Grafo de Visibilidad.
+ * @brief Arista ponderada en el grafo de visibilidad: vecino y distancia.
  */
 struct GraphEdge {
     int to;
     double weight;
-
-    GraphEdge() : to(-1), weight(0.0) {}
-    GraphEdge(int to_, double weight_) : to(to_), weight(weight_) {}
 };
 
 /**
@@ -66,7 +57,7 @@ struct BoundingBox {
 };
 
 /**
- * @brief Grafo de Visibilidad Euclidiano G = (V, E) libre de colisiones.
+ * @brief Grafo de visibilidad euclidiano G = (V, E) libre de colisiones.
  * Transforma el espacio continuo 2D en un grafo ponderado discreto conectando nodos
  * visibles cuyos trayectos no intersecan el interior de ningún polígono obstáculo.
  */
@@ -103,36 +94,13 @@ private:
     }
 
 public:
-    VisibilityGraph() = default;
-
     /**
-     * @brief Registra el depósito inicial.
+     * @brief Agrega un nodo (base, cliente o estación) y devuelve su índice en el grafo.
      */
-    int setDepot(const Point& depotPt, const std::string& name = "Base Logistica D") {
-        int idx = static_cast<int>(nodes_.size());
-        nodes_.emplace_back(depotPt, NodeType::DEPOT, idx, name);
+    int addNode(const Point& pt, NodeType type, const std::string& name) {
+        nodes_.push_back({pt, type, name});
         adj_.emplace_back();
-        return idx;
-    }
-
-    /**
-     * @brief Registra un cliente con sus coordenadas.
-     */
-    int addClient(const Point& pt, const std::string& name = "") {
-        int idx = static_cast<int>(nodes_.size());
-        nodes_.emplace_back(pt, NodeType::CLIENT, idx, name);
-        adj_.emplace_back();
-        return idx;
-    }
-
-    /**
-     * @brief Registra una estación de recarga rápida de batería.
-     */
-    int addChargingStation(const Point& pt, const std::string& name = "") {
-        int idx = static_cast<int>(nodes_.size());
-        nodes_.emplace_back(pt, NodeType::CHARGING_STATION, idx, name);
-        adj_.emplace_back();
-        return idx;
+        return static_cast<int>(nodes_.size()) - 1;
     }
 
     /**
@@ -142,10 +110,7 @@ public:
         obstacles_.push_back(poly);
         obstacleBoxes_.push_back(boxOf(poly));
         for (int i = 0; i < poly.size(); ++i) {
-            int idx = static_cast<int>(nodes_.size());
-            nodes_.emplace_back(poly[i], NodeType::OBSTACLE_VERTEX, idx,
-                                "Obs" + std::to_string(poly.id) + "_V" + std::to_string(i));
-            adj_.emplace_back();
+            addNode(poly[i], NodeType::OBSTACLE_VERTEX, "Obs" + std::to_string(poly.id) + "_V" + std::to_string(i));
         }
     }
 
@@ -170,35 +135,19 @@ public:
                 Segment seg(nodes_[i].pt, nodes_[j].pt);
                 if (isSegmentClear(seg, useBoundingBoxFilter)) {
                     double dist = nodes_[i].pt.dist(nodes_[j].pt);
-                    adj_[i].emplace_back(j, dist);
-                    adj_[j].emplace_back(i, dist);
+                    adj_[i].push_back({j, dist});
+                    adj_[j].push_back({i, dist});
                     edgeCount_++;
                 }
             }
         }
     }
 
-    // Getters
     int numVertices() const { return static_cast<int>(nodes_.size()); }
     int numEdges() const { return edgeCount_; }
-    const std::vector<Node>& getNodes() const { return nodes_; }
     const Node& getNode(int index) const { return nodes_[index]; }
     const std::vector<std::vector<GraphEdge>>& getAdj() const { return adj_; }
     const std::vector<GraphEdge>& getNeighbors(int u) const { return adj_[u]; }
-    const std::vector<Polygon>& getObstacles() const { return obstacles_; }
-
-    /**
-     * @brief Retorna los índices de todos los nodos clave K = {D} ∪ C ∪ S.
-     */
-    std::vector<int> getKeyNodeIndices() const {
-        std::vector<int> keyIndices;
-        for (const auto& n : nodes_) {
-            if (n.isKeyNode()) {
-                keyIndices.push_back(n.index);
-            }
-        }
-        return keyIndices;
-    }
 };
 
 } // namespace geodrone

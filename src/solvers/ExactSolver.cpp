@@ -67,7 +67,7 @@ struct Search {
 
         for (int i : candidatesFrom(position)) {
             double nextCost = cost + dist[position][clients[i]];
-            if (nextCost >= best.cost) {
+            if (nextCost >= best.cost) {    // Solo llegar a ese cliente ya iguala la mejor ruta
                 ++best.nodesPruned;
                 continue;
             }

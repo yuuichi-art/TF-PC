@@ -87,6 +87,8 @@ double ChargingNetwork::minimumAutonomy(const MissionGraph& mission) {
             if (d != INF) maxDistance = std::max(maxDistance, d);
         }
     }
+    // Invariante: hi siempre es factible y lo no lo es (o es 0). Cada iteración parte el
+    // intervalo a la mitad y conserva la mitad donde está el cambio de no factible a factible.
     double lo = 0.0;
     double hi = 2.0 * maxDistance;
     for (int iteration = 0; iteration < 60; ++iteration) {

@@ -15,7 +15,7 @@
 
 using namespace geodrone;
 
-void testCCWAndOrientation() {
+void testCCW() {
     std::cout << "[TEST] 1. Giro horario, antihorario y colinealidad (CCW)..." << std::endl;
 
     Point a(0.0, 0.0);
@@ -24,12 +24,10 @@ void testCCWAndOrientation() {
     // Punto hacia arriba -> Giro antihorario (izquierda)
     Point c_left(2.0, 3.0);
     assert(GeometryUtils::ccw(a, b, c_left) == 1);
-    assert(GeometryUtils::getOrientation(a, b, c_left) == Orientation::COUNTER_CLOCKWISE);
 
     // Punto hacia abajo -> Giro horario (derecha)
     Point c_right(2.0, -3.0);
     assert(GeometryUtils::ccw(a, b, c_right) == -1);
-    assert(GeometryUtils::getOrientation(a, b, c_right) == Orientation::CLOCKWISE);
 
     // Puntos estrictamente colineales
     Point c_collinear(8.0, 0.0);
@@ -38,7 +36,6 @@ void testCCWAndOrientation() {
     assert(GeometryUtils::ccw(a, b, c_collinear) == 0);
     assert(GeometryUtils::ccw(a, b, c_between) == 0);
     assert(GeometryUtils::ccw(a, b, c_behind) == 0);
-    assert(GeometryUtils::getOrientation(a, b, c_between) == Orientation::COLLINEAR);
 
     // Casos con precisión épsilon (1e-10 de perturbación debe considerarse colineal con EPS = 1e-9)
     Point c_near_collinear(2.0, 1e-10);
@@ -205,7 +202,7 @@ void testConvexHull() {
 
     // Todos los puntos de entrada quedan dentro o sobre el borde de la envolvente.
     for (const Point& p : points) {
-        assert(GeometryUtils::isPointInsideOrBoundary(p, hullPoly));
+        assert(GeometryUtils::pointInPolygon(p, hullPoly) != PointLocation::OUTSIDE);
     }
 
     // Casos degenerados: puntos colineales o menos de 3 puntos no forman polígono.
@@ -224,7 +221,7 @@ int main() {
     std::cout << "        USIL - Programacion Competitiva (2026)          " << std::endl;
     std::cout << "=========================================================\n" << std::endl;
 
-    testCCWAndOrientation();
+    testCCW();
     testSegmentIntersections();
     testPointInPolygon();
     testPolygonMetrics();

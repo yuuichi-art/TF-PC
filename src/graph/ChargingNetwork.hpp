@@ -55,7 +55,9 @@ public:
 
     /**
      * @brief Factibilidad de una autonomía B: todos los clientes que los obstáculos no separan
-     * de la base se pueden atender. Es monótona: si vale para B, vale para cualquier B mayor.
+     * de la base se pueden atender. Es monótona: si vale para B, vale para cualquier B mayor,
+     * porque con más batería la red tiene más aristas, alcanza más puntos de recarga y dRecarga
+     * de cada cliente solo puede bajar. Esa monotonía es la que permite la búsqueda binaria.
      */
     static bool isFeasible(const MissionGraph& mission, double battery);
 

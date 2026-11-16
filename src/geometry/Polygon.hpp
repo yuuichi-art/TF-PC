@@ -3,10 +3,9 @@
 
 #include "Point.hpp"
 #include "Segment.hpp"
-#include <vector>
-#include <string>
 #include <cmath>
-#include <iostream>
+#include <string>
+#include <vector>
 
 namespace geodrone {
 
@@ -29,21 +28,13 @@ struct Polygon {
         return static_cast<int>(vertices.size());
     }
 
-    bool empty() const {
-        return vertices.empty();
-    }
-
-    // Acceso indexado a los vértices con manejo cíclico opcional
+    // Acceso indexado a los vértices (sin comprobar el rango)
     const Point& operator[](int i) const {
         return vertices[i];
     }
 
     Point& operator[](int i) {
         return vertices[i];
-    }
-
-    const Point& at(int i) const {
-        return vertices.at(i);
     }
 
     void addVertex(const Point& pt) {
@@ -58,7 +49,7 @@ struct Polygon {
         edges.reserve(n);
         for (int i = 0; i < n; ++i) {
             int next = (i + 1) % n;
-            edges.emplace_back(vertices[i], vertices[next], i);
+            edges.emplace_back(vertices[i], vertices[next]);
         }
         return edges;
     }
@@ -89,18 +80,6 @@ struct Polygon {
     // Área absoluta del polígono
     double area() const {
         return std::abs(signedArea());
-    }
-
-    // Determina si los vértices están listados en sentido horario
-    bool isClockwise() const {
-        return signedArea() < -EPS;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const Polygon& poly) {
-        os << "Polygon[id=" << poly.id;
-        if (!poly.name.empty()) os << ", name=" << poly.name;
-        os << ", vertices=" << poly.size() << "]";
-        return os;
     }
 };
 

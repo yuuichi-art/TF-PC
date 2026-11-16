@@ -9,15 +9,6 @@
 namespace geodrone {
 
 /**
- * @brief Orientación relativa de una terna de puntos (A, B, C).
- */
-enum class Orientation {
-    CLOCKWISE = -1,         // Giro horario / derecha
-    COLLINEAR = 0,          // Colineales
-    COUNTER_CLOCKWISE = 1   // Giro antihorario / izquierda
-};
-
-/**
  * @brief Ubicación de un punto respecto a un polígono.
  */
 enum class PointLocation {
@@ -35,12 +26,8 @@ namespace GeometryUtils {
     int ccw(const Point& a, const Point& b, const Point& c);
 
     /**
-     * @brief Retorna el enum Orientation correspondiente a la terna (A, B, C).
-     */
-    Orientation getOrientation(const Point& a, const Point& b, const Point& c);
-
-    /**
-     * @brief Verifica si el punto P reside sobre el segmento cerrado AB, asumiendo colinealidad previa o verificándola.
+     * @brief Verifica si el punto P está sobre el segmento cerrado AB: colineal con A y B, y dentro
+     * del rectángulo que forman (con tolerancia EPS).
      */
     bool onSegment(const Point& p, const Point& a, const Point& b);
     bool onSegment(const Point& p, const Segment& s);
@@ -57,20 +44,15 @@ namespace GeometryUtils {
     bool properIntersection(const Segment& s1, const Segment& s2);
 
     /**
-     * @brief Determina si un punto está dentro, en el borde o fuera de un polígono mediante Ray Casting (Jordan Curve Theorem).
+     * @brief Determina si un punto está dentro, en el borde o fuera de un polígono mediante Ray Casting (teorema de la curva de Jordan).
      * Complejidad: O(V) donde V es el número de vértices del polígono.
      */
     PointLocation pointInPolygon(const Point& pt, const Polygon& poly);
 
     /**
-     * @brief Helper que retorna true si el punto está estrictamente en el interior del polígono.
+     * @brief true si el punto está estrictamente en el interior del polígono (no en el borde).
      */
     bool isPointStrictlyInside(const Point& pt, const Polygon& poly);
-
-    /**
-     * @brief Helper que retorna true si el punto está en el interior o en el borde del polígono.
-     */
-    bool isPointInsideOrBoundary(const Point& pt, const Polygon& poly);
 
     /**
      * @brief Valida si una trayectoria entre u y v interseca o penetra el interior de un polígono de exclusión.

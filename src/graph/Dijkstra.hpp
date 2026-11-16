@@ -2,14 +2,14 @@
 #define GEODRONE_DIJKSTRA_HPP
 
 #include "VisibilityGraph.hpp"
-#include <vector>
 #include <queue>
-#include <algorithm>
+#include <vector>
 
 namespace geodrone {
 
 /**
- * @brief Resultado de una ejecución de Dijkstra de fuente única (SSSP).
+ * @brief Resultado de Dijkstra desde un origen: distancia mínima a cada nodo (INF si no se
+ * alcanza) y su predecesor en el camino mínimo (-1 para el origen y los no alcanzados).
  */
 struct DijkstraResult {
     int source;
@@ -18,30 +18,11 @@ struct DijkstraResult {
 
     DijkstraResult(int n = 0, int src = -1)
         : source(src), dist(n, INF), parent(n, -1) {}
-
-    bool isReachable(int target) const {
-        return target >= 0 && target < static_cast<int>(dist.size()) && dist[target] < INF / 2.0;
-    }
-
-    /**
-     * @brief Reconstruye la secuencia de vértices del camino mínimo desde source hasta target.
-     */
-    std::vector<int> getPathTo(int target) const {
-        std::vector<int> path;
-        if (!isReachable(target)) return path;
-
-        for (int curr = target; curr != -1; curr = parent[curr]) {
-            path.push_back(curr);
-            if (curr == source) break;
-        }
-        std::reverse(path.begin(), path.end());
-        return path;
-    }
 };
 
 /**
- * @brief Algoritmo de Dijkstra optimizado con cola de prioridad std::priority_queue.
- * Complejidad: O(|E| log |V|) por fuente.
+ * @brief Algoritmo de Dijkstra con cola de prioridad (std::priority_queue).
+ * Complejidad: O(|E| log |V|) por origen.
  */
 class Dijkstra {
 public:
@@ -58,7 +39,7 @@ public:
         DijkstraResult res(n, source);
         if (source < 0 || source >= n) return res;
 
-        // min-heap ordenado por distancia acumulada: pair<dist, vertex_idx>
+        // Cola de mínimos ordenada por distancia acumulada: pair<distancia, nodo>
         using QueueElement = std::pair<double, int>;
         std::priority_queue<QueueElement, std::vector<QueueElement>, std::greater<QueueElement>> pq;
 
@@ -71,7 +52,7 @@ public:
             auto [d, u] = pq.top();
             pq.pop();
 
-            // Descartar entradas obsoletas (lazy deletion en heap)
+            // Entrada vieja: el nodo ya se sacó antes con una distancia menor
             if (d > res.dist[u] + EPS) {
                 continue;
             }
@@ -91,34 +72,6 @@ public:
         }
 
         return res;
-    }
-
-    /**
-     * @brief Construye la Matriz de Distancias Reducida (Grafo de Misión GM) entre nodos clave K = {D} ∪ C ∪ S.
-     * Fase 1 del desacoplamiento arquitectural.
-     * Complejidad: O(|K| * |E| log |V|).
-     * @param graph Grafo de visibilidad construido.
-     * @param keyIndices Índices de los nodos clave a interconectar.
-     * @return Matriz |K| x |K| con los costos geodésicos mínimos libres de colisiones.
-     */
-    static std::vector<std::vector<double>> buildReducedCostMatrix(
-        const VisibilityGraph& graph,
-        const std::vector<int>& keyIndices)
-    {
-        int k = static_cast<int>(keyIndices.size());
-        std::vector<std::vector<double>> costMatrix(k, std::vector<double>(k, INF));
-
-        for (int i = 0; i < k; ++i) {
-            int srcNode = keyIndices[i];
-            DijkstraResult sssp = run(graph, srcNode);
-
-            for (int j = 0; j < k; ++j) {
-                int targetNode = keyIndices[j];
-                costMatrix[i][j] = sssp.dist[targetNode];
-            }
-        }
-
-        return costMatrix;
     }
 };
 

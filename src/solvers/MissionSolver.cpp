@@ -49,14 +49,13 @@ MissionSolver::MissionSolver(const Scenario& scenario)
       constructionStart_(Clock::now()),
       mission_(scenario),
       network_(mission_, scenario.battery) {
-    // Exclusiones (decisión 11): primero los que separan los obstáculos, luego los de batería.
+    // Exclusiones (docs/decisiones.md §1): primero los que separan los obstáculos, luego los de batería.
     for (int c = 0; c < mission_.numClients(); ++c) {
         int key = mission_.clientKey(c);
-        std::string label = mission_.graph().getNode(key).name;
         if (!mission_.isConnectedToDepot(key)) {
-            excluded_.push_back({label, "OBSTACLES"});
+            excluded_.push_back({mission_.label(key), "OBSTACLES"});
         } else if (!network_.canServe(key)) {
-            excluded_.push_back({label, "BATTERY"});
+            excluded_.push_back({mission_.label(key), "BATTERY"});
         } else {
             servable_.push_back(key);
         }
@@ -138,7 +137,7 @@ Route MissionSolver::solve(Algorithm algorithm) const {
     route.cost = plan.cost;
     route.recharges = plan.recharges;
     for (int key : plan.keySequence) {
-        route.order.push_back(mission_.graph().getNode(key).name);
+        route.order.push_back(mission_.label(key));
     }
     route.path = expandPath(plan.keySequence);
 

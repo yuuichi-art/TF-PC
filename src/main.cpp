@@ -85,8 +85,6 @@ void printBanner() {
 }
 
 void printScenarioSummary(const Scenario& s) {
-    // Formato normal de números (otras pantallas dejan activo std::fixed): la batería es entera.
-    std::cout << std::defaultfloat << std::setprecision(6);
     std::cout << "  Escenario " << s.name << " (" << categoryName(s.category) << ", semilla " << s.seed << "): "
               << "clientes " << s.numClients() << ", estaciones " << s.numStations() << ", obstaculos "
               << s.numObstacles() << " (" << s.totalObstacleVertices() << " vertices), bateria " << s.battery << "\n";
@@ -103,10 +101,6 @@ void printLabels(const std::vector<std::string>& labels) {
         std::cout << ' ' << labels[i];
     }
     std::cout << '\n';
-}
-
-std::string labelOf(const MissionGraph& mission, int key) {
-    return mission.graph().getNode(key).name;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -153,19 +147,24 @@ void solveScenario() {
     std::cout << std::fixed << std::setprecision(2)
               << "  Grafo de mision y red de recarga listos en " << solver.preparationMs() << " ms\n";
 
+    // Opciones 1..count; el exacto solo está disponible con pocos clientes atendibles.
     const std::vector<Algorithm>& algorithms = allAlgorithms();
-    for (size_t i = 0; i < algorithms.size(); ++i) {
-        bool available = algorithms[i] != Algorithm::BRANCH_AND_BOUND || solver.supportsExact();
-        std::cout << "  " << i + 1 << ". " << algorithmName(algorithms[i])
-                  << (available ? "" : "  (no disponible: demasiados clientes para el exacto)") << '\n';
+    int count = static_cast<int>(algorithms.size());
+    auto available = [&](int option) {
+        return algorithms[option - 1] != Algorithm::BRANCH_AND_BOUND || solver.supportsExact();
+    };
+    for (int option = 1; option <= count; ++option) {
+        std::cout << "  " << option << ". " << algorithmName(algorithms[option - 1])
+                  << (available(option) ? "" : "  (no disponible: demasiados clientes para el exacto)") << '\n';
     }
-    int defaultChoice = solver.supportsExact() ? 1 : static_cast<int>(algorithms.size());
-    int choice = askNumber("Algoritmo", defaultChoice, 1, static_cast<int>(algorithms.size()));
-    while (algorithms[choice - 1] == Algorithm::BRANCH_AND_BOUND && !solver.supportsExact() && !inputClosed) {
+    // El valor por defecto siempre está disponible (el exacto o la búsqueda local iterada), así que el
+    // bucle termina aunque se cierre la entrada: askNumber devuelve entonces ese valor.
+    int defaultChoice = solver.supportsExact() ? 1 : count;
+    int choice = askNumber("Algoritmo", defaultChoice, 1, count);
+    while (!available(choice)) {
         std::cout << "  El exacto no esta disponible para este escenario.\n";
-        choice = askNumber("Algoritmo", defaultChoice, 1, static_cast<int>(algorithms.size()));
+        choice = askNumber("Algoritmo", defaultChoice, 1, count);
     }
-    if (algorithms[choice - 1] == Algorithm::BRANCH_AND_BOUND && !solver.supportsExact()) choice = defaultChoice;
 
     Route route = solver.solve(algorithms[choice - 1]);
     CategoryLimits limits = limitsFor(scenario.category);
@@ -263,14 +262,17 @@ void analyzeNetwork() {
     Scenario scenario = ScenarioIO::load(path);
     printScenarioSummary(scenario);
 
-    MissionGraph mission(scenario);
-    ChargingNetwork network(mission, scenario.battery);
+    // El solver prepara el grafo de misión y la red de recarga, y clasifica a los excluidos.
+    MissionSolver solver(scenario);
+    const MissionGraph& mission = solver.mission();
+    const ChargingNetwork& network = solver.network();
     std::cout << std::fixed << std::setprecision(2);
 
     // Alcance de la red con la batería del escenario (DFS desde la base).
     std::vector<std::string> unreachable;
     for (int s = 0; s < mission.numStations(); ++s) {
-        if (!network.isReachable(mission.stationKey(s))) unreachable.push_back(labelOf(mission, mission.stationKey(s)));
+        int key = mission.stationKey(s);
+        if (!network.isReachable(key)) unreachable.push_back(mission.label(key));
     }
     std::cout << "  Estaciones alcanzables desde la base: " << mission.numStations() - unreachable.size()
               << " de " << mission.numStations() << '\n';
@@ -281,7 +283,7 @@ void analyzeNetwork() {
 
     // Estaciones críticas: puntos de articulación (Tarjan).
     std::vector<std::string> critical;
-    for (int key : network.criticalStations()) critical.push_back(labelOf(mission, key));
+    for (int key : network.criticalStations()) critical.push_back(mission.label(key));
     std::cout << "  Estaciones criticas (puntos de articulacion): ";
     if (critical.empty()) {
         std::cout << "ninguna\n";
@@ -296,7 +298,7 @@ void analyzeNetwork() {
     for (size_t i = 1; i < nodes.size(); ++i) {
         if (tree.parent[i] < 0) continue;
         int from = nodes[tree.parent[i]];
-        std::cout << "    " << labelOf(mission, from) << " - " << labelOf(mission, nodes[i])
+        std::cout << "    " << mission.label(from) << " - " << mission.label(nodes[i])
                   << "  " << mission.distance(from, nodes[i]) << '\n';
     }
 
@@ -306,12 +308,11 @@ void analyzeNetwork() {
               << " (el escenario tiene " << scenario.battery << ")\n";
 
     std::vector<std::string> byObstacles, byBattery;
-    for (int c = 0; c < mission.numClients(); ++c) {
-        int key = mission.clientKey(c);
-        if (!mission.isConnectedToDepot(key)) {
-            byObstacles.push_back(labelOf(mission, key));
-        } else if (!network.canServe(key)) {
-            byBattery.push_back(labelOf(mission, key));
+    for (const ExcludedClient& client : solver.excluded()) {
+        if (client.reason == "OBSTACLES") {
+            byObstacles.push_back(client.label);
+        } else {
+            byBattery.push_back(client.label);
         }
     }
     std::cout << "  Clientes separados por obstaculos: " << byObstacles.size();
@@ -337,6 +338,8 @@ int main() {
                   << "  0. Salir\n";
         int option = askNumber("Opcion", 0, 0, 4);
         if (option == 0) break;
+        // Cada opción empieza con el formato normal de números: las otras dejan std::fixed activo.
+        std::cout << std::defaultfloat << std::setprecision(6);
         try {
             if (option == 1) generateDatasets();
             if (option == 2) solveScenario();
