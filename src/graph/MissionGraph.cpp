@@ -9,12 +9,12 @@ namespace geodrone {
 MissionGraph::MissionGraph(const Scenario& scenario)
     : numStations_(scenario.numStations()), numClients_(scenario.numClients()) {
     // Primero los nodos clave, en el orden base, estaciones, clientes; después los obstáculos.
-    graph_.setDepot(scenario.depot, "D0");
+    graph_.addNode(scenario.depot, NodeType::DEPOT, "D0");
     for (int i = 0; i < numStations_; ++i) {
-        graph_.addChargingStation(scenario.stations[i], "S" + std::to_string(i + 1));
+        graph_.addNode(scenario.stations[i], NodeType::CHARGING_STATION, "S" + std::to_string(i + 1));
     }
     for (int i = 0; i < numClients_; ++i) {
-        graph_.addClient(scenario.clients[i], "C" + std::to_string(i + 1));
+        graph_.addNode(scenario.clients[i], NodeType::CLIENT, "C" + std::to_string(i + 1));
     }
     for (const Polygon& poly : scenario.obstacles) {
         graph_.addObstacle(poly);

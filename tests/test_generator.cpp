@@ -48,7 +48,8 @@ bool polygonsTouch(const Polygon& a, const Polygon& b) {
             if (GeometryUtils::segmentsIntersect(ea, eb)) return true;
         }
     }
-    return GeometryUtils::isPointInsideOrBoundary(a[0], b) || GeometryUtils::isPointInsideOrBoundary(b[0], a);
+    return GeometryUtils::pointInPolygon(a[0], b) != PointLocation::OUTSIDE ||
+           GeometryUtils::pointInPolygon(b[0], a) != PointLocation::OUTSIDE;
 }
 
 void testSameSeedSameScenario() {

@@ -1,4 +1,5 @@
 #include "DatasetGenerator.hpp"
+#include "Random.hpp"
 #include "ScenarioIO.hpp"
 #include "../geometry/ConvexHull.hpp"
 #include "../geometry/GeometryUtils.hpp"
@@ -17,15 +18,6 @@
 namespace geodrone {
 
 namespace {
-
-// Entero uniforme en [lo, hi]. Se usa el módulo en lugar de std::uniform_int_distribution
-// porque la salida de mt19937_64 está fijada por el estándar y la de la distribución no:
-// así una semilla produce el mismo escenario con cualquier compilador.
-// El sesgo del módulo es despreciable con rangos de miles frente a 2^64.
-long long randomInt(std::mt19937_64& rng, long long lo, long long hi) {
-    unsigned long long range = static_cast<unsigned long long>(hi - lo) + 1ULL;
-    return lo + static_cast<long long>(rng() % range);
-}
 
 // Obstáculos convexos sin solape. El área se divide en una cuadrícula de side x side celdas
 // (unas el doble que obstáculos, para dejar espacio libre) y cada obstáculo ocupa una celda

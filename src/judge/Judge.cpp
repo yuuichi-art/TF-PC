@@ -80,6 +80,7 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
     double length = 0.0;
     int recharges = 0;
     std::vector<int> visits(scenario.numClients(), 0);
+    std::vector<std::string> keyLabels;     // Nodos clave de la trayectoria, para compararlos con ORDER
 
     for (size_t i = 0; i < route.path.size(); ++i) {
         const RoutePoint& p = route.path[i];
@@ -90,6 +91,7 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
             if (p.point != pointOf(scenario, type, number)) {
                 return fail(p.label + " no esta en las coordenadas del escenario");
             }
+            keyLabels.push_back(p.label);
         }
         if (i == 0) continue;
 
@@ -132,6 +134,7 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
         return fail("el costo informado no coincide con la trayectoria");
     }
     if (recharges != route.recharges) return fail("las recargas informadas no coinciden con la trayectoria");
+    if (keyLabels != route.order) return fail("el orden informado no coincide con la trayectoria");
     return {};
 }
 
@@ -154,6 +157,81 @@ std::vector<std::string> findScenarioFiles(const std::string& folder) {
     return files;
 }
 
+namespace {
+
+// Resuelve un escenario con cada algoritmo, guarda y verifica cada ruta, y le da veredicto y gap.
+std::vector<JudgeRow> judgeScenario(const Scenario& s, const std::string& routesFolder) {
+    MissionSolver solver(s);
+    bool smallCase = s.category == DatasetCategory::SMALL || s.category == DatasetCategory::ADVERSARIAL;
+
+    std::vector<JudgeRow> rows;
+    std::vector<bool> valid;
+    for (Algorithm algorithm : allAlgorithms()) {
+        if (algorithm == Algorithm::BRANCH_AND_BOUND && !(smallCase && solver.supportsExact())) continue;
+        Route route = solver.solve(algorithm);
+        Exporter::saveRoute(route, routesFolder + "/" + route.scenario + "_" + route.algorithm + ".txt");
+        VerificationResult check = verifyRoute(s, solver, route);
+
+        JudgeRow row;
+        row.scenario = s.name;
+        row.category = s.category;
+        row.clients = s.numClients();
+        row.algorithm = route.algorithm;
+        row.problem = check.problem;
+        row.cost = route.cost;
+        row.recharges = route.recharges;
+        row.excluded = static_cast<int>(route.excluded.size());
+        row.timeMs = route.totalMs();
+        rows.push_back(row);
+        valid.push_back(check.valid);
+    }
+
+    // Memoria pico al terminar el caso; los veredictos se dan después de medirla.
+    double memory = peakMemoryMB();
+    CategoryLimits limits = limitsFor(s.category);
+    double best = INF;
+    for (size_t i = 0; i < rows.size(); ++i) {
+        rows[i].memoryMB = memory;
+        rows[i].verdict = verdictFor(valid[i], rows[i].timeMs, memory, limits);
+        if (rows[i].verdict == "OK") best = std::min(best, rows[i].cost);
+    }
+
+    // Gap contra la mejor ruta OK y contra la cota inferior: el árbol de expansión mínima de la
+    // base y los clientes atendibles.
+    std::vector<int> nodes = {solver.mission().depotKey()};
+    nodes.insert(nodes.end(), solver.servableClients().begin(), solver.servableClients().end());
+    double bound = primMst(solver.mission().distances(), nodes).cost;
+    for (JudgeRow& row : rows) {
+        bool isOk = row.verdict == "OK";
+        row.gapBest = isOk ? percentOver(row.cost, best) : NOT_AVAILABLE;
+        row.gapBound = isOk ? percentOver(row.cost, bound) : NOT_AVAILABLE;
+    }
+    return rows;
+}
+
+// Avance en consola: una línea por caso y el motivo de cada ruta que no dio OK.
+void printCase(std::ostream& log, size_t number, size_t total, const Scenario& s, const std::vector<JudgeRow>& rows) {
+    int ok = 0;
+    double best = INF;
+    for (const JudgeRow& row : rows) {
+        if (row.verdict == "OK") {
+            ++ok;
+            best = std::min(best, row.cost);
+        }
+    }
+    log << "  [" << std::setw(2) << number << "/" << total << "] " << std::left << std::setw(26) << s.name
+        << std::right << std::setw(5) << s.numClients() << " clientes  " << ok << "/" << rows.size()
+        << " OK  mejor " << std::fixed << std::setprecision(2) << best << "\n" << std::flush;
+    for (const JudgeRow& row : rows) {
+        if (row.verdict != "OK") {
+            log << "         " << row.algorithm << ": " << row.verdict
+                << (row.problem.empty() ? "" : " (" + row.problem + ")") << "\n";
+        }
+    }
+}
+
+} // namespace
+
 std::vector<JudgeRow> run(const std::vector<std::string>& scenarioFiles, const std::string& routesFolder,
                           std::ostream& log) {
     std::vector<Scenario> scenarios;
@@ -162,64 +240,9 @@ std::vector<JudgeRow> run(const std::vector<std::string>& scenarioFiles, const s
                      [](const Scenario& a, const Scenario& b) { return sizeOf(a) < sizeOf(b); });
 
     std::vector<JudgeRow> rows;
-    for (size_t index = 0; index < scenarios.size(); ++index) {
-        const Scenario& s = scenarios[index];
-        MissionSolver solver(s);
-        CategoryLimits limits = limitsFor(s.category);
-        bool smallCase = s.category == DatasetCategory::SMALL || s.category == DatasetCategory::ADVERSARIAL;
-
-        // Cota inferior del caso: árbol de expansión mínima de la base y los clientes atendibles.
-        std::vector<int> nodes = {solver.mission().depotKey()};
-        nodes.insert(nodes.end(), solver.servableClients().begin(), solver.servableClients().end());
-        double bound = primMst(solver.mission().distances(), nodes).cost;
-
-        std::vector<JudgeRow> caseRows;
-        std::vector<bool> valid;
-        for (Algorithm algorithm : allAlgorithms()) {
-            if (algorithm == Algorithm::BRANCH_AND_BOUND && !(smallCase && solver.supportsExact())) continue;
-            Route route = solver.solve(algorithm);
-            Exporter::saveRoute(route, routesFolder + "/" + route.scenario + "_" + route.algorithm + ".txt");
-            VerificationResult check = verifyRoute(s, solver, route);
-
-            JudgeRow row;
-            row.scenario = s.name;
-            row.category = s.category;
-            row.clients = s.numClients();
-            row.algorithm = route.algorithm;
-            row.problem = check.problem;
-            row.cost = route.cost;
-            row.recharges = route.recharges;
-            row.excluded = static_cast<int>(route.excluded.size());
-            row.timeMs = route.totalMs();
-            caseRows.push_back(row);
-            valid.push_back(check.valid);
-        }
-
-        // Memoria pico al terminar el caso; los veredictos se dan después de medirla.
-        double memory = peakMemoryMB();
-        double best = INF;
-        for (size_t i = 0; i < caseRows.size(); ++i) {
-            caseRows[i].memoryMB = memory;
-            caseRows[i].verdict = verdictFor(valid[i], caseRows[i].timeMs, memory, limits);
-            if (caseRows[i].verdict == "OK") best = std::min(best, caseRows[i].cost);
-        }
-        int ok = 0;
-        for (JudgeRow& row : caseRows) {
-            bool isOk = row.verdict == "OK";
-            ok += isOk ? 1 : 0;
-            row.gapBest = isOk ? percentOver(row.cost, best) : NOT_AVAILABLE;
-            row.gapBound = isOk ? percentOver(row.cost, bound) : NOT_AVAILABLE;
-        }
-
-        log << "  [" << std::setw(2) << index + 1 << "/" << scenarios.size() << "] " << std::left << std::setw(26)
-            << s.name << std::right << std::setw(5) << s.numClients() << " clientes  " << ok << "/" << caseRows.size()
-            << " OK  mejor " << std::fixed << std::setprecision(2) << best << "\n" << std::flush;
-        for (const JudgeRow& row : caseRows) {
-            if (row.verdict != "OK") {
-                log << "         " << row.algorithm << ": " << row.verdict
-                    << (row.problem.empty() ? "" : " (" + row.problem + ")") << "\n";
-            }
-        }
+    for (size_t i = 0; i < scenarios.size(); ++i) {
+        std::vector<JudgeRow> caseRows = judgeScenario(scenarios[i], routesFolder);
+        printCase(log, i + 1, scenarios.size(), scenarios[i], caseRows);
         rows.insert(rows.end(), caseRows.begin(), caseRows.end());
     }
     return rows;

@@ -261,8 +261,7 @@ void write(const Scenario& scenario, std::ostream& out) {
     }
 }
 
-void save(const Scenario& scenario, const std::string& path) {
-    checkName(scenario.name);   // Antes de crear el archivo, para no dejarlo vacío
+std::ofstream openForWriting(const std::string& path) {
     std::filesystem::path filePath(path);
     if (filePath.has_parent_path()) {
         std::filesystem::create_directories(filePath.parent_path());
@@ -271,6 +270,12 @@ void save(const Scenario& scenario, const std::string& path) {
     if (!file) {
         throw std::runtime_error("no se pudo crear el archivo " + path);
     }
+    return file;
+}
+
+void save(const Scenario& scenario, const std::string& path) {
+    checkName(scenario.name);   // Antes de crear el archivo, para no dejarlo vacío
+    std::ofstream file = openForWriting(path);
     write(scenario, file);
     if (!file) {
         throw std::runtime_error("error al escribir el archivo " + path);

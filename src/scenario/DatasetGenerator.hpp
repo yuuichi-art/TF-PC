@@ -27,8 +27,8 @@ struct CategorySpec {
  * @brief Generador determinista y reproducible de escenarios con obstáculos, estaciones y clientes.
  *
  * - Usa std::mt19937_64 con la semilla recibida: la misma semilla da el mismo escenario.
- * - Coordenadas enteras dentro del área (decisión 1).
- * - Obstáculos convexos sin solape (decisión 2): el área se divide en celdas y cada
+ * - Coordenadas enteras dentro del área (docs/decisiones.md §2).
+ * - Obstáculos convexos sin solape (§2): el área se divide en celdas y cada
  *   obstáculo es la envolvente convexa de puntos aleatorios dentro de una celda distinta.
  * - Base, estaciones y clientes en puntos libres: fuera de todo obstáculo y sin repetir.
  *

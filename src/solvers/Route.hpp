@@ -18,7 +18,7 @@ struct RoutePoint {
 };
 
 /**
- * @brief Cliente que quedó fuera de la misión (decisión 11) y por qué.
+ * @brief Cliente que quedó fuera de la misión (docs/decisiones.md §1) y por qué.
  */
 struct ExcludedClient {
     std::string label;      // "C3"

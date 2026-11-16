@@ -4,6 +4,7 @@
 #include "VisibilityGraph.hpp"
 #include "../scenario/Scenario.hpp"
 
+#include <string>
 #include <vector>
 
 namespace geodrone {
@@ -34,8 +35,10 @@ public:
     int stationKey(int station) const { return 1 + station; }
     int clientKey(int client) const { return 1 + numStations_ + client; }
 
-    NodeType keyType(int key) const { return graph_.getNode(key).type; }
     const Point& keyPoint(int key) const { return graph_.getNode(key).pt; }
+
+    // Etiqueta del nodo clave: "D0", "S1".."S<S>" o "C1".."C<N>", como en los archivos de ruta.
+    const std::string& label(int key) const { return graph_.getNode(key).name; }
 
     // Distancia de vuelo mínima entre dos nodos clave (infinito si no hay camino).
     double distance(int fromKey, int toKey) const { return dist_[fromKey][toKey]; }

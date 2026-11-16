@@ -36,7 +36,7 @@ Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/dec
 ## 3. Arquitectura del Repositorio
 
 ```text
-GeoDroneChallenge/
+TF-PC/
 ├── CMakeLists.txt              # Configuración modular de compilación C++17 (-O3, CTest)
 ├── .gitignore                  # Exclusiones de build, binarios y editores
 ├── README.md                   # Documentación técnica del sistema
@@ -47,15 +47,15 @@ GeoDroneChallenge/
 │   └── adversarial/            # Casos adversariales hechos a mano (ver su README)
 ├── src/
 │   ├── geometry/               # Módulo de Geometría Computacional Propia
-│   │   ├── Point.hpp           # Vector 2D, aritmética, producto cruz, dot, dist, EPS
+│   │   ├── Point.hpp           # Punto 2D: aritmética, producto cruz, distancia, EPS e INF
 │   │   ├── Segment.hpp         # Segmentos, longitud y punto medio
 │   │   ├── Polygon.hpp         # Polígonos de exclusión, aristas, área Shoelace
 │   │   ├── GeometryUtils.hpp   # Declaraciones de CCW, intersección y Ray Casting
-│   │   ├── GeometryUtils.cpp   # Implementaciones optimizadas sin dependencias externas
+│   │   ├── GeometryUtils.cpp   # Implementación, incluida la validación de tramos (RF04)
 │   │   └── ConvexHull.hpp      # Envolvente convexa (monotone chain)
 │   ├── graph/                  # Módulo de Grafos y Navegación
 │   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
-│   │   ├── Dijkstra.hpp        # SSSP con std::priority_queue y Matriz Reducida
+│   │   ├── Dijkstra.hpp        # Dijkstra desde un origen con cola de prioridad
 │   │   ├── MissionGraph.hpp    # Grafo de misión: matriz, caminos reales y DFS desde la base
 │   │   ├── MissionGraph.cpp
 │   │   ├── Mst.hpp             # Árbol de expansión mínima (Prim sobre matriz)
@@ -65,6 +65,7 @@ GeoDroneChallenge/
 │   │   ├── Scenario.hpp        # Escenario, categorías y límites competitivos
 │   │   ├── ScenarioIO.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
 │   │   ├── ScenarioIO.cpp
+│   │   ├── Random.hpp          # Entero aleatorio reproducible con cualquier compilador
 │   │   ├── DatasetGenerator.hpp# Generador reproducible por semilla (mt19937_64)
 │   │   └── DatasetGenerator.cpp
 │   ├── solvers/                # Motores de optimización

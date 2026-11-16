@@ -111,6 +111,10 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     expectRejected(hand, solver, r, "recargas informadas");
 
     r = good;
+    std::swap(r.order[1], r.order[2]);                  // ORDER no sigue a la trayectoria
+    expectRejected(hand, solver, r, "orden informado");
+
+    r = good;
     r.path[1].label = "X9";
     expectRejected(hand, solver, r, "etiqueta desconocida");
 

@@ -13,13 +13,6 @@ int ccw(const Point& a, const Point& b, const Point& c) {
     return 0;                  // Colineal
 }
 
-Orientation getOrientation(const Point& a, const Point& b, const Point& c) {
-    int res = ccw(a, b, c);
-    if (res > 0) return Orientation::COUNTER_CLOCKWISE;
-    if (res < 0) return Orientation::CLOCKWISE;
-    return Orientation::COLLINEAR;
-}
-
 bool onSegment(const Point& p, const Point& a, const Point& b) {
     // Verificar colinealidad con tolerancia EPS
     if (std::abs((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)) > EPS) {
@@ -113,11 +106,6 @@ PointLocation pointInPolygon(const Point& pt, const Polygon& poly) {
 
 bool isPointStrictlyInside(const Point& pt, const Polygon& poly) {
     return pointInPolygon(pt, poly) == PointLocation::INSIDE;
-}
-
-bool isPointInsideOrBoundary(const Point& pt, const Polygon& poly) {
-    PointLocation loc = pointInPolygon(pt, poly);
-    return loc == PointLocation::INSIDE || loc == PointLocation::BOUNDARY;
 }
 
 bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {

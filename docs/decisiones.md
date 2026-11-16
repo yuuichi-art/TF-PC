@@ -109,12 +109,12 @@ Detalles del juez:
 - Toma los `.txt` de una carpeta (por defecto `data/generated/`) y, si se pide, los de `data/adversarial/`.
 - El exacto corre en Small y en los adversariales; las demás técnicas, en todos los casos.
 - El grafo de misión se prepara una vez por caso; el tiempo de cada ruta es preparación + resolución.
-- La verificación usa solo la ruta, el escenario y la geometría, y comprueba además que cada punto etiquetado está en las coordenadas del escenario y que el costo y las recargas informados coinciden. Cada exclusión se confirma con el grafo de misión (DFS para `OBSTACLES`, 2·dRecarga > B para `BATTERY`).
+- La verificación usa solo la ruta, el escenario y la geometría, y comprueba además que cada punto etiquetado está en las coordenadas del escenario y que el costo, las recargas y el orden informados coinciden con la trayectoria. Cada exclusión se confirma con el grafo de misión (DFS para `OBSTACLES`, 2·dRecarga > B para `BATTERY`).
 - Precedencia de veredictos: WA si la ruta no es válida; si es válida, TLE si excede el tiempo, MLE si excede la memoria y OK en otro caso.
 - `gap_mejor` es el porcentaje sobre la ruta OK más corta del caso. `gap_cota` es el porcentaje sobre el árbol de expansión mínima de la base y los clientes atendibles, que nunca supera al óptimo; es un máximo garantizado de cuánto se aleja la ruta del óptimo.
 - Salidas: `output/judge/results.csv`, `output/judge/ranking.csv` y una ruta por caso y algoritmo en `output/judge/routes/`.
 
-Consecuencia observada de la decisión 5 (orden primero, recargas después): el orden óptimo del exacto no siempre da la ruta más corta una vez insertadas las recargas. En `small_3`, el exacto queda en 4583,81 y la 2-aproximación + 2-opt en 4367,91: su orden, algo más largo, necesita desvíos más cortos para recargar.
+Consecuencia observada de optimizar primero el orden y después insertar las recargas (§3): el orden óptimo del exacto no siempre da la ruta más corta una vez insertadas las recargas. En `small_3`, el exacto queda en 4583,81 y la 2-aproximación + 2-opt en 4367,91: su orden, algo más largo, necesita desvíos más cortos para recargar.
 
 ## 6. Formatos de archivo
 

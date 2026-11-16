@@ -29,7 +29,7 @@ struct ExactResult {
  * Para encontrar pronto una buena ruta, y así podar más, los hijos se exploran del cliente
  * más cercano al más lejano.
  *
- * Optimiza el orden sobre la matriz de distancias (decisión 5): las recargas se insertan
+ * Optimiza el orden sobre la matriz de distancias (docs/decisiones.md §3): las recargas se insertan
  * después, así que el óptimo es el del orden, no el de la ruta con recargas.
  *
  * Complejidad: O(n! · n^2) en el peor caso (n! órdenes, Prim O(n^2) por nodo); la poda reduce

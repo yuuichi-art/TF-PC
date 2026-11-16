@@ -1,5 +1,6 @@
 #include "HeuristicSolver.hpp"
 #include "../graph/Mst.hpp"
+#include "../scenario/Random.hpp"
 
 #include <algorithm>
 #include <random>
@@ -11,13 +12,6 @@ namespace {
 
 // Mejora mínima para aplicar un intercambio: evita ciclos infinitos por errores de redondeo.
 const double MIN_IMPROVEMENT = 1e-7;
-
-// Entero uniforme en [lo, hi], igual que en el generador: el módulo sobre mt19937_64 da la
-// misma secuencia con cualquier compilador (std::uniform_int_distribution no lo garantiza).
-int randomInt(std::mt19937_64& rng, int lo, int hi) {
-    unsigned long long range = static_cast<unsigned long long>(hi - lo) + 1ULL;
-    return lo + static_cast<int>(rng() % range);
-}
 
 // Preorden del árbol: se visita un nodo y luego sus hijos, del más cercano al más lejano.
 void preorder(int node, const std::vector<std::vector<int>>& children, const std::vector<int>& nodes,
@@ -31,9 +25,9 @@ void preorder(int node, const std::vector<std::vector<int>>& children, const std
 // Double-bridge: corta en tres puntos al azar (A | B | C | D) y arma A C B D.
 std::vector<int> doubleBridge(const std::vector<int>& order, std::mt19937_64& rng) {
     int n = static_cast<int>(order.size());
-    int p1 = randomInt(rng, 1, n - 3);
-    int p2 = randomInt(rng, p1 + 1, n - 2);
-    int p3 = randomInt(rng, p2 + 1, n - 1);
+    int p1 = static_cast<int>(randomInt(rng, 1, n - 3));
+    int p2 = static_cast<int>(randomInt(rng, p1 + 1, n - 2));
+    int p3 = static_cast<int>(randomInt(rng, p2 + 1, n - 1));
     std::vector<int> result(order.begin(), order.begin() + p1);                  // A
     result.insert(result.end(), order.begin() + p2, order.begin() + p3);         // C
     result.insert(result.end(), order.begin() + p1, order.begin() + p2);         // B
@@ -159,7 +153,6 @@ IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int 
         if (cost < bestCost - MIN_IMPROVEMENT) {
             result.order = std::move(candidate);
             bestCost = cost;
-            ++result.improvements;
         }
     }
     return result;

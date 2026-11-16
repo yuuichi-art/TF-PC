@@ -3,6 +3,7 @@
 
 #include "Scenario.hpp"
 
+#include <fstream>
 #include <istream>
 #include <ostream>
 #include <string>
@@ -40,6 +41,12 @@ namespace ScenarioIO {
      * puede escribir.
      */
     void save(const Scenario& scenario, const std::string& path);
+
+    /**
+     * @brief Crea el archivo para escribir, con las carpetas que falten. Lanza std::runtime_error
+     * si no se puede. La usan también las exportaciones de rutas, CSV y SVG.
+     */
+    std::ofstream openForWriting(const std::string& path);
 
 } // namespace ScenarioIO
 

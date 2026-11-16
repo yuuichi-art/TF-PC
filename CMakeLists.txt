@@ -6,7 +6,7 @@ project(GeoDroneChallenge
     LANGUAGES CXX
 )
 
-# Estándar de C++: C++17 o C++20
+# Estándar de C++17, sin extensiones del compilador
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -58,6 +58,7 @@ add_library(geodrone_core STATIC
     src/graph/ChargingNetwork.hpp
     src/graph/ChargingNetwork.cpp
     src/scenario/Scenario.hpp
+    src/scenario/Random.hpp
     src/scenario/ScenarioIO.hpp
     src/scenario/ScenarioIO.cpp
     src/scenario/DatasetGenerator.hpp

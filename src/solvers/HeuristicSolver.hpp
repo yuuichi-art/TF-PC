@@ -12,7 +12,7 @@ namespace geodrone {
  *
  * Como el solver exacto, trabajan sobre la matriz de distancias del grafo de misión y
  * devuelven las claves de los clientes en orden de visita, sin la base; las recargas se
- * insertan después (decisión 5). Todas suponen que los clientes son alcanzables.
+ * insertan después (docs/decisiones.md §3). Todas suponen que los clientes son alcanzables.
  *
  * - Constructivas: vecino más cercano (greedy) y 2-aproximación por árbol de expansión mínima.
  * - Mejora: 2-opt y búsqueda local iterada (aleatoria, con semilla).
@@ -66,7 +66,6 @@ namespace HeuristicSolver {
     struct IlsResult {
         std::vector<int> order;
         int iterations = 0;          // Iteraciones realizadas
-        int improvements = 0;        // Iteraciones que mejoraron la ruta
         bool stoppedByTime = false;
     };
 
