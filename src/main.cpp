@@ -1,11 +1,11 @@
-#include "graph/ChargingNetwork.hpp"
-#include "graph/MissionGraph.hpp"
-#include "judge/Judge.hpp"
-#include "judge/MemoryUsage.hpp"
-#include "report/Exporter.hpp"
-#include "scenario/DatasetGenerator.hpp"
-#include "scenario/ScenarioIO.hpp"
-#include "solvers/MissionSolver.hpp"
+#include "grafo/RedRecarga.hpp"
+#include "grafo/GrafoMision.hpp"
+#include "juez/Juez.hpp"
+#include "juez/UsoMemoria.hpp"
+#include "exportacion/Exportador.hpp"
+#include "escenario/GeneradorDatasets.hpp"
+#include "escenario/ArchivoEscenario.hpp"
+#include "solvers/SolverMision.hpp"
 
 #include <iomanip>
 #include <iostream>

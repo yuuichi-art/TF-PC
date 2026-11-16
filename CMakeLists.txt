@@ -43,113 +43,113 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Librería núcleo (Core Library)
-add_library(geodrone_core STATIC
-    src/geometry/Point.hpp
-    src/geometry/Segment.hpp
-    src/geometry/Polygon.hpp
-    src/geometry/GeometryUtils.hpp
-    src/geometry/GeometryUtils.cpp
-    src/geometry/ConvexHull.hpp
-    src/graph/VisibilityGraph.hpp
-    src/graph/Dijkstra.hpp
-    src/graph/MissionGraph.hpp
-    src/graph/MissionGraph.cpp
-    src/graph/Mst.hpp
-    src/graph/ChargingNetwork.hpp
-    src/graph/ChargingNetwork.cpp
-    src/scenario/Scenario.hpp
-    src/scenario/Random.hpp
-    src/scenario/ScenarioIO.hpp
-    src/scenario/ScenarioIO.cpp
-    src/scenario/DatasetGenerator.hpp
-    src/scenario/DatasetGenerator.cpp
-    src/solvers/ExactSolver.hpp
-    src/solvers/ExactSolver.cpp
-    src/solvers/HeuristicSolver.hpp
-    src/solvers/HeuristicSolver.cpp
-    src/solvers/RechargePlanner.hpp
-    src/solvers/RechargePlanner.cpp
-    src/solvers/Route.hpp
-    src/solvers/MissionSolver.hpp
-    src/solvers/MissionSolver.cpp
-    src/judge/MemoryUsage.hpp
-    src/judge/MemoryUsage.cpp
-    src/judge/Judge.hpp
-    src/judge/Judge.cpp
-    src/report/Exporter.hpp
-    src/report/Exporter.cpp
+add_library(geodrone_nucleo STATIC
+    src/geometria/Punto.hpp
+    src/geometria/Segmento.hpp
+    src/geometria/Poligono.hpp
+    src/geometria/Geometria.hpp
+    src/geometria/Geometria.cpp
+    src/geometria/EnvolventeConvexa.hpp
+    src/grafo/GrafoVisibilidad.hpp
+    src/grafo/Dijkstra.hpp
+    src/grafo/GrafoMision.hpp
+    src/grafo/GrafoMision.cpp
+    src/grafo/ArbolMinimo.hpp
+    src/grafo/RedRecarga.hpp
+    src/grafo/RedRecarga.cpp
+    src/escenario/Escenario.hpp
+    src/escenario/Aleatorio.hpp
+    src/escenario/ArchivoEscenario.hpp
+    src/escenario/ArchivoEscenario.cpp
+    src/escenario/GeneradorDatasets.hpp
+    src/escenario/GeneradorDatasets.cpp
+    src/solvers/SolverExacto.hpp
+    src/solvers/SolverExacto.cpp
+    src/solvers/SolverHeuristico.hpp
+    src/solvers/SolverHeuristico.cpp
+    src/solvers/PlanificadorRecargas.hpp
+    src/solvers/PlanificadorRecargas.cpp
+    src/solvers/Ruta.hpp
+    src/solvers/SolverMision.hpp
+    src/solvers/SolverMision.cpp
+    src/juez/UsoMemoria.hpp
+    src/juez/UsoMemoria.cpp
+    src/juez/Juez.hpp
+    src/juez/Juez.cpp
+    src/exportacion/Exportador.hpp
+    src/exportacion/Exportador.cpp
 )
 
-target_include_directories(geodrone_core PUBLIC
+target_include_directories(geodrone_nucleo PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Memoria pico del proceso: GetProcessMemoryInfo está en psapi en Windows.
 if(WIN32)
-    target_link_libraries(geodrone_core PUBLIC psapi)
+    target_link_libraries(geodrone_nucleo PUBLIC psapi)
 endif()
 
 # 1. Ejecutable Principal / CLI
 add_executable(geodrone
     src/main.cpp
 )
-target_link_libraries(geodrone PRIVATE geodrone_core)
+target_link_libraries(geodrone PRIVATE geodrone_nucleo)
 
 # 2. Ejecutable de Pruebas Unitarias de Geometría
-add_executable(test_geometry
-    tests/test_geometry.cpp
+add_executable(prueba_geometria
+    tests/prueba_geometria.cpp
 )
-target_link_libraries(test_geometry PRIVATE geodrone_core)
+target_link_libraries(prueba_geometria PRIVATE geodrone_nucleo)
 
 # 3. Pruebas de lectura y escritura de escenarios
-add_executable(test_scenario
-    tests/test_scenario.cpp
+add_executable(prueba_escenario
+    tests/prueba_escenario.cpp
 )
-target_link_libraries(test_scenario PRIVATE geodrone_core)
+target_link_libraries(prueba_escenario PRIVATE geodrone_nucleo)
 
 # 4. Pruebas del generador de datasets
-add_executable(test_generator
-    tests/test_generator.cpp
+add_executable(prueba_generador
+    tests/prueba_generador.cpp
 )
-target_link_libraries(test_generator PRIVATE geodrone_core)
+target_link_libraries(prueba_generador PRIVATE geodrone_nucleo)
 
 # 5. Pruebas del grafo de misión (visibilidad, Dijkstra, caminos y DFS)
-add_executable(test_graph
-    tests/test_graph.cpp
+add_executable(prueba_grafo
+    tests/prueba_grafo.cpp
 )
-target_link_libraries(test_graph PRIVATE geodrone_core)
+target_link_libraries(prueba_grafo PRIVATE geodrone_nucleo)
 
 # 6. Pruebas de la red de recarga (Prim, Tarjan, búsqueda binaria e inserción de recargas)
-add_executable(test_network
-    tests/test_network.cpp
+add_executable(prueba_red
+    tests/prueba_red.cpp
 )
-target_link_libraries(test_network PRIVATE geodrone_core)
+target_link_libraries(prueba_red PRIVATE geodrone_nucleo)
 
 # 7. Pruebas de los solvers (exacto contra fuerza bruta)
-add_executable(test_solvers
-    tests/test_solvers.cpp
+add_executable(prueba_solvers
+    tests/prueba_solvers.cpp
 )
-target_link_libraries(test_solvers PRIVATE geodrone_core)
+target_link_libraries(prueba_solvers PRIVATE geodrone_nucleo)
 
 # 8. Pruebas de la misión completa (resolver, recargas, trayectoria y exportación)
-add_executable(test_mission
-    tests/test_mission.cpp
+add_executable(prueba_mision
+    tests/prueba_mision.cpp
 )
-target_link_libraries(test_mission PRIVATE geodrone_core)
+target_link_libraries(prueba_mision PRIVATE geodrone_nucleo)
 
 # 9. Pruebas del juez (verificador, veredictos, ranking y benchmark)
-add_executable(test_judge
-    tests/test_judge.cpp
+add_executable(prueba_juez
+    tests/prueba_juez.cpp
 )
-target_link_libraries(test_judge PRIVATE geodrone_core)
+target_link_libraries(prueba_juez PRIVATE geodrone_nucleo)
 
 # Habilitar suite de tests con CTest
 enable_testing()
-add_test(NAME GeometryUnitTests COMMAND test_geometry)
-add_test(NAME ScenarioTests COMMAND test_scenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
-add_test(NAME GeneratorTests COMMAND test_generator)
-add_test(NAME GraphTests COMMAND test_graph ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
-add_test(NAME NetworkTests COMMAND test_network ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
-add_test(NAME SolverTests COMMAND test_solvers ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
-add_test(NAME MissionTests COMMAND test_mission ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
-add_test(NAME JudgeTests COMMAND test_judge ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasGeometria COMMAND prueba_geometria)
+add_test(NAME PruebasEscenario COMMAND prueba_escenario ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasGenerador COMMAND prueba_generador)
+add_test(NAME PruebasGrafo COMMAND prueba_grafo ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasRed COMMAND prueba_red ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasSolvers COMMAND prueba_solvers ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasMision COMMAND prueba_mision ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)
+add_test(NAME PruebasJuez COMMAND prueba_juez ${CMAKE_CURRENT_SOURCE_DIR}/data/adversarial)

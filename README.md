@@ -37,65 +37,66 @@ Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/dec
 
 ```text
 TF-PC/
-├── CMakeLists.txt              # Configuración modular de compilación C++17 (-O3, CTest)
-├── .gitignore                  # Exclusiones de build, binarios y editores
-├── README.md                   # Documentación técnica del sistema
+├── CMakeLists.txt                    # Configuración modular de compilación C++17 (-O3, CTest)
+├── .gitignore                        # Exclusiones de build, binarios y editores
+├── README.md                         # Documentación técnica del sistema
 ├── docs/
-│   ├── decisiones.md           # Decisiones de diseño, alcance y pendientes
-│   └── resultados/             # Benchmark final: CSV, ranking, rutas de ejemplo y hallazgos
+│   ├── decisiones.md                 # Decisiones de diseño, alcance y pendientes
+│   ├── glosario.md                   # Nombres del código: inglés anterior y español actual
+│   └── resultados/                   # Benchmark final: CSV, ranking, rutas de ejemplo y hallazgos
 ├── data/
-│   └── adversarial/            # Casos adversariales hechos a mano (ver su README)
+│   └── adversarial/                  # Casos adversariales hechos a mano (ver su README)
 ├── src/
-│   ├── geometry/               # Módulo de Geometría Computacional Propia
-│   │   ├── Point.hpp           # Punto 2D: aritmética, producto cruz, distancia, EPS e INF
-│   │   ├── Segment.hpp         # Segmentos, longitud y punto medio
-│   │   ├── Polygon.hpp         # Polígonos de exclusión, aristas, área Shoelace
-│   │   ├── GeometryUtils.hpp   # Declaraciones de CCW, intersección y Ray Casting
-│   │   ├── GeometryUtils.cpp   # Implementación, incluida la validación de tramos (RF04)
-│   │   └── ConvexHull.hpp      # Envolvente convexa (monotone chain)
-│   ├── graph/                  # Módulo de Grafos y Navegación
-│   │   ├── VisibilityGraph.hpp # Construcción del Grafo de Visibilidad G = (V, E)
-│   │   ├── Dijkstra.hpp        # Dijkstra desde un origen con cola de prioridad
-│   │   ├── MissionGraph.hpp    # Grafo de misión: matriz, caminos reales y DFS desde la base
-│   │   ├── MissionGraph.cpp
-│   │   ├── Mst.hpp             # Árbol de expansión mínima (Prim sobre matriz)
-│   │   ├── ChargingNetwork.hpp # Red de recarga: Tarjan, red mínima y autonomía mínima
-│   │   └── ChargingNetwork.cpp
-│   ├── scenario/               # Escenarios de misión
-│   │   ├── Scenario.hpp        # Escenario, categorías y límites competitivos
-│   │   ├── ScenarioIO.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
-│   │   ├── ScenarioIO.cpp
-│   │   ├── Random.hpp          # Entero aleatorio reproducible con cualquier compilador
-│   │   ├── DatasetGenerator.hpp# Generador reproducible por semilla (mt19937_64)
-│   │   └── DatasetGenerator.cpp
-│   ├── solvers/                # Motores de optimización
-│   │   ├── ExactSolver.hpp     # Branch & Bound con cota MST (Small, hasta 12 clientes)
-│   │   ├── ExactSolver.cpp
-│   │   ├── HeuristicSolver.hpp # Vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada
-│   │   ├── HeuristicSolver.cpp
-│   │   ├── RechargePlanner.hpp # Inserción de recargas sobre un orden de clientes
-│   │   ├── RechargePlanner.cpp
-│   │   ├── Route.hpp           # Ruta final: orden, trayectoria, excluidos y tiempos
-│   │   ├── MissionSolver.hpp   # Resolver un escenario completo con el algoritmo elegido
-│   │   └── MissionSolver.cpp
-│   ├── judge/                  # Juez y benchmark
-│   │   ├── MemoryUsage.hpp     # Memoria pico del proceso (GetProcessMemoryInfo)
-│   │   ├── MemoryUsage.cpp
-│   │   ├── Judge.hpp           # Verificación, veredictos, benchmark y ranking
-│   │   └── Judge.cpp
-│   ├── report/                 # Exportación de resultados
-│   │   ├── Exporter.hpp        # Ruta en TXT y SVG, resultados y ranking en CSV
-│   │   └── Exporter.cpp
-│   └── main.cpp                # Menú interactivo
+│   ├── geometria/                    # Geometría computacional propia
+│   │   ├── Punto.hpp                 # Punto 2D: aritmética, producto cruz, distancia, EPS e INF
+│   │   ├── Segmento.hpp              # Segmentos, longitud y punto medio
+│   │   ├── Poligono.hpp              # Polígonos de exclusión, aristas, área Shoelace
+│   │   ├── Geometria.hpp             # Declaraciones de CCW, intersección y Ray Casting
+│   │   ├── Geometria.cpp             # Implementación, incluida la validación de tramos (RF04)
+│   │   └── EnvolventeConvexa.hpp     # Envolvente convexa (monotone chain)
+│   ├── grafo/                        # Grafos y navegación
+│   │   ├── GrafoVisibilidad.hpp      # Construcción del grafo de visibilidad G = (V, E)
+│   │   ├── Dijkstra.hpp              # Dijkstra desde un origen con cola de prioridad
+│   │   ├── GrafoMision.hpp           # Grafo de misión: matriz, caminos reales y DFS desde la base
+│   │   ├── GrafoMision.cpp
+│   │   ├── ArbolMinimo.hpp           # Árbol de expansión mínima (Prim sobre matriz)
+│   │   ├── RedRecarga.hpp            # Red de recarga: Tarjan, red mínima y autonomía mínima
+│   │   └── RedRecarga.cpp
+│   ├── escenario/                    # Escenarios de misión
+│   │   ├── Escenario.hpp             # Escenario, categorías y límites competitivos
+│   │   ├── ArchivoEscenario.hpp      # Lectura y escritura del TXT con etiquetas en orden fijo
+│   │   ├── ArchivoEscenario.cpp
+│   │   ├── Aleatorio.hpp             # Entero aleatorio reproducible con cualquier compilador
+│   │   ├── GeneradorDatasets.hpp     # Generador reproducible por semilla (mt19937_64)
+│   │   └── GeneradorDatasets.cpp
+│   ├── solvers/                      # Motores de optimización
+│   │   ├── SolverExacto.hpp          # Branch and bound con cota MST (Small, hasta 12 clientes)
+│   │   ├── SolverExacto.cpp
+│   │   ├── SolverHeuristico.hpp      # Vecino más cercano, 2-aproximación, 2-opt y búsqueda local iterada
+│   │   ├── SolverHeuristico.cpp
+│   │   ├── PlanificadorRecargas.hpp  # Inserción de recargas sobre un orden de clientes
+│   │   ├── PlanificadorRecargas.cpp
+│   │   ├── Ruta.hpp                  # Ruta final: orden, trayectoria, excluidos y tiempos
+│   │   ├── SolverMision.hpp          # Resolver un escenario completo con el algoritmo elegido
+│   │   └── SolverMision.cpp
+│   ├── juez/                         # Juez y benchmark
+│   │   ├── UsoMemoria.hpp            # Memoria pico del proceso (GetProcessMemoryInfo)
+│   │   ├── UsoMemoria.cpp
+│   │   ├── Juez.hpp                  # Verificación, veredictos, benchmark y ranking
+│   │   └── Juez.cpp
+│   ├── exportacion/                  # Exportación de resultados
+│   │   ├── Exportador.hpp            # Ruta en TXT y SVG, resultados y ranking en CSV
+│   │   └── Exportador.cpp
+│   └── main.cpp                      # Menú interactivo
 └── tests/
-    ├── test_geometry.cpp       # Pruebas de geometría, trayectorias y envolvente convexa
-    ├── test_scenario.cpp       # Pruebas de lectura, escritura y errores de escenarios
-    ├── test_generator.cpp      # Pruebas de reproducibilidad y validez del generador
-    ├── test_graph.cpp          # Pruebas del grafo, Dijkstra, caminos y DFS
-    ├── test_network.cpp        # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
-    ├── test_solvers.cpp        # Pruebas del exacto contra fuerza bruta y de las heurísticas
-    ├── test_mission.cpp        # Pruebas de la misión completa y de la ruta exportada
-    └── test_judge.cpp          # Pruebas del verificador, veredictos, ranking y benchmark
+    ├── prueba_geometria.cpp          # Pruebas de geometría, trayectorias y envolvente convexa
+    ├── prueba_escenario.cpp          # Pruebas de lectura, escritura y errores de escenarios
+    ├── prueba_generador.cpp          # Pruebas de reproducibilidad y validez del generador
+    ├── prueba_grafo.cpp              # Pruebas del grafo, Dijkstra, caminos y DFS
+    ├── prueba_red.cpp                # Pruebas de Prim, Tarjan, búsqueda binaria y recargas
+    ├── prueba_solvers.cpp            # Pruebas del exacto contra fuerza bruta y de las heurísticas
+    ├── prueba_mision.cpp             # Pruebas de la misión completa y de la ruta exportada
+    └── prueba_juez.cpp               # Pruebas del verificador, veredictos, ranking y benchmark
 ```
 
 ---
