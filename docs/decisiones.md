@@ -211,7 +211,3 @@ El set de benchmark incluye además `extreme_max`: un Extreme con todos los rang
 - Prioridades, ventanas de tiempo y clientes opcionales.
 - Held-Karp u otro exacto adicional.
 - Un segundo ejecutable para el juez.
-
-## 9. Por definir
-
-Nada por ahora.
