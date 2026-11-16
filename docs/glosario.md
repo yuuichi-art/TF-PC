@@ -1,12 +1,12 @@
 # Glosario de nombres del código
 
-Propuesta de nombres en español para el código, para que el grupo la revise y la apruebe antes del renombrado. Cuando se apruebe, este archivo queda como referencia de los nombres viejos y los nuevos.
+Correspondencia entre los nombres anteriores del código, en inglés, y los actuales, en español. Sirve para ubicar en el código algo que se recuerde con su nombre anterior, por ejemplo al leer commits viejos. Los commits del renombrado están listados en `.git-blame-ignore-revs`; en ellos solo cambiaron nombres y la salida del programa quedó idéntica byte a byte.
 
 ## Reglas
 
 **Estilo:**
 - Sin tildes ni ñ (`tamano`, `anio`).
-- Mismo estilo de ahora:
+- El mismo estilo que tenía el código en inglés:
   - `PascalCase` para tipos;
   - `camelCase` para funciones y variables;
   - `MAYUSCULAS` para constantes y valores de `enum`;
@@ -30,7 +30,7 @@ Propuesta de nombres en español para el código, para que el grupo la revise y 
 
   El código solo cambia el nombre interno; el texto que se escribe en los archivos queda igual.
 
-**Variables locales y parámetros:** no están en este glosario. Se traducen con estas mismas reglas (`battery` → `bateria`, `position` → `posicion`) y se revisan en el diff de cada fase. Las variables de una letra (`i`, `j`, `u`, `v`, `a`, `b`) y `lo`/`hi` de la búsqueda binaria se quedan.
+**Variables locales, parámetros y pruebas:** no están en este glosario. Siguen estas mismas reglas (`battery` → `bateria`, `position` → `posicion`), y las funciones de prueba pasaron de `testX` a `probarX` (`testPrim` → `probarPrim`). Las variables de una letra (`i`, `j`, `u`, `v`, `a`, `b`) y `lo`/`hi` de la búsqueda binaria se quedaron.
 
 ## Carpetas y archivos
 
@@ -221,9 +221,9 @@ Las guardas de inclusión siguen el nombre del archivo (`GEODRONE_GRAFOMISION_HP
 | `writeRankingCsv`, `saveRankingCsv` | `escribirRankingCsv`, `guardarRankingCsv` |
 | `writeSvg`, `saveSvg` | `escribirSvg`, `guardarSvg` |
 
-## Funciones internas (revisión opcional)
+## Funciones internas
 
-Son nombres que solo se usan dentro de un archivo. Se listan para que se vean coherentes con el resto.
+Son nombres que solo se usan dentro de un archivo.
 
 | Archivo | Actual → Nuevo |
 | --- | --- |

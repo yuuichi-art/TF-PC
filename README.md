@@ -39,6 +39,7 @@ Las decisiones de diseño y el alcance están en [`docs/decisiones.md`](docs/dec
 TF-PC/
 ├── CMakeLists.txt                    # Configuración modular de compilación C++17 (-O3, CTest)
 ├── .gitignore                        # Exclusiones de build, binarios y editores
+├── .git-blame-ignore-revs            # Commits de renombrado que git blame debe saltar
 ├── README.md                         # Documentación técnica del sistema
 ├── docs/
 │   ├── decisiones.md                 # Decisiones de diseño, alcance y pendientes
@@ -118,6 +119,7 @@ TF-PC/
    - **Extreme:** $201 \le N \le 1000$, $12 \le S \le 25$, $50 \le M \le 150$, $\sum |P_k| \le 1500$ | TL: 5.0s, ML: 512 MB.
 
    $N$ = clientes, $S$ = estaciones, $M$ = obstáculos, $\sum |P_k|$ = total de vértices de obstáculos.
+6. **Código en español:** identificadores en español sin tildes ni ñ, salvo los términos que la guía usa en inglés (*solver*, *dataset*, *benchmark*, *ranking*, *gap*) y los nombres propios de algoritmos (Dijkstra, Prim, Tarjan). Los formatos de archivo no se traducen. La tabla con los nombres anteriores en inglés está en [`docs/glosario.md`](docs/glosario.md).
 
 ---
 
@@ -161,3 +163,11 @@ cmake --build build-debug
 ```
 
 Si no se indica `CMAKE_BUILD_TYPE`, se usa Release.
+
+### Historial con `git blame`
+
+El código se pasó de inglés a español en commits que solo cambian nombres, listados en `.git-blame-ignore-revs`. GitHub los salta solo. En una copia local, este comando hace que `git blame` siga mostrando quién escribió cada línea, en vez de esos commits:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```

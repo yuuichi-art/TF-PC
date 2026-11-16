@@ -1,0 +1,15 @@
+# Commits que solo renombran el código de inglés a español (ver docs/glosario.md).
+# git blame los salta para seguir mostrando quién escribió cada línea.
+# GitHub lo usa solo; en una copia local:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# refactor: renombrar carpetas y archivos a espanol
+4f15a81798fb5154ea4fdb216f837a2125bed1cc
+# refactor: nombres en espanol en geometria y escenario
+867f3ab6dc1085f9153ceb23169251de2e8dabd8
+# refactor: nombres en espanol en grafo y red de recarga
+7a5758a938b6ccea190aa9232748681a77366b87
+# refactor: nombres en espanol en los solvers
+64da18a2ce16b15b90f6c6ec20d1f070640cc156
+# refactor: nombres en espanol en juez, exportacion y menu
+1c279902f44542b60b9ad6e3d3de48dda0735937
