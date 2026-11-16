@@ -16,7 +16,7 @@
 using namespace geodrone;
 
 void probarOrientacion() {
-    std::cout << "[TEST] 1. Giro horario, antihorario y colinealidad (CCW)..." << std::endl;
+    std::cout << "[PRUEBA] 1. Giro horario, antihorario y colinealidad (CCW)..." << std::endl;
 
     Punto a(0.0, 0.0);
     Punto b(4.0, 0.0);
@@ -41,11 +41,11 @@ void probarOrientacion() {
     Punto cCasiColineal(2.0, 1e-10);
     assert(Geometria::orientacion(a, b, cCasiColineal) == 0);
 
-    std::cout << "  -> PASSED: Orientacion CCW verificada exitosamente.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarInterseccionSegmentos() {
-    std::cout << "[TEST] 2. Interseccion propia e impropia de segmentos..." << std::endl;
+    std::cout << "[PRUEBA] 2. Interseccion propia e impropia de segmentos..." << std::endl;
 
     // 2.1 Intersección propia en cruz perfecta
     Segmento s1(Punto(0.0, 2.0), Punto(4.0, 2.0));
@@ -77,11 +77,11 @@ void probarInterseccionSegmentos() {
     assert(Geometria::segmentosSeIntersecan(sParalelo1, sParalelo2, false) == false);
     assert(Geometria::interseccionPropia(sParalelo1, sParalelo2) == false);
 
-    std::cout << "  -> PASSED: Interseccion de segmentos verificada exitosamente.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarPuntoEnPoligono() {
-    std::cout << "[TEST] 3. Prueba de pertenencia Punto en Poligono (Ray Casting)..." << std::endl;
+    std::cout << "[PRUEBA] 3. Prueba de pertenencia Punto en Poligono (Ray Casting)..." << std::endl;
 
     // Cuadrado unitario de 10x10: [0, 10] x [0, 10]
     Poligono cuadrado(1, "Obstaculo_Cuadrado");
@@ -129,11 +129,11 @@ void probarPuntoEnPoligono() {
     assert(Geometria::ubicacionEnPoligono(Punto(1.0, 4.0), poligonoL) == UbicacionPunto::DENTRO);
     assert(Geometria::ubicacionEnPoligono(Punto(4.0, 1.0), poligonoL) == UbicacionPunto::DENTRO);
 
-    std::cout << "  -> PASSED: Point in Polygon (Ray Casting) verificado exitosamente.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarMetricasPoligono() {
-    std::cout << "[TEST] 4. Metricas de Poligonos (Area Shoelace y Perimetro)..." << std::endl;
+    std::cout << "[PRUEBA] 4. Metricas de Poligonos (Area Shoelace y Perimetro)..." << std::endl;
 
     Poligono rectangulo(1, "Rectangulo");
     rectangulo.agregarVertice(Punto(0.0, 0.0));
@@ -144,11 +144,11 @@ void probarMetricasPoligono() {
     assert(std::abs(rectangulo.area() - 40.0) < EPS);
     assert(std::abs(rectangulo.perimetro() - 26.0) < EPS);
 
-    std::cout << "  -> PASSED: Area y perimetro calculados con precision.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarValidacionTramos() {
-    std::cout << "[TEST] 5. Validacion de Trayectorias de Vuelo vs Obstaculos..." << std::endl;
+    std::cout << "[PRUEBA] 5. Validacion de Trayectorias de Vuelo vs Obstaculos..." << std::endl;
 
     Poligono obstaculo(1, "Edificio");
     obstaculo.agregarVertice(Punto(2.0, 2.0));
@@ -177,11 +177,11 @@ void probarValidacionTramos() {
     Segmento tramoBorde(Punto(2.0, 0.0), Punto(2.0, 8.0));
     assert(Geometria::segmentoCruzaInterior(tramoBorde, obstaculo) == false);
 
-    std::cout << "  -> PASSED: Validacion de trayectorias verificada exitosamente.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarEnvolventeConvexa() {
-    std::cout << "[TEST] 6. Envolvente convexa (monotone chain)..." << std::endl;
+    std::cout << "[PRUEBA] 6. Envolvente convexa (monotone chain)..." << std::endl;
 
     // Cuadrado con puntos interiores, puntos colineales en los bordes y un duplicado.
     std::vector<Punto> puntos = {
@@ -209,7 +209,7 @@ void probarEnvolventeConvexa() {
     assert(envolventeConvexa({Punto(0, 0), Punto(1, 1), Punto(2, 2), Punto(3, 3)}).size() < 3);
     assert(envolventeConvexa({Punto(5, 5), Punto(5, 5), Punto(6, 7)}).size() < 3);
 
-    std::cout << "  -> PASSED: Envolvente convexa verificada exitosamente.\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main() {

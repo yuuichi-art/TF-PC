@@ -29,9 +29,9 @@ std::vector<int> doblePuente(const std::vector<int>& orden, std::mt19937_64& rng
     int p2 = static_cast<int>(enteroAleatorio(rng, p1 + 1, n - 2));
     int p3 = static_cast<int>(enteroAleatorio(rng, p2 + 1, n - 1));
     std::vector<int> resultado(orden.begin(), orden.begin() + p1);                  // A
-    resultado.insert(resultado.end(), orden.begin() + p2, orden.begin() + p3);         // C
-    resultado.insert(resultado.end(), orden.begin() + p1, orden.begin() + p2);         // B
-    resultado.insert(resultado.end(), orden.begin() + p3, orden.end());                // D
+    resultado.insert(resultado.end(), orden.begin() + p2, orden.begin() + p3);      // C
+    resultado.insert(resultado.end(), orden.begin() + p1, orden.begin() + p2);      // B
+    resultado.insert(resultado.end(), orden.begin() + p3, orden.end());             // D
     return resultado;
 }
 
@@ -48,7 +48,7 @@ double costoCiclo(const std::vector<std::vector<double>>& distancias, int base, 
 }
 
 std::vector<int> vecinoMasCercano(const std::vector<std::vector<double>>& distancias, int base,
-                                 const std::vector<int>& clientes) {
+                                  const std::vector<int>& clientes) {
     std::vector<int> orden;
     std::vector<char> visitado(clientes.size(), 0);
     int posicion = base;
@@ -68,7 +68,7 @@ std::vector<int> vecinoMasCercano(const std::vector<std::vector<double>>& distan
 }
 
 std::vector<int> dosAproximacion(const std::vector<std::vector<double>>& distancias, int base,
-                                  const std::vector<int>& clientes) {
+                                 const std::vector<int>& clientes) {
     std::vector<int> nodos = {base};
     nodos.insert(nodos.end(), clientes.begin(), clientes.end());
     ArbolMinimo arbol = arbolMinimoPrim(distancias, nodos);
@@ -94,7 +94,7 @@ std::vector<int> dosAproximacion(const std::vector<std::vector<double>>& distanc
 }
 
 bool aplicar2Opt(const std::vector<std::vector<double>>& distancias, int base, std::vector<int>& orden,
-            Reloj::time_point limite) {
+                 Reloj::time_point limite) {
     // Ruta completa con la base en ambos extremos: ciclo[0] = ciclo[n + 1] = base.
     std::vector<int> ciclo = {base};
     ciclo.insert(ciclo.end(), orden.begin(), orden.end());
@@ -130,8 +130,8 @@ bool aplicar2Opt(const std::vector<std::vector<double>>& distancias, int base, s
 }
 
 ResultadoBusquedaIterada busquedaLocalIterada(const std::vector<std::vector<double>>& distancias, int base,
-                              const std::vector<int>& ordenInicial, uint64_t semilla,
-                              int maxIteraciones, Reloj::time_point limite) {
+                                              const std::vector<int>& ordenInicial, uint64_t semilla,
+                                              int maxIteraciones, Reloj::time_point limite) {
     ResultadoBusquedaIterada resultado;
     resultado.orden = ordenInicial;
     resultado.cortadaPorTiempo = !aplicar2Opt(distancias, base, resultado.orden, limite);

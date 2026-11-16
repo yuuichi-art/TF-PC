@@ -24,7 +24,7 @@ namespace {
 // distinta elegida al azar. Dentro de la celda se deja un margen del 15 % por lado, así que
 // dos obstáculos nunca se tocan.
 std::vector<Poligono> generarObstaculos(std::mt19937_64& rng, int cantidad, int maxPuntos,
-                                       double ancho, double alto) {
+                                        double ancho, double alto) {
     std::vector<Poligono> obstaculos;
     if (cantidad == 0) return obstaculos;
 
@@ -67,8 +67,8 @@ std::vector<Poligono> generarObstaculos(std::mt19937_64& rng, int cantidad, int 
 
 // Punto entero libre: fuera de todo obstáculo (ni dentro ni sobre el borde) y no usado antes.
 Punto puntoLibreAleatorio(std::mt19937_64& rng, double ancho, double alto,
-                      const std::vector<Poligono>& obstaculos,
-                      std::set<std::pair<long long, long long>>& usados) {
+                          const std::vector<Poligono>& obstaculos,
+                          std::set<std::pair<long long, long long>>& usados) {
     while (true) {
         long long x = enteroAleatorio(rng, 0, static_cast<long long>(ancho));
         long long y = enteroAleatorio(rng, 0, static_cast<long long>(alto));
@@ -130,7 +130,7 @@ double GeneradorDatasets::bateriaPara(const Escenario& geometria) {
 }
 
 Escenario GeneradorDatasets::generarGeometria(const RangosCategoria& rangos, Categoria categoria, uint64_t semilla,
-                                          double ancho, double alto) {
+                                              double ancho, double alto) {
     std::mt19937_64 rng(semilla);
 
     Escenario escenario;
@@ -159,8 +159,9 @@ Escenario GeneradorDatasets::generarGeometria(const RangosCategoria& rangos, Cat
     return escenario;
 }
 
-std::vector<std::string> GeneradorDatasets::generarConjuntoBenchmark(const std::string& carpeta, int semillasPorCategoria,
-                                                                bool incluirPeorCaso) {
+std::vector<std::string> GeneradorDatasets::generarConjuntoBenchmark(const std::string& carpeta,
+                                                                     int semillasPorCategoria,
+                                                                     bool incluirPeorCaso) {
     const Categoria categorias[] = {
         Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE, Categoria::EXTREME
     };

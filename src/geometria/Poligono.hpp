@@ -41,8 +41,8 @@ struct Poligono {
         vertices.push_back(punto);
     }
 
-    // Genera la lista de segmentos perimetrales del polígono (aristas)
-    std::vector<Segmento> aristas() const {
+    // Lados del polígono como segmentos (el último une el último vértice con el primero)
+    std::vector<Segmento> lados() const {
         std::vector<Segmento> resultado;
         int n = numVertices();
         if (n < 2) return resultado;

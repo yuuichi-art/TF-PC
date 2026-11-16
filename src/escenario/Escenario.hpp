@@ -74,7 +74,7 @@ inline bool interpretarCategoria(const std::string& texto, Categoria& categoria)
 struct Escenario {
     std::string nombre;                  // Sin espacios: se guarda como una sola palabra
     Categoria categoria = Categoria::SMALL;
-    uint64_t semilla = 0;                 // 0 en los casos hechos a mano
+    uint64_t semilla = 0;              // 0 en los casos hechos a mano
     double anchoArea = 1000.0;         // Rectángulo que contiene el escenario
     double altoArea = 1000.0;
     double bateria = 0.0;              // Autonomía en unidades de distancia

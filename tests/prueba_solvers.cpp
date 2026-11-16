@@ -68,7 +68,7 @@ ResultadoExacto verificarOptimo(const Matriz& distancias, int base, const std::v
 }
 
 void probarEjemplosAMano() {
-    std::cout << "[TEST] 1. Casos calculados a mano..." << std::endl;
+    std::cout << "[PRUEBA] 1. Casos calculados a mano..." << std::endl;
 
     // Cuadrado de lado 10 con la base en una esquina: el óptimo es el perímetro, 40.
     Matriz cuadrado = matrizEuclidiana({Punto(0, 0), Punto(10, 0), Punto(10, 10), Punto(0, 10)});
@@ -80,11 +80,11 @@ void probarEjemplosAMano() {
     assert(std::abs(costoCicloAMano(linea, 0, {1, 2, 3}) - 14.0) < TOLERANCIA);
     assert(std::abs(verificarOptimo(linea, 0, {1, 2, 3}).costo - 12.0) < TOLERANCIA);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarCasosBorde() {
-    std::cout << "[TEST] 2. Casos borde: sin clientes, un cliente y demasiados clientes..." << std::endl;
+    std::cout << "[PRUEBA] 2. Casos borde: sin clientes, un cliente y demasiados clientes..." << std::endl;
 
     Matriz distancias = matrizEuclidiana({Punto(0, 0), Punto(3, 4)});
     ResultadoExacto vacio = SolverExacto::resolver(distancias, 0, {});
@@ -102,11 +102,11 @@ void probarCasosBorde() {
     }
     assert(rechazado);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarAleatoriasContraFuerzaBruta() {
-    std::cout << "[TEST] 3. Instancias aleatorias de 1 a 8 clientes contra fuerza bruta..." << std::endl;
+    std::cout << "[PRUEBA] 3. Instancias aleatorias de 1 a 8 clientes contra fuerza bruta..." << std::endl;
 
     std::mt19937 rng(2026);
     std::uniform_int_distribution<int> coordenada(0, 100);
@@ -120,11 +120,12 @@ void probarAleatoriasContraFuerzaBruta() {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarEscenariosConObstaculos(const std::string& carpetaAdversarial) {
-    std::cout << "[TEST] 4. Escenarios con obstaculos (generados y adversariales) contra fuerza bruta..." << std::endl;
+    std::cout << "[PRUEBA] 4. Escenarios con obstaculos (generados y adversariales) contra fuerza bruta..."
+              << std::endl;
 
     std::vector<Escenario> escenarios;
     for (uint64_t semilla = 1; semilla <= 15; ++semilla) {
@@ -147,11 +148,11 @@ void probarEscenariosConObstaculos(const std::string& carpetaAdversarial) {
         verificarOptimo(mision.distancias(), mision.claveBase(), clientes);
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarPoda() {
-    std::cout << "[TEST] 5. La poda evita recorrer todos los ordenes..." << std::endl;
+    std::cout << "[PRUEBA] 5. La poda evita recorrer todos los ordenes..." << std::endl;
 
     // Con 10 clientes hay 10! = 3 628 800 órdenes completos; el árbol entero tiene aún más nodos.
     std::mt19937 rng(7);
@@ -167,7 +168,7 @@ void probarPoda() {
         assert(resultado.nodosExplorados < 3628800 / 10);
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -214,7 +215,7 @@ bool esOptimoLocal2Opt(const Matriz& distancias, int base, const std::vector<int
 }
 
 void probarHeuristicasAMano() {
-    std::cout << "[TEST] 6. Heuristicas en los casos calculados a mano..." << std::endl;
+    std::cout << "[PRUEBA] 6. Heuristicas en los casos calculados a mano..." << std::endl;
 
     // Recta: base en 0, clientes en 1, -2 y 4. El vecino más cercano hace 0 -> 1 -> -2 -> 4 -> 0 = 14
     // y 2-opt lo corrige hasta el óptimo, 12.
@@ -230,11 +231,11 @@ void probarHeuristicasAMano() {
     assert(SolverHeuristico::dosAproximacion(linea, 0, {}).empty());
     assert(SolverHeuristico::busquedaLocalIterada(linea, 0, {}, 1).orden.empty());
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarHeuristicasDanOrdenesValidos() {
-    std::cout << "[TEST] 7. Cada heuristica devuelve una permutacion; 2-opt nunca empeora..." << std::endl;
+    std::cout << "[PRUEBA] 7. Cada heuristica devuelve una permutacion; 2-opt nunca empeora..." << std::endl;
 
     std::mt19937 rng(42);
     std::vector<Instancia> instancias;
@@ -255,22 +256,23 @@ void probarHeuristicasDanOrdenesValidos() {
             assert(esOptimoLocal2Opt(caso.distancias, caso.base, inicio));
         }
 
-        SolverHeuristico::ResultadoBusquedaIterada busqueda = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, voraz, 7, 30);
+        SolverHeuristico::ResultadoBusquedaIterada busqueda =
+            SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, voraz, 7, 30);
         assert(esPermutacionDe(busqueda.orden, caso.clientes) && !busqueda.cortadaPorTiempo);
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarGarantiaAproximacion() {
-    std::cout << "[TEST] 8. La 2-aproximacion cumple costo <= 2 x arbol minimo <= 2 x optimo..." << std::endl;
+    std::cout << "[PRUEBA] 8. La 2-aproximacion cumple costo <= 2 x arbol minimo <= 2 x optimo..." << std::endl;
 
     std::mt19937 rng(9);
     for (int n = 1; n <= 9; ++n) {
         for (int instancia = 0; instancia < 5; ++instancia) {
             Instancia caso = instanciaAleatoria(n, rng);
-            double aprox = SolverHeuristico::costoCiclo(caso.distancias, caso.base,
-                                                      SolverHeuristico::dosAproximacion(caso.distancias, caso.base, caso.clientes));
+            std::vector<int> orden = SolverHeuristico::dosAproximacion(caso.distancias, caso.base, caso.clientes);
+            double aprox = SolverHeuristico::costoCiclo(caso.distancias, caso.base, orden);
             double optimo = SolverExacto::resolver(caso.distancias, caso.base, caso.clientes).costo;
             assert(aprox <= 2.0 * optimo + TOLERANCIA);
         }
@@ -282,16 +284,16 @@ void probarGarantiaAproximacion() {
         std::vector<int> nodos = {caso.base};
         nodos.insert(nodos.end(), caso.clientes.begin(), caso.clientes.end());
         double costoArbol = arbolMinimoPrim(caso.distancias, nodos).costo;
-        double aprox = SolverHeuristico::costoCiclo(caso.distancias, caso.base,
-                                                  SolverHeuristico::dosAproximacion(caso.distancias, caso.base, caso.clientes));
+        std::vector<int> orden = SolverHeuristico::dosAproximacion(caso.distancias, caso.base, caso.clientes);
+        double aprox = SolverHeuristico::costoCiclo(caso.distancias, caso.base, orden);
         assert(costoArbol <= aprox + TOLERANCIA && aprox <= 2.0 * costoArbol + TOLERANCIA);
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarBusquedaLocalIterada() {
-    std::cout << "[TEST] 9. Busqueda local iterada: mejora, es reproducible y respeta el tiempo..." << std::endl;
+    std::cout << "[PRUEBA] 9. Busqueda local iterada: mejora, es reproducible y respeta el tiempo..." << std::endl;
 
     // Nunca peor que el 2-opt de su ruta inicial, y la misma semilla da la misma ruta.
     for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
@@ -300,8 +302,10 @@ void probarBusquedaLocalIterada() {
         std::vector<int> optimoLocal = inicio;
         SolverHeuristico::aplicar2Opt(caso.distancias, caso.base, optimoLocal);
 
-        SolverHeuristico::ResultadoBusquedaIterada primera = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
-        SolverHeuristico::ResultadoBusquedaIterada segunda = SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
+        SolverHeuristico::ResultadoBusquedaIterada primera =
+            SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
+        SolverHeuristico::ResultadoBusquedaIterada segunda =
+            SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla);
         assert(primera.orden == segunda.orden);
         assert(primera.iteraciones == SolverHeuristico::ITERACIONES_POR_DEFECTO);
         assert(SolverHeuristico::costoCiclo(caso.distancias, caso.base, primera.orden) <=
@@ -312,8 +316,9 @@ void probarBusquedaLocalIterada() {
     for (uint64_t semilla = 1; semilla <= 10; ++semilla) {
         Instancia caso = instanciaDeEscenario(Categoria::SMALL, semilla);
         std::vector<int> inicio = SolverHeuristico::vecinoMasCercano(caso.distancias, caso.base, caso.clientes);
-        double busqueda = SolverHeuristico::costoCiclo(caso.distancias, caso.base,
-                                               SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla).orden);
+        std::vector<int> orden =
+            SolverHeuristico::busquedaLocalIterada(caso.distancias, caso.base, inicio, semilla).orden;
+        double busqueda = SolverHeuristico::costoCiclo(caso.distancias, caso.base, orden);
         double optimo = SolverExacto::resolver(caso.distancias, caso.base, caso.clientes).costo;
         assert(busqueda <= optimo + TOLERANCIA);
     }
@@ -324,11 +329,12 @@ void probarBusquedaLocalIterada() {
     auto comienzo = SolverHeuristico::Reloj::now();
     SolverHeuristico::ResultadoBusquedaIterada limitada = SolverHeuristico::busquedaLocalIterada(
         grande.distancias, grande.base, inicio, 1, 1000000, comienzo + std::chrono::milliseconds(30));
-    double transcurridoMs = std::chrono::duration<double, std::milli>(SolverHeuristico::Reloj::now() - comienzo).count();
+    double transcurridoMs =
+        std::chrono::duration<double, std::milli>(SolverHeuristico::Reloj::now() - comienzo).count();
     assert(limitada.cortadaPorTiempo && esPermutacionDe(limitada.orden, grande.clientes));
     assert(transcurridoMs < 30.0 + 200.0);   // Margen para la última pasada de 2-opt y el sistema
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

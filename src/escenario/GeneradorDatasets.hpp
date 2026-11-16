@@ -61,7 +61,7 @@ public:
      * medición del peor caso (con todos los rangos en su máximo).
      */
     static Escenario generarGeometria(const RangosCategoria& rangos, Categoria categoria, uint64_t semilla,
-                                   double ancho = 1000.0, double alto = 1000.0);
+                                      double ancho = 1000.0, double alto = 1000.0);
 
     /**
      * @brief Batería del escenario: la autonomía mínima (búsqueda binaria, RF10) por
@@ -77,7 +77,7 @@ public:
      * límite. Devuelve las rutas creadas, de menor a mayor categoría.
      */
     static std::vector<std::string> generarConjuntoBenchmark(const std::string& carpeta, int semillasPorCategoria = 5,
-                                                         bool incluirPeorCaso = true);
+                                                             bool incluirPeorCaso = true);
 };
 
 } // namespace geodrone

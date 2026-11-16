@@ -15,7 +15,7 @@ struct Busqueda {
     int base;
     const std::vector<int>& clientes;
 
-    std::vector<char> visitado;      // visitado[i]: clientes[i] ya está en la ruta parcial
+    std::vector<char> visitado;    // visitado[i]: clientes[i] ya está en la ruta parcial
     std::vector<int> actual;       // Ruta parcial (claves de clientes)
     ResultadoExacto mejor;
 
@@ -83,7 +83,7 @@ struct Busqueda {
 } // namespace
 
 ResultadoExacto SolverExacto::resolver(const std::vector<std::vector<double>>& distancias, int base,
-                               const std::vector<int>& clientes) {
+                                       const std::vector<int>& clientes) {
     if (static_cast<int>(clientes.size()) > MAX_CLIENTES) {
         throw std::invalid_argument("el solver exacto admite hasta " + std::to_string(MAX_CLIENTES) +
                                     " clientes y se pidieron " + std::to_string(clientes.size()));

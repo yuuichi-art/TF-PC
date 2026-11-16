@@ -50,9 +50,9 @@ void escribirResultadosCsv(const std::vector<FilaJuez>& filas, std::ostream& sal
            "gap_mejor,gap_cota\n";
     salida << std::fixed << std::setprecision(3);
     for (const FilaJuez& fila : filas) {
-        salida << fila.escenario << ',' << nombreCategoria(fila.categoria) << ',' << fila.clientes << ',' << fila.algoritmo << ','
-            << fila.veredicto << ',' << fila.costo << ',' << fila.recargas << ',' << fila.excluidos << ',' << fila.tiempoMs
-            << ',' << fila.memoriaMB << ',';
+        salida << fila.escenario << ',' << nombreCategoria(fila.categoria) << ',' << fila.clientes << ','
+            << fila.algoritmo << ',' << fila.veredicto << ',' << fila.costo << ',' << fila.recargas << ','
+            << fila.excluidos << ',' << fila.tiempoMs << ',' << fila.memoriaMB << ',';
         if (!std::isnan(fila.gapMejor)) salida << fila.gapMejor;
         salida << ',';
         if (!std::isnan(fila.gapCota)) salida << fila.gapCota;
@@ -70,8 +70,8 @@ void escribirRankingCsv(const std::vector<FilaRanking>& ranking, std::ostream& s
     salida << "categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms\n";
     salida << std::fixed << std::setprecision(3);
     for (const FilaRanking& fila : ranking) {
-        salida << nombreCategoria(fila.categoria) << ',' << fila.posicion << ',' << fila.algoritmo << ',' << fila.casosOk
-            << ',' << fila.casos << ',' << fila.gapMedio << ',' << fila.tiempoMedioMs << '\n';
+        salida << nombreCategoria(fila.categoria) << ',' << fila.posicion << ',' << fila.algoritmo << ','
+            << fila.casosOk << ',' << fila.casos << ',' << fila.gapMedio << ',' << fila.tiempoMedioMs << '\n';
     }
 }
 
@@ -118,7 +118,8 @@ void dibujarEstacion(std::ostream& salida, double x, double y, double tamano, co
 }
 
 void dibujarCruz(std::ostream& salida, double x, double y, double tamano, const std::string& atributos) {
-    salida << "<path " << atributos << " d=\"M" << x - tamano << ',' << y - tamano << " L" << x + tamano << ',' << y + tamano
+    salida << "<path " << atributos << " d=\"M" << x - tamano << ',' << y - tamano
+        << " L" << x + tamano << ',' << y + tamano
         << " M" << x - tamano << ',' << y + tamano << " L" << x + tamano << ',' << y - tamano
         << "\" stroke=\"#dc2626\" stroke-width=\"2\"/>\n";
 }

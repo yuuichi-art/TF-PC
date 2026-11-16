@@ -27,14 +27,14 @@ struct FilaJuez {
     Categoria categoria = Categoria::SMALL;
     int clientes = 0;                // Clientes del escenario, incluidos los excluidos
     std::string algoritmo;
-    std::string veredicto;            // OK, WA, TLE o MLE
+    std::string veredicto;           // OK, WA, TLE o MLE
     std::string problema;            // Motivo del WA (se muestra en consola, no va al CSV)
     double costo = 0.0;
     int recargas = 0;
     int excluidos = 0;
-    double tiempoMs = 0.0;            // Preparación + resolución
-    double memoriaMB = 0.0;          // Memoria pico del proceso al terminar el caso
-    double gapMejor = 0.0;           // % sobre la mejor ruta OK del caso; solo con veredicto OK
+    double tiempoMs = 0.0;         // Preparación + resolución
+    double memoriaMB = 0.0;        // Memoria pico del proceso al terminar el caso
+    double gapMejor = 0.0;         // % sobre la mejor ruta OK del caso; solo con veredicto OK
     double gapCota = 0.0;          // % sobre la cota del árbol de expansión mínima; solo con OK
 };
 
@@ -48,7 +48,7 @@ struct FilaRanking {
     int casosOk = 0;
     int casos = 0;
     double gapMedio = 0.0;           // Promedio de gapMejor en los casos OK
-    double tiempoMedioMs = 0.0;        // Promedio de tiempo en los casos OK
+    double tiempoMedioMs = 0.0;      // Promedio de tiempo en los casos OK
 };
 
 /**
@@ -85,7 +85,7 @@ namespace Juez {
      * en los adversariales. Guarda cada ruta en carpetaRutas y escribe el avance en registro.
      */
     std::vector<FilaJuez> ejecutar(const std::vector<std::string>& archivosEscenario, const std::string& carpetaRutas,
-                              std::ostream& registro);
+                                   std::ostream& registro);
 
     /**
      * @brief Ranking por categoría: más casos OK, luego menor gap medio, luego menor tiempo medio.

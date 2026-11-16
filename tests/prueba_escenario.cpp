@@ -83,7 +83,7 @@ void esperarError(const std::string& texto, const std::string& fragmentoEsperado
 }
 
 void probarEjemploDecisiones() {
-    std::cout << "[TEST] 1. Lectura del ejemplo de docs/decisiones.md..." << std::endl;
+    std::cout << "[PRUEBA] 1. Lectura del ejemplo de docs/decisiones.md..." << std::endl;
 
     Escenario s = leerTexto(EJEMPLO_DECISIONES);
     assert(s.nombre == "small_001");
@@ -99,15 +99,15 @@ void probarEjemploDecisiones() {
     assert(s.obstaculos[1][2] == Punto(650, 690));
     assert(s.totalVerticesObstaculos() == 7);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarIdaYVuelta() {
-    std::cout << "[TEST] 2. Escribir y volver a leer conserva el escenario..." << std::endl;
+    std::cout << "[PRUEBA] 2. Escribir y volver a leer conserva el escenario..." << std::endl;
 
     Escenario original = leerTexto(EJEMPLO_DECISIONES);
-    original.bateria = 450.5;                   // Valor no entero
-    original.semilla = 18446744073709551615ULL;    // Semilla máxima de 64 bits
+    original.bateria = 450.5;                    // Valor no entero
+    original.semilla = 18446744073709551615ULL;  // Semilla máxima de 64 bits
 
     std::stringstream flujo;
     ArchivoEscenario::escribir(original, flujo);
@@ -118,11 +118,11 @@ void probarIdaYVuelta() {
     ArchivoEscenario::escribir(leerTexto(EJEMPLO_DECISIONES), reescrito);
     assert(reescrito.str() == EJEMPLO_DECISIONES);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarGuardarYCargar() {
-    std::cout << "[TEST] 3. Guardar en archivo (creando carpetas) y cargar..." << std::endl;
+    std::cout << "[PRUEBA] 3. Guardar en archivo (creando carpetas) y cargar..." << std::endl;
 
     const std::string carpeta = "tmp_prueba_scenario";
     const std::string ruta = carpeta + "/sub/escenario.txt";
@@ -141,32 +141,32 @@ void probarGuardarYCargar() {
     }
     assert(fallo);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarErrores() {
-    std::cout << "[TEST] 4. Errores con linea y descripcion..." << std::endl;
+    std::cout << "[PRUEBA] 4. Errores con linea y descripcion..." << std::endl;
 
     esperarError("NAME x\nCATEGORY HUGE\n", "linea 2: categoria desconocida 'HUGE'");
     esperarError("NAME x\nCATEGORY SMALL\nSEED -3\n", "linea 3: la semilla debe ser un entero no negativo");
     esperarError("NAME x\nCATEGORY SMALL\nSEED 1\nAREA 100 100\nBATTERY -5\n",
-                "linea 5: la autonomia de la bateria debe ser positiva");
+                 "linea 5: la autonomia de la bateria debe ser positiva");
     esperarError(ENCABEZADO_VALIDO + "STATION 1\n5 5\nCLIENTS 0\nOBSTACLES 0\n",
-                "linea 7: se esperaba la etiqueta STATIONS y se encontro 'STATION'");
+                 "linea 7: se esperaba la etiqueta STATIONS y se encontro 'STATION'");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 1.5\n",
-                "linea 7: la cantidad de estaciones debe ser un entero no negativo");
+                 "linea 7: la cantidad de estaciones debe ser un entero no negativo");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 1\n5 cinco\nCLIENTS 0\nOBSTACLES 0\n",
-                "linea 8: se esperaba la coordenada y de la estacion 1 (un numero) y se encontro 'cinco'");
+                 "linea 8: se esperaba la coordenada y de la estacion 1 (un numero) y se encontro 'cinco'");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 2\n1 1\nOBSTACLES 0\n",
-                "linea 10: se esperaba la coordenada x del cliente 2 (un numero) y se encontro 'OBSTACLES'");
+                 "linea 10: se esperaba la coordenada x del cliente 2 (un numero) y se encontro 'OBSTACLES'");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\nOBSTACLES 1\n2  0 0  1 1\n",
-                "linea 10: el obstaculo 1 necesita al menos 3 vertices");
+                 "linea 10: el obstaculo 1 necesita al menos 3 vertices");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\n",
-                "linea 8: el archivo termina antes de la etiqueta OBSTACLES");
+                 "linea 8: el archivo termina antes de la etiqueta OBSTACLES");
     esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\nOBSTACLES 0\nextra\n",
-                "linea 10: contenido inesperado 'extra'");
+                 "linea 10: contenido inesperado 'extra'");
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 // Ningún punto de interés puede estar dentro ni sobre el borde de un obstáculo.
@@ -186,7 +186,7 @@ bool clear(const Escenario& s, const Punto& a, const Punto& b) {
 }
 
 void probarArchivosAdversariales(const std::string& carpeta) {
-    std::cout << "[TEST] 5. Casos adversariales de " << carpeta << "..." << std::endl;
+    std::cout << "[PRUEBA] 5. Casos adversariales de " << carpeta << "..." << std::endl;
 
     const std::vector<std::string> nombres = {
         "adv_collinear", "adv_enclosed", "adv_corridor", "adv_concave_trap", "adv_unreachable_battery"
@@ -201,29 +201,30 @@ void probarArchivosAdversariales(const std::string& carpeta) {
 
     // Comprobaciones geométricas de cada caso, para confirmar que miden lo que dicen.
     Escenario colineal = ArchivoEscenario::cargar(carpeta + "/adv_collinear.txt");
-    assert(clear(colineal, colineal.base, colineal.clientes[0]));          // Vuela sobre el borde inferior
-    assert(!clear(colineal, colineal.estaciones[0], colineal.clientes[3]));   // x = 50 cruza el obstáculo
+    assert(clear(colineal, colineal.base, colineal.clientes[0]));            // Vuela sobre el borde inferior
+    assert(!clear(colineal, colineal.estaciones[0], colineal.clientes[3]));  // x = 50 cruza el obstáculo
 
     Escenario encerrado = ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt");
     Punto atrapado = encerrado.clientes[0];
-    const std::vector<Punto> exterior = {encerrado.base, encerrado.estaciones[0], encerrado.clientes[1], encerrado.clientes[2],
-                                        Punto(50, 0), Punto(50, 100), Punto(0, 50), Punto(100, 50)};
+    const std::vector<Punto> exterior = {encerrado.base, encerrado.estaciones[0], encerrado.clientes[1],
+                                         encerrado.clientes[2], Punto(50, 0), Punto(50, 100),
+                                         Punto(0, 50), Punto(100, 50)};
     for (const Punto& p : exterior) {
-        assert(!clear(encerrado, atrapado, p));                                  // Ninguna salida directa
+        assert(!clear(encerrado, atrapado, p));                              // Ninguna salida directa
     }
 
     Escenario pasillo = ArchivoEscenario::cargar(carpeta + "/adv_corridor.txt");
-    assert(clear(pasillo, pasillo.base, pasillo.clientes[0]));             // Recto por el pasillo
+    assert(clear(pasillo, pasillo.base, pasillo.clientes[0]));               // Recto por el pasillo
 
     Escenario trampa = ArchivoEscenario::cargar(carpeta + "/adv_concave_trap.txt");
-    assert(clear(trampa, trampa.base, trampa.clientes[0]));                         // Entra al hueco de la U
-    assert(!clear(trampa, trampa.base, trampa.clientes[1]));                        // El cliente de atrás está bloqueado
+    assert(clear(trampa, trampa.base, trampa.clientes[0]));                  // Entra al hueco de la U
+    assert(!clear(trampa, trampa.base, trampa.clientes[1]));                 // El cliente de atrás está bloqueado
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarBomYNombres() {
-    std::cout << "[TEST] 6. Archivo con BOM UTF-8 y nombres con espacios..." << std::endl;
+    std::cout << "[PRUEBA] 6. Archivo con BOM UTF-8 y nombres con espacios..." << std::endl;
 
     // El Bloc de notas puede anteponer un BOM (EF BB BF): se ignora y el archivo se lee igual.
     Escenario conBom = leerTexto("\xEF\xBB\xBF" + EJEMPLO_DECISIONES);
@@ -255,7 +256,7 @@ void probarBomYNombres() {
     }
     assert(rechazado && !std::filesystem::exists(ruta));
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

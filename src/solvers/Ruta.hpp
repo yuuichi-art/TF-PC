@@ -21,7 +21,7 @@ struct PuntoRuta {
  * @brief Cliente que quedó fuera de la misión (docs/decisiones.md §1) y por qué.
  */
 struct ClienteExcluido {
-    std::string etiqueta;      // "C3"
+    std::string etiqueta;   // "C3"
     std::string motivo;     // "OBSTACLES" (los obstáculos lo separan de la base) o "BATTERY"
 };
 
@@ -37,9 +37,9 @@ struct Ruta {
     int recargas = 0;
     std::vector<ClienteExcluido> excluidos;
     std::vector<std::string> orden;         // Nodos clave visitados: D0 C2 S1 C1 ... D0
-    std::vector<PuntoRuta> trayectoria;           // Trayectoria completa, con los vértices de obstáculos
+    std::vector<PuntoRuta> trayectoria;     // Trayectoria completa, con los vértices de obstáculos
     double preparacionMs = 0.0;             // Grafo de misión y red de recarga
-    double resolucionMs = 0.0;                   // Orden de visita, recargas y trayectoria
+    double resolucionMs = 0.0;              // Orden de visita, recargas y trayectoria
 
     double totalMs() const { return preparacionMs + resolucionMs; }
 };

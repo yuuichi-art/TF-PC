@@ -29,7 +29,8 @@ bool esEtiquetaRecarga(const std::string& etiqueta) { return etiqueta[0] == 'D' 
 // Verificación independiente del solver, solo con la ruta y el escenario: lo mismo que hará el juez.
 void verificarRutaValida(const Escenario& s, const Ruta& ruta, size_t clientesEsperados) {
     assert(ruta.factible);
-    assert(!ruta.trayectoria.empty() && ruta.trayectoria.front().etiqueta == "D0" && ruta.trayectoria.back().etiqueta == "D0");
+    assert(!ruta.trayectoria.empty() && ruta.trayectoria.front().etiqueta == "D0" &&
+           ruta.trayectoria.back().etiqueta == "D0");
     assert(ruta.orden.front() == "D0" && ruta.orden.back() == "D0");
     assert(ruta.preparacionMs >= 0 && ruta.resolucionMs >= 0);
 
@@ -75,7 +76,7 @@ Escenario escenarioAMano() {
 }
 
 void probarRutaAManoYExportacion() {
-    std::cout << "[TEST] 1. Ruta calculada a mano y su archivo exportado..." << std::endl;
+    std::cout << "[PRUEBA] 1. Ruta calculada a mano y su archivo exportado..." << std::endl;
 
     Escenario s = escenarioAMano();
     SolverMision solver(s);
@@ -114,15 +115,15 @@ void probarRutaAManoYExportacion() {
     assert(contenido.str() == esperado);
     std::filesystem::remove_all(carpeta);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarTodosDanRutasValidas(const std::string& carpeta) {
-    std::cout << "[TEST] 2. Todos los algoritmos dan rutas validas (adversariales y generados)..." << std::endl;
+    std::cout << "[PRUEBA] 2. Todos los algoritmos dan rutas validas (adversariales y generados)..." << std::endl;
 
     std::vector<Escenario> escenarios;
     for (const char* nombre : {"adv_collinear", "adv_enclosed", "adv_corridor", "adv_concave_trap",
-                             "adv_unreachable_battery"}) {
+                               "adv_unreachable_battery"}) {
         escenarios.push_back(ArchivoEscenario::cargar(carpeta + "/" + nombre + ".txt"));
     }
     for (uint64_t semilla = 1; semilla <= 2; ++semilla) {
@@ -141,11 +142,11 @@ void probarTodosDanRutasValidas(const std::string& carpeta) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarExclusiones(const std::string& carpeta) {
-    std::cout << "[TEST] 3. Clientes excluidos por obstaculos y por bateria..." << std::endl;
+    std::cout << "[PRUEBA] 3. Clientes excluidos por obstaculos y por bateria..." << std::endl;
 
     Escenario encerrado = ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt");
     SolverMision solverEncerrado(encerrado);
@@ -161,11 +162,11 @@ void probarExclusiones(const std::string& carpeta) {
     verificarRutaValida(bateria, ruta, 3);
     assert(ruta.excluidos.size() == 1);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarDisponibilidadExacto() {
-    std::cout << "[TEST] 4. El exacto solo se ofrece con pocos clientes..." << std::endl;
+    std::cout << "[PRUEBA] 4. El exacto solo se ofrece con pocos clientes..." << std::endl;
 
     Escenario mediano = GeneradorDatasets::generar(Categoria::MEDIUM, 1);
     assert(mediano.numClientes() > SolverExacto::MAX_CLIENTES);
@@ -179,11 +180,11 @@ void probarDisponibilidadExacto() {
     }
     assert(rechazado);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarSinClientes() {
-    std::cout << "[TEST] 5. Sin clientes el dron no despega..." << std::endl;
+    std::cout << "[PRUEBA] 5. Sin clientes el dron no despega..." << std::endl;
 
     Escenario s = escenarioAMano();
     s.clientes.clear();
@@ -194,7 +195,7 @@ void probarSinClientes() {
         assert(ruta.orden == std::vector<std::string>{"D0"} && ruta.trayectoria.size() == 1);
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 size_t contarApariciones(const std::string& texto, const std::string& fragmento) {
@@ -210,7 +211,7 @@ std::string svgDe(const Escenario& s, const Ruta& ruta) {
 }
 
 void probarSvg(const std::string& carpeta) {
-    std::cout << "[TEST] 6. Dibujo SVG del escenario y la ruta..." << std::endl;
+    std::cout << "[PRUEBA] 6. Dibujo SVG del escenario y la ruta..." << std::endl;
 
     // Ruta a mano: un SVG completo con un elemento de cada tipo y la trayectoria de 5 puntos.
     Escenario aMano = escenarioAMano();
@@ -250,7 +251,7 @@ void probarSvg(const std::string& carpeta) {
     assert(std::filesystem::file_size(carpetaSalida + "/ruta.svg") > 500);
     std::filesystem::remove_all(carpetaSalida);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

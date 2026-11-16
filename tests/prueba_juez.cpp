@@ -33,7 +33,8 @@ Escenario escenarioAMano() {
 void esperarRechazo(const Escenario& s, const SolverMision& solver, const Ruta& ruta, const std::string& fragmento) {
     ResultadoVerificacion resultado = Juez::verificarRuta(s, solver, ruta);
     if (resultado.valida || resultado.problema.find(fragmento) == std::string::npos) {
-        std::cerr << "  Resultado: " << (resultado.valida ? "valida" : resultado.problema) << "\n  Se esperaba: " << fragmento << "\n";
+        std::cerr << "  Resultado: " << (resultado.valida ? "valida" : resultado.problema)
+                  << "\n  Se esperaba: " << fragmento << "\n";
         assert(false);
     }
 }
@@ -43,10 +44,12 @@ void quitarPunto(Ruta& ruta, size_t indice) {
 }
 
 void probarAceptaRutasValidas(const std::string& carpeta) {
-    std::cout << "[TEST] 1. El verificador acepta las rutas de todos los algoritmos..." << std::endl;
+    std::cout << "[PRUEBA] 1. El verificador acepta las rutas de todos los algoritmos..." << std::endl;
 
     std::vector<Escenario> escenarios;
-    for (const std::string& archivo : Juez::buscarEscenarios(carpeta)) escenarios.push_back(ArchivoEscenario::cargar(archivo));
+    for (const std::string& archivo : Juez::buscarEscenarios(carpeta)) {
+        escenarios.push_back(ArchivoEscenario::cargar(archivo));
+    }
     escenarios.push_back(GeneradorDatasets::generar(Categoria::SMALL, 1));
     escenarios.push_back(GeneradorDatasets::generar(Categoria::MEDIUM, 1));
     escenarios.push_back(escenarioAMano());
@@ -61,18 +64,18 @@ void probarAceptaRutasValidas(const std::string& carpeta) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarRechazaRutasInvalidas(const std::string& carpeta) {
-    std::cout << "[TEST] 2. El verificador rechaza cada tipo de ruta invalida..." << std::endl;
+    std::cout << "[PRUEBA] 2. El verificador rechaza cada tipo de ruta invalida..." << std::endl;
 
     // Trampa en U: sin los vértices de obstáculo, la ruta atraviesa la U.
     Escenario trampa = ArchivoEscenario::cargar(carpeta + "/adv_concave_trap.txt");
     SolverMision solverTrampa(trampa);
     Ruta recta = solverTrampa.resolver(Algoritmo::BRANCH_AND_BOUND);
     recta.trayectoria.erase(std::remove_if(recta.trayectoria.begin(), recta.trayectoria.end(),
-                                       [](const PuntoRuta& p) { return p.etiqueta == "V"; }),
+                                           [](const PuntoRuta& p) { return p.etiqueta == "V"; }),
                         recta.trayectoria.end());
     esperarRechazo(trampa, solverTrampa, recta, "cruza un obstaculo");
 
@@ -131,11 +134,11 @@ void probarRechazaRutasInvalidas(const std::string& carpeta) {
     r.excluidos = {{"C1", "BATTERY"}};
     esperarRechazo(aMano, solver, r, "C1 se excluyo por BATTERY pero se puede atender");
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarVeredictos() {
-    std::cout << "[TEST] 3. Veredictos OK, WA, TLE y MLE..." << std::endl;
+    std::cout << "[PRUEBA] 3. Veredictos OK, WA, TLE y MLE..." << std::endl;
 
     LimitesCategoria limits{1.0, 256.0};
     assert(Juez::veredictoPara(true, 999.0, 100.0, limits) == "OK");
@@ -144,11 +147,11 @@ void probarVeredictos() {
     assert(Juez::veredictoPara(true, 1000.1, 100.0, limits) == "TLE");
     assert(Juez::veredictoPara(true, 999.0, 256.5, limits) == "MLE");
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 FilaJuez crearFila(Categoria categoria, const std::string& algoritmo, const std::string& veredicto,
-                 double gap, double tiempoMs) {
+                   double gap, double tiempoMs) {
     FilaJuez fila;
     fila.categoria = categoria;
     fila.algoritmo = algoritmo;
@@ -159,7 +162,7 @@ FilaJuez crearFila(Categoria categoria, const std::string& algoritmo, const std:
 }
 
 void probarRanking() {
-    std::cout << "[TEST] 4. Ranking: mas casos OK, luego menor gap, luego menor tiempo..." << std::endl;
+    std::cout << "[PRUEBA] 4. Ranking: mas casos OK, luego menor gap, luego menor tiempo..." << std::endl;
 
     std::vector<FilaJuez> filas = {
         crearFila(Categoria::SMALL, "lento", "OK", 0.0, 10.0),
@@ -185,11 +188,11 @@ void probarRanking() {
     assert(ranking[3].casosOk == 1 && ranking[3].casos == 2);
     assert(ranking[4].categoria == Categoria::MEDIUM && ranking[4].posicion == 1);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarEjecucionCompleta(const std::string& carpeta) {
-    std::cout << "[TEST] 5. Benchmark completo sobre los casos adversariales..." << std::endl;
+    std::cout << "[PRUEBA] 5. Benchmark completo sobre los casos adversariales..." << std::endl;
 
     std::vector<std::string> archivos = Juez::buscarEscenarios(carpeta);
     assert(archivos.size() == 5);                                    // Solo los .txt, no el README
@@ -221,7 +224,7 @@ void probarEjecucionCompleta(const std::string& carpeta) {
     Exportador::escribirResultadosCsv(filas, csv);
     std::string texto = csv.str();
     assert(texto.rfind("escenario,categoria,clientes,algoritmo,veredicto,costo,recargas,excluidos,tiempo_ms,"
-                      "memoria_mb,gap_mejor,gap_cota\n", 0) == 0);
+                       "memoria_mb,gap_mejor,gap_cota\n", 0) == 0);
     assert(std::count(texto.begin(), texto.end(), '\n') == 31);
 
     std::vector<FilaRanking> ranking = Juez::armarRanking(filas);
@@ -230,7 +233,7 @@ void probarEjecucionCompleta(const std::string& carpeta) {
 
     std::filesystem::remove_all(salida);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

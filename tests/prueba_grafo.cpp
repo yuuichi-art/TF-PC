@@ -26,7 +26,7 @@ std::vector<Escenario> escenariosDeMuestra(const std::string& carpetaAdversarial
         escenarios.push_back(GeneradorDatasets::generar(Categoria::MEDIUM, semilla));
     }
     for (const char* nombre : {"adv_collinear", "adv_enclosed", "adv_corridor", "adv_concave_trap",
-                             "adv_unreachable_battery"}) {
+                               "adv_unreachable_battery"}) {
         escenarios.push_back(ArchivoEscenario::cargar(carpetaAdversarial + "/" + nombre + ".txt"));
     }
     return escenarios;
@@ -50,7 +50,7 @@ std::vector<int> vecinosOrdenados(const GrafoVisibilidad& g, int u) {
 }
 
 void probarFiltroCajas(const std::vector<Escenario>& escenarios) {
-    std::cout << "[TEST] 1. El filtro por caja envolvente da las mismas aristas..." << std::endl;
+    std::cout << "[PRUEBA] 1. El filtro por caja envolvente da las mismas aristas..." << std::endl;
 
     for (const Escenario& s : escenarios) {
         GrafoVisibilidad filtrado = construirGrafo(s, true);
@@ -61,11 +61,11 @@ void probarFiltroCajas(const std::vector<Escenario>& escenarios) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarNodosClaveComoExtremos(const std::vector<Escenario>& escenarios) {
-    std::cout << "[TEST] 2. Dijkstra sin expandir nodos clave da las mismas distancias..." << std::endl;
+    std::cout << "[PRUEBA] 2. Dijkstra sin expandir nodos clave da las mismas distancias..." << std::endl;
 
     for (const Escenario& s : escenarios) {
         GrafoMision mision(s);
@@ -80,11 +80,11 @@ void probarNodosClaveComoExtremos(const std::vector<Escenario>& escenarios) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarPropiedadesMatriz(const std::vector<Escenario>& escenarios) {
-    std::cout << "[TEST] 3. Matriz simetrica, diagonal cero y desigualdad triangular..." << std::endl;
+    std::cout << "[PRUEBA] 3. Matriz simetrica, diagonal cero y desigualdad triangular..." << std::endl;
 
     for (const Escenario& s : escenarios) {
         GrafoMision mision(s);
@@ -106,11 +106,12 @@ void probarPropiedadesMatriz(const std::vector<Escenario>& escenarios) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarCaminos(const std::vector<Escenario>& escenarios) {
-    std::cout << "[TEST] 4. Caminos reales: validos, solo doblan en obstaculos y miden lo de la matriz..." << std::endl;
+    std::cout << "[PRUEBA] 4. Caminos reales: validos, solo doblan en obstaculos y miden lo de la matriz..."
+              << std::endl;
 
     for (const Escenario& s : escenarios) {
         GrafoMision mision(s);
@@ -135,11 +136,11 @@ void probarCaminos(const std::vector<Escenario>& escenarios) {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarDistanciaCalculadaAMano() {
-    std::cout << "[TEST] 5. Distancia calculada a mano alrededor de un cuadrado..." << std::endl;
+    std::cout << "[PRUEBA] 5. Distancia calculada a mano alrededor de un cuadrado..." << std::endl;
 
     // Base (0,5) y cliente (10,5) con el cuadrado [3,7]x[3,7] en medio. El camino mínimo rodea
     // el cuadrado por abajo: (0,5) -> (3,3) -> (7,3) -> (10,5) = 2·sqrt(13) + 4.
@@ -151,11 +152,11 @@ void probarDistanciaCalculadaAMano() {
     assert(std::abs(mision.distancia(0, mision.claveCliente(0)) - (2.0 * std::sqrt(13.0) + 4.0)) < TOLERANCIA);
     assert(mision.nodosCamino(0, mision.claveCliente(0)).size() == 4);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarCasosAdversariales(const std::string& carpeta) {
-    std::cout << "[TEST] 6. Casos adversariales: DFS, pasillo, borde y trampa concava..." << std::endl;
+    std::cout << "[PRUEBA] 6. Casos adversariales: DFS, pasillo, borde y trampa concava..." << std::endl;
 
     // Cliente encerrado: el DFS desde la base no lo alcanza y no hay distancia finita.
     GrafoMision encerrado(ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt"));
@@ -180,7 +181,7 @@ void probarCasosAdversariales(const std::string& carpeta) {
     double detras = trampa.distancia(0, trampa.claveCliente(1));
     assert(!std::isinf(detras) && detras > 70.0 + 1.0);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

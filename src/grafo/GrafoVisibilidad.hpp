@@ -17,9 +17,9 @@ namespace geodrone {
  */
 enum class TipoNodo {
     BASE,              // Base logística (D)
-    CLIENTE,             // Cliente con entrega obligatoria (C)
-    ESTACION,   // Estación de recarga (S)
-    VERTICE_OBSTACULO     // Vértice de un obstáculo, para rodearlo
+    CLIENTE,           // Cliente con entrega obligatoria (C)
+    ESTACION,          // Estación de recarga (S)
+    VERTICE_OBSTACULO  // Vértice de un obstáculo, para rodearlo
 };
 
 /**
@@ -74,7 +74,7 @@ private:
     // si las cajas no se tocan, el tramo no puede entrar al polígono.
     bool tramoVisible(const Segmento& segmento, bool usarFiltroCajas) const {
         CajaEnvolvente cajaTramo{std::min(segmento.a.x, segmento.b.x), std::min(segmento.a.y, segmento.b.y),
-                           std::max(segmento.a.x, segmento.b.x), std::max(segmento.a.y, segmento.b.y)};
+                                 std::max(segmento.a.x, segmento.b.x), std::max(segmento.a.y, segmento.b.y)};
         for (size_t k = 0; k < obstaculos_.size(); ++k) {
             if (usarFiltroCajas && cajaTramo.esDisjuntaDe(cajasObstaculos_[k])) continue;
             if (Geometria::segmentoCruzaInterior(segmento, obstaculos_[k])) return false;
@@ -110,7 +110,8 @@ public:
         obstaculos_.push_back(poligono);
         cajasObstaculos_.push_back(cajaDe(poligono));
         for (int i = 0; i < poligono.numVertices(); ++i) {
-            agregarNodo(poligono[i], TipoNodo::VERTICE_OBSTACULO, "Obs" + std::to_string(poligono.id) + "_V" + std::to_string(i));
+            agregarNodo(poligono[i], TipoNodo::VERTICE_OBSTACULO,
+                        "Obs" + std::to_string(poligono.id) + "_V" + std::to_string(i));
         }
     }
 

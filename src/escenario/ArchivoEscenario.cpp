@@ -95,7 +95,8 @@ public:
     // Tras los obstáculos no debe quedar nada: así se detectan cantidades mal escritas.
     void esperarFin() {
         if (posicion_ < palabras_.size()) {
-            fallarEn(palabras_[posicion_].linea, "contenido inesperado '" + palabras_[posicion_].texto + "' despues de los obstaculos");
+            fallarEn(palabras_[posicion_].linea,
+                     "contenido inesperado '" + palabras_[posicion_].texto + "' despues de los obstaculos");
         }
     }
 
@@ -133,7 +134,7 @@ private:
 // Bloque "ETIQUETA cantidad" seguido de un punto por elemento (estaciones o clientes).
 // nombrePlural y delElemento solo sirven para los mensajes de error ("clientes", "del cliente").
 std::vector<Punto> leerBloquePuntos(LectorPalabras& lector, const std::string& etiqueta,
-                                  const std::string& nombrePlural, const std::string& delElemento) {
+                                    const std::string& nombrePlural, const std::string& delElemento) {
     lector.esperarEtiqueta(etiqueta);
     int cantidad = lector.leerCantidad("la cantidad de " + nombrePlural);
     std::vector<Punto> puntos;
@@ -187,7 +188,7 @@ Escenario leer(std::istream& entrada) {
     std::string textoCategoria = lector.leerPalabra("la categoria");
     if (!interpretarCategoria(textoCategoria, escenario.categoria)) {
         lector.fallarEnUltima("categoria desconocida '" + textoCategoria +
-                          "' (se espera SMALL, MEDIUM, LARGE, EXTREME o ADVERSARIAL)");
+                              "' (se espera SMALL, MEDIUM, LARGE, EXTREME o ADVERSARIAL)");
     }
 
     lector.esperarEtiqueta("SEED");

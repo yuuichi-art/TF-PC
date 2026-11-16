@@ -40,7 +40,7 @@ public:
     double bateria() const { return bateria_; }
 
     // Arista de la red: distancia de vuelo entre dos puntos de recarga ≤ B.
-    bool conectados(int a, int b) const;
+    bool enlazados(int a, int b) const;
 
     bool esAlcanzable(int claveRecarga) const { return alcanzable_[claveRecarga] != 0; }
     const std::vector<int>& puntosAlcanzables() const { return puntosAlcanzables_; }
@@ -79,11 +79,11 @@ public:
 private:
     const GrafoMision& mision_;
     double bateria_;
-    int numPuntosRecarga_;                     // R = S + 1
+    int numPuntosRecarga_;                   // R = S + 1
     std::vector<char> alcanzable_;           // Por punto de recarga
-    std::vector<char> articulacion_;        // Por punto de recarga
-    std::vector<int> puntosAlcanzables_;      // Claves alcanzables, base primero
-    std::vector<double> distanciaARecarga_; // Por nodo clave
+    std::vector<char> articulacion_;         // Por punto de recarga
+    std::vector<int> puntosAlcanzables_;     // Claves alcanzables, base primero
+    std::vector<double> distanciaARecarga_;  // Por nodo clave
 
     void tarjan(int u, int padre, int& contador, std::vector<int>& descubrimiento, std::vector<int>& bajo);
 };

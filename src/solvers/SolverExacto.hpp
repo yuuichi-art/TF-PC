@@ -10,9 +10,9 @@ namespace geodrone {
  */
 struct ResultadoExacto {
     std::vector<int> orden;         // Claves de los clientes en el orden de visita óptimo
-    double costo = 0.0;              // Costo del ciclo base -> clientes -> base, sin recargas
-    long long nodosExplorados = 0;    // Nodos del árbol de búsqueda visitados
-    long long nodosPodados = 0;      // Ramas descartadas por la cota
+    double costo = 0.0;             // Costo del ciclo base -> clientes -> base, sin recargas
+    long long nodosExplorados = 0;  // Nodos del árbol de búsqueda visitados
+    long long nodosPodados = 0;     // Ramas descartadas por la cota
 };
 
 /**
@@ -47,7 +47,7 @@ public:
      * Lanza std::invalid_argument si hay más de MAX_CLIENTES clientes.
      */
     static ResultadoExacto resolver(const std::vector<std::vector<double>>& distancias, int base,
-                             const std::vector<int>& clientes);
+                                    const std::vector<int>& clientes);
 };
 
 } // namespace geodrone

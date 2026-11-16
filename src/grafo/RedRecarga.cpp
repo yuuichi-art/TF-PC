@@ -31,7 +31,7 @@ RedRecarga::RedRecarga(const GrafoMision& mision, double bateria)
 }
 
 // Comparación exacta, sin tolerancia: ver TOLERANCIA_BATERIA en el encabezado.
-bool RedRecarga::conectados(int a, int b) const {
+bool RedRecarga::enlazados(int a, int b) const {
     return a != b && mision_.distancia(a, b) <= bateria_;
 }
 
@@ -44,7 +44,7 @@ void RedRecarga::tarjan(int u, int padre, int& contador, std::vector<int>& descu
     descubrimiento[u] = bajo[u] = ++contador;
     int hijos = 0;
     for (int v = 0; v < numPuntosRecarga_; ++v) {
-        if (!conectados(u, v)) continue;
+        if (!enlazados(u, v)) continue;
         if (descubrimiento[v] == 0) {
             ++hijos;
             tarjan(v, u, contador, descubrimiento, bajo);

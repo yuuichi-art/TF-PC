@@ -11,7 +11,8 @@ const double TOL = RedRecarga::TOLERANCIA_BATERIA;
 PlanificadorRecargas::PlanificadorRecargas(const GrafoMision& mision, const RedRecarga& red)
     : mision_(mision), red_(red) {}
 
-std::vector<double> PlanificadorRecargas::distanciasEnRed(int inicio, double bateria, std::vector<int>& anterior) const {
+std::vector<double> PlanificadorRecargas::distanciasEnRed(int inicio, double bateria,
+                                                          std::vector<int>& anterior) const {
     const std::vector<int>& puntos = red_.puntosAlcanzables();
     int r = static_cast<int>(puntos.size());
     std::vector<double> mejor(r, INF);
@@ -32,7 +33,7 @@ std::vector<double> PlanificadorRecargas::distanciasEnRed(int inicio, double bat
         if (u == -1) break;
         listo[u] = 1;
         for (int v = 0; v < r; ++v) {
-            if (listo[v] || !red_.conectados(puntos[u], puntos[v])) continue;
+            if (listo[v] || !red_.enlazados(puntos[u], puntos[v])) continue;
             double candidato = mejor[u] + mision_.distancia(puntos[u], puntos[v]);
             if (candidato < mejor[v]) {
                 mejor[v] = candidato;
@@ -59,7 +60,8 @@ int PlanificadorRecargas::elegirUltimaRecarga(const std::vector<double>& mejor, 
     return elegido;
 }
 
-bool PlanificadorRecargas::buscarCaminoRecarga(int inicio, double bateria, int destino, std::vector<int>& camino) const {
+bool PlanificadorRecargas::buscarCaminoRecarga(int inicio, double bateria, int destino,
+                                               std::vector<int>& camino) const {
     std::vector<int> anterior;
     std::vector<double> mejor = distanciasEnRed(inicio, bateria, anterior);
     int ultimo = elegirUltimaRecarga(mejor, destino);

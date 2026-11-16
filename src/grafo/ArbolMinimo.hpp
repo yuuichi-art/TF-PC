@@ -13,7 +13,7 @@ namespace geodrone {
  */
 struct ArbolMinimo {
     double costo = 0.0;          // Suma de las aristas del árbol
-    double aristaMaxima = 0.0;       // Arista más larga del árbol
+    double aristaMaxima = 0.0;   // Arista más larga del árbol
     std::vector<int> padre;
     bool cubreTodos = true;       // false si algún nodo no tiene camino (distancia infinita)
 };

@@ -85,9 +85,10 @@ void imprimirPortada() {
 }
 
 void imprimirResumenEscenario(const Escenario& s) {
-    std::cout << "  Escenario " << s.nombre << " (" << nombreCategoria(s.categoria) << ", semilla " << s.semilla << "): "
-              << "clientes " << s.numClientes() << ", estaciones " << s.numEstaciones() << ", obstaculos "
-              << s.numObstaculos() << " (" << s.totalVerticesObstaculos() << " vertices), bateria " << s.bateria << "\n";
+    std::cout << "  Escenario " << s.nombre << " (" << nombreCategoria(s.categoria) << ", semilla " << s.semilla
+              << "): clientes " << s.numClientes() << ", estaciones " << s.numEstaciones() << ", obstaculos "
+              << s.numObstaculos() << " (" << s.totalVerticesObstaculos() << " vertices), bateria " << s.bateria
+              << "\n";
 }
 
 // Lista de etiquetas; si es muy larga muestra el inicio y el final.
@@ -111,15 +112,18 @@ void generarDatasets() {
     std::cout << "\n--- GENERAR DATASETS ---\n";
     std::cout << "  Categoria  Clientes   Estaciones  Obstaculos  Tiempo  Memoria\n";
     for (Categoria c : {Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE,
-                              Categoria::EXTREME}) {
+                        Categoria::EXTREME}) {
         RangosCategoria rangos = GeneradorDatasets::rangosDe(c);
         LimitesCategoria limites = limitesDe(c);
-        std::cout << "  " << std::left << std::setw(10) << nombreCategoria(c) << std::right
-                  << std::setw(5) << rangos.minClientes << "-" << std::left << std::setw(6) << rangos.maxClientes
-                  << std::right << std::setw(5) << rangos.minEstaciones << "-" << std::left << std::setw(6) << rangos.maxEstaciones
-                  << std::right << std::setw(5) << rangos.minObstaculos << "-" << std::left << std::setw(6) << rangos.maxObstaculos
-                  << std::right << std::setw(4) << limites.limiteTiempoSegundos << " s" << std::setw(6)
-                  << limites.limiteMemoriaMB << " MB\n";
+        std::cout << "  " << std::left << std::setw(10) << nombreCategoria(c)
+                  << std::right << std::setw(5) << rangos.minClientes
+                  << "-" << std::left << std::setw(6) << rangos.maxClientes
+                  << std::right << std::setw(5) << rangos.minEstaciones
+                  << "-" << std::left << std::setw(6) << rangos.maxEstaciones
+                  << std::right << std::setw(5) << rangos.minObstaculos
+                  << "-" << std::left << std::setw(6) << rangos.maxObstaculos
+                  << std::right << std::setw(4) << limites.limiteTiempoSegundos << " s"
+                  << std::setw(6) << limites.limiteMemoriaMB << " MB\n";
     }
 
     std::string carpeta = preguntarTexto("Carpeta de destino", "data/generated");
@@ -174,7 +178,9 @@ void resolverEscenario() {
     std::cout << std::setprecision(2) << "  Costo:      " << ruta.costo << " (distancia volada, con recargas)\n";
     std::cout << "  Recargas:   " << ruta.recargas << "\n";
     std::cout << "  Excluidos:  " << ruta.excluidos.size();
-    for (const ClienteExcluido& cliente : ruta.excluidos) std::cout << "  " << cliente.etiqueta << " (" << cliente.motivo << ")";
+    for (const ClienteExcluido& cliente : ruta.excluidos) {
+        std::cout << "  " << cliente.etiqueta << " (" << cliente.motivo << ")";
+    }
     std::cout << '\n';
     std::cout << "  Tiempo:     " << ruta.totalMs() << " ms = " << ruta.preparacionMs << " de preparacion + "
               << ruta.resolucionMs << " de resolucion (limite " << static_cast<int>(limites.limiteTiempoSegundos * 1000)

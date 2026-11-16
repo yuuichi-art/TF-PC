@@ -60,9 +60,9 @@ private:
     GrafoVisibilidad grafo_;
     int numEstaciones_ = 0;
     int numClientes_ = 0;
-    std::vector<std::vector<double>> distancias_;     // distancias_[a][b] entre nodos clave
-    std::vector<std::vector<int>> padres_;      // padres_[a][v]: predecesor de v en el camino desde a
-    std::vector<char> conectados_;               // conectados_[v]: v se alcanza desde la base
+    std::vector<std::vector<double>> distancias_;  // distancias_[a][b] entre nodos clave
+    std::vector<std::vector<int>> padres_;         // padres_[a][v]: predecesor de v en el camino desde a
+    std::vector<char> conectados_;                 // conectados_[v]: v se alcanza desde la base
 
     void marcarConectados(int nodo);
 };

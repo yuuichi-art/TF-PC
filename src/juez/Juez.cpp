@@ -87,7 +87,9 @@ ResultadoVerificacion verificarRuta(const Escenario& escenario, const SolverMisi
         char tipo = 'V';
         int numero = 0;
         if (p.etiqueta != "V") {
-            if (!interpretarEtiqueta(escenario, p.etiqueta, tipo, numero)) return falla("etiqueta desconocida '" + p.etiqueta + "'");
+            if (!interpretarEtiqueta(escenario, p.etiqueta, tipo, numero)) {
+                return falla("etiqueta desconocida '" + p.etiqueta + "'");
+            }
             if (p.punto != puntoDe(escenario, tipo, numero)) {
                 return falla(p.etiqueta + " no esta en las coordenadas del escenario");
             }
@@ -129,7 +131,9 @@ ResultadoVerificacion verificarRuta(const Escenario& escenario, const SolverMisi
         excluidos[numero - 1] = 1;
     }
     for (int c = 0; c < escenario.numClientes(); ++c) {
-        if (visitas[c] == 0 && !excluidos[c]) return falla("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
+        if (visitas[c] == 0 && !excluidos[c]) {
+            return falla("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
+        }
     }
 
     if (std::abs(longitud - ruta.costo) > TOL * std::max(1.0, longitud)) {
@@ -212,7 +216,8 @@ std::vector<FilaJuez> juzgarEscenario(const Escenario& s, const std::string& car
 }
 
 // Avance en consola: una línea por caso y el motivo de cada ruta que no dio OK.
-void imprimirCaso(std::ostream& registro, size_t numero, size_t total, const Escenario& s, const std::vector<FilaJuez>& filas) {
+void imprimirCaso(std::ostream& registro, size_t numero, size_t total, const Escenario& s,
+                  const std::vector<FilaJuez>& filas) {
     int ok = 0;
     double mejor = INF;
     for (const FilaJuez& fila : filas) {
@@ -235,7 +240,7 @@ void imprimirCaso(std::ostream& registro, size_t numero, size_t total, const Esc
 } // namespace
 
 std::vector<FilaJuez> ejecutar(const std::vector<std::string>& archivosEscenario, const std::string& carpetaRutas,
-                          std::ostream& registro) {
+                               std::ostream& registro) {
     std::vector<Escenario> escenarios;
     for (const std::string& archivo : archivosEscenario) escenarios.push_back(ArchivoEscenario::cargar(archivo));
     std::stable_sort(escenarios.begin(), escenarios.end(),

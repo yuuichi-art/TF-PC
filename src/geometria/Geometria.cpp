@@ -10,7 +10,7 @@ int orientacion(const Punto& a, const Punto& b, const Punto& c) {
     double producto = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
     if (producto > EPS) return 1;    // Antihorario / izquierda
     if (producto < -EPS) return -1;  // Horario / derecha
-    return 0;                  // Colineal
+    return 0;                        // Colineal
 }
 
 bool estaEnSegmento(const Punto& p, const Punto& a, const Punto& b) {
@@ -117,9 +117,9 @@ bool segmentoCruzaInterior(const Segmento& segmento, const Poligono& poligono) {
         return estaEstrictamenteDentro(segmento.a, poligono);
     }
 
-    // 1. Si el segmento interseca propiamente (en cruz) cualquier arista del polígono,
+    // 1. Si el segmento interseca propiamente (en cruz) cualquier lado del polígono,
     // forzosamente penetra o atraviesa el interior.
-    // Las aristas se arman en la pila en vez de pedir poligono.aristas(): esta función se llama
+    // Los lados se arman en la pila en vez de pedir poligono.lados(): esta función se llama
     // millones de veces al construir el grafo y crear un vector en cada llamada era el costo dominante.
     for (int i = 0; i < n; ++i) {
         Segmento arista(poligono[i], poligono[(i + 1) % n]);

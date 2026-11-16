@@ -37,7 +37,7 @@ namespace SolverHeuristico {
      * Rápido pero sin garantía de calidad. Complejidad: O(n^2) en tiempo, O(n) en espacio.
      */
     std::vector<int> vecinoMasCercano(const std::vector<std::vector<double>>& distancias, int base,
-                                     const std::vector<int>& clientes);
+                                      const std::vector<int>& clientes);
 
     /**
      * @brief 2-aproximación: árbol de expansión mínima (Prim) de la base y los clientes, recorrido
@@ -50,7 +50,7 @@ namespace SolverHeuristico {
      * Complejidad: O(n^2) en tiempo (Prim sobre matriz) y O(n) en espacio.
      */
     std::vector<int> dosAproximacion(const std::vector<std::vector<double>>& distancias, int base,
-                                      const std::vector<int>& clientes);
+                                     const std::vector<int>& clientes);
 
     /**
      * @brief 2-opt: mientras exista, aplica un intercambio que acorte la ruta. Un intercambio quita
@@ -61,7 +61,7 @@ namespace SolverHeuristico {
      * @return false si se detuvo por el límite de tiempo antes del óptimo local.
      */
     bool aplicar2Opt(const std::vector<std::vector<double>>& distancias, int base, std::vector<int>& orden,
-                Reloj::time_point limite = sinLimite());
+                     Reloj::time_point limite = sinLimite());
 
     struct ResultadoBusquedaIterada {
         std::vector<int> orden;
@@ -80,9 +80,9 @@ namespace SolverHeuristico {
      * Complejidad: O(iteraciones · costo de 2-opt). Espacio O(n).
      */
     ResultadoBusquedaIterada busquedaLocalIterada(const std::vector<std::vector<double>>& distancias, int base,
-                                  const std::vector<int>& ordenInicial, uint64_t semilla,
-                                  int maxIteraciones = ITERACIONES_POR_DEFECTO,
-                                  Reloj::time_point limite = sinLimite());
+                                                  const std::vector<int>& ordenInicial, uint64_t semilla,
+                                                  int maxIteraciones = ITERACIONES_POR_DEFECTO,
+                                                  Reloj::time_point limite = sinLimite());
 
 } // namespace SolverHeuristico
 

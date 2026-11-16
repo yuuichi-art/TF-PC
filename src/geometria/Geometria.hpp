@@ -12,9 +12,9 @@ namespace geodrone {
  * @brief Ubicación de un punto respecto a un polígono.
  */
 enum class UbicacionPunto {
-    FUERA = 0,    // Estrictamente exterior
+    FUERA = 0,   // Estrictamente exterior
     BORDE = 1,   // Sobre el borde o vértice
-    DENTRO = 2      // Estrictamente interior
+    DENTRO = 2   // Estrictamente interior
 };
 
 namespace Geometria {
@@ -44,7 +44,8 @@ namespace Geometria {
     bool interseccionPropia(const Segmento& s1, const Segmento& s2);
 
     /**
-     * @brief Determina si un punto está dentro, en el borde o fuera de un polígono mediante Ray Casting (teorema de la curva de Jordan).
+     * @brief Determina si un punto está dentro, en el borde o fuera de un polígono mediante Ray Casting
+     * (teorema de la curva de Jordan).
      * Complejidad: O(V) donde V es el número de vértices del polígono.
      */
     UbicacionPunto ubicacionEnPoligono(const Punto& punto, const Poligono& poligono);

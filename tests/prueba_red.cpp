@@ -37,7 +37,7 @@ Escenario soloGeometria(Categoria categoria, uint64_t semilla) {
 // empieza y termina en la base, visita cada cliente una vez, la batería nunca baja de 0,
 // al llegar a un cliente queda batería para su recarga más cercana, y costo y recargas cuadran.
 void verificarPlanValido(const GrafoMision& mision, const RedRecarga& red,
-                     const std::vector<int>& orden, const PlanRecargas& plan) {
+                         const std::vector<int>& orden, const PlanRecargas& plan) {
     assert(plan.factible);
     const std::vector<int>& secuencia = plan.secuenciaClaves;
     assert(secuencia.front() == mision.claveBase() && secuencia.back() == mision.claveBase());
@@ -66,7 +66,7 @@ void verificarPlanValido(const GrafoMision& mision, const RedRecarga& red,
 }
 
 void probarPrim() {
-    std::cout << "[TEST] 1. Prim sobre una matriz calculada a mano..." << std::endl;
+    std::cout << "[PRUEBA] 1. Prim sobre una matriz calculada a mano..." << std::endl;
 
     // Cuadrado de lado 1: el árbol usa tres lados (costo 3, arista mayor 1).
     const double r2 = std::sqrt(2.0);
@@ -88,21 +88,21 @@ void probarPrim() {
     // Un nodo sin camino deja el árbol incompleto.
     assert(!arbolMinimoPrim(distancias, {0, 1, 4}).cubreTodos);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarEstructuraRed() {
-    std::cout << "[TEST] 2. Red de recarga: alcanzables, articulacion, dRecarga y red minima..." << std::endl;
+    std::cout << "[PRUEBA] 2. Red de recarga: alcanzables, articulacion, dRecarga y red minima..." << std::endl;
 
     // Base y estaciones en cadena: D(0,0) - S1(10,0) - S2(20,0) - S3(30,0), y S4(20,8) colgando
     // de S2. Con B = 10.5 solo existen esas aristas, así que S1 y S2 son críticas.
     Escenario s = crearEscenario(Punto(0, 0),
-                              {Punto(10, 0), Punto(20, 0), Punto(30, 0), Punto(20, 8)},
-                              {Punto(0, 6), Punto(30, 4)});
+                                 {Punto(10, 0), Punto(20, 0), Punto(30, 0), Punto(20, 8)},
+                                 {Punto(0, 6), Punto(30, 4)});
     GrafoMision mision(s);
     RedRecarga red(mision, 10.5);
 
-    assert(red.conectados(0, 1) && red.conectados(2, 4) && !red.conectados(1, 4) && !red.conectados(0, 2));
+    assert(red.enlazados(0, 1) && red.enlazados(2, 4) && !red.enlazados(1, 4) && !red.enlazados(0, 2));
     assert(red.puntosAlcanzables() == std::vector<int>({0, 1, 2, 3, 4}));
     assert(red.estacionesCriticas() == std::vector<int>({1, 2}));
 
@@ -130,11 +130,11 @@ void probarEstructuraRed() {
     assert(RedRecarga(mision, arbol.aristaMaxima).puntosAlcanzables().size() == 5);
     assert(RedRecarga(mision, arbol.aristaMaxima - 0.01).puntosAlcanzables().size() < 5);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarAutonomiaMinimaAMano() {
-    std::cout << "[TEST] 3. Autonomia minima calculada a mano..." << std::endl;
+    std::cout << "[PRUEBA] 3. Autonomia minima calculada a mano..." << std::endl;
 
     // Base (0,0), estación (10,0), cliente (10,6).
     // Con B ≥ 10 la estación es alcanzable y el cliente queda a 6 de ella: hace falta B ≥ 12.
@@ -145,11 +145,11 @@ void probarAutonomiaMinimaAMano() {
     assert(RedRecarga::esFactible(mision, 12.0));
     assert(!RedRecarga::esFactible(mision, 11.99));
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarAutonomiaMinimaMonotona() {
-    std::cout << "[TEST] 4. Busqueda binaria: factibilidad monotona en escenarios generados..." << std::endl;
+    std::cout << "[PRUEBA] 4. Busqueda binaria: factibilidad monotona en escenarios generados..." << std::endl;
 
     for (Categoria categoria : {Categoria::SMALL, Categoria::MEDIUM}) {
         for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
@@ -168,11 +168,11 @@ void probarAutonomiaMinimaMonotona() {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarPlanificadorAMano() {
-    std::cout << "[TEST] 5. Insercion de recargas calculada a mano..." << std::endl;
+    std::cout << "[PRUEBA] 5. Insercion de recargas calculada a mano..." << std::endl;
 
     // Mismo escenario que la prueba 3 con B = 12. Desde la base, ir directo al cliente (11.66)
     // dejaría 0.34 y su recarga más cercana está a 6: se desvía por la estación. De vuelta,
@@ -195,11 +195,11 @@ void probarPlanificadorAMano() {
     PlanRecargas directo = PlanificadorRecargas(mision, grande).planificar(orden);
     assert(directo.secuenciaClaves == std::vector<int>({0, 2, 0}) && directo.recargas == 0);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarPlanificadorEnGenerados() {
-    std::cout << "[TEST] 6. Rutas con recargas validas en escenarios generados (B minima y B x 1.2)..." << std::endl;
+    std::cout << "[PRUEBA] 6. Rutas con recargas validas en escenarios generados (B minima y B x 1.2)..." << std::endl;
 
     std::mt19937 rng(2026);
     for (Categoria categoria : {Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE}) {
@@ -222,11 +222,11 @@ void probarPlanificadorEnGenerados() {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarBateriaAdversarial(const std::string& carpeta) {
-    std::cout << "[TEST] 7. Casos adversariales: cliente fuera de alcance y cliente encerrado..." << std::endl;
+    std::cout << "[PRUEBA] 7. Casos adversariales: cliente fuera de alcance y cliente encerrado..." << std::endl;
 
     // Con B = 60 el cliente (95,95) queda lejos de toda recarga; los otros tres se atienden.
     Escenario s = ArchivoEscenario::cargar(carpeta + "/adv_unreachable_battery.txt");
@@ -244,11 +244,11 @@ void probarBateriaAdversarial(const std::string& carpeta) {
     double minima = RedRecarga::autonomiaMinima(encerrado);
     assert(std::isfinite(minima) && RedRecarga::esFactible(encerrado, minima));
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarBateriaGenerador() {
-    std::cout << "[TEST] 8. Bateria del generador = autonomia minima x 1.2, redondeada..." << std::endl;
+    std::cout << "[PRUEBA] 8. Bateria del generador = autonomia minima x 1.2, redondeada..." << std::endl;
 
     for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
         Escenario s = GeneradorDatasets::generar(Categoria::SMALL, semilla);
@@ -258,7 +258,7 @@ void probarBateriaGenerador() {
         assert(RedRecarga::esFactible(mision, s.bateria));
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

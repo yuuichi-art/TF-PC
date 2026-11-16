@@ -43,8 +43,8 @@ bool dentroDelArea(const Escenario& s, const Punto& p) {
 // Dos polígonos convexos se tocan o se solapan si alguna arista de uno corta (o toca) una
 // arista del otro, o si un vértice de uno está dentro o sobre el borde del otro.
 bool poligonosSeTocan(const Poligono& a, const Poligono& b) {
-    for (const Segmento& ea : a.aristas()) {
-        for (const Segmento& eb : b.aristas()) {
+    for (const Segmento& ea : a.lados()) {
+        for (const Segmento& eb : b.lados()) {
             if (Geometria::segmentosSeIntersecan(ea, eb)) return true;
         }
     }
@@ -53,7 +53,7 @@ bool poligonosSeTocan(const Poligono& a, const Poligono& b) {
 }
 
 void probarMismaSemillaMismoEscenario() {
-    std::cout << "[TEST] 1. La misma semilla produce el mismo escenario..." << std::endl;
+    std::cout << "[PRUEBA] 1. La misma semilla produce el mismo escenario..." << std::endl;
 
     for (Categoria categoria : CATEGORIAS_GENERADAS) {
         for (uint64_t semilla : {1ULL, 7ULL, 123456789ULL}) {
@@ -65,11 +65,11 @@ void probarMismaSemillaMismoEscenario() {
         assert(aTexto(soloGeometria(categoria, 1)) != aTexto(soloGeometria(categoria, 2)));
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarTamanosDentroDeCategoria() {
-    std::cout << "[TEST] 2. Cantidades dentro de los rangos de cada categoria..." << std::endl;
+    std::cout << "[PRUEBA] 2. Cantidades dentro de los rangos de cada categoria..." << std::endl;
 
     const int maxVerticesObstaculos[] = {30, 100, 400, 1500};
     int indice = 0;
@@ -89,11 +89,11 @@ void probarTamanosDentroDeCategoria() {
         ++indice;
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarGeometriaValida() {
-    std::cout << "[TEST] 3. Obstaculos convexos sin solape y puntos libres y enteros..." << std::endl;
+    std::cout << "[PRUEBA] 3. Obstaculos convexos sin solape y puntos libres y enteros..." << std::endl;
 
     for (Categoria categoria : CATEGORIAS_GENERADAS) {
         for (uint64_t semilla = 1; semilla <= 5; ++semilla) {
@@ -132,11 +132,11 @@ void probarGeometriaValida() {
         }
     }
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarAdversarialRechazado() {
-    std::cout << "[TEST] 4. La categoria ADVERSARIAL no se genera..." << std::endl;
+    std::cout << "[PRUEBA] 4. La categoria ADVERSARIAL no se genera..." << std::endl;
 
     bool rechazado = false;
     try {
@@ -146,11 +146,11 @@ void probarAdversarialRechazado() {
     }
     assert(rechazado);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 void probarConjuntoBenchmark() {
-    std::cout << "[TEST] 5. Set de benchmark guardado y releido desde archivo..." << std::endl;
+    std::cout << "[PRUEBA] 5. Set de benchmark guardado y releido desde archivo..." << std::endl;
 
     const std::string carpeta = "tmp_prueba_generator";
     std::filesystem::remove_all(carpeta);
@@ -176,7 +176,8 @@ void probarConjuntoBenchmark() {
     // El peor caso fija cada cantidad en el máximo del rango.
     for (Categoria categoria : CATEGORIAS_GENERADAS) {
         RangosCategoria rango = GeneradorDatasets::rangosDe(categoria);
-        Escenario peor = GeneradorDatasets::generarGeometria(GeneradorDatasets::rangosPeorCaso(categoria), categoria, 1);
+        Escenario peor = GeneradorDatasets::generarGeometria(GeneradorDatasets::rangosPeorCaso(categoria),
+                                                             categoria, 1);
         assert(peor.numClientes() == rango.maxClientes);
         assert(peor.numEstaciones() == rango.maxEstaciones);
         assert(peor.numObstaculos() == rango.maxObstaculos);
@@ -184,7 +185,7 @@ void probarConjuntoBenchmark() {
 
     std::filesystem::remove_all(carpeta);
 
-    std::cout << "  -> PASSED\n" << std::endl;
+    std::cout << "  -> OK\n" << std::endl;
 }
 
 int main() {

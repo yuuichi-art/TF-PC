@@ -32,7 +32,8 @@ inline std::vector<Punto> envolventeConvexa(std::vector<Punto> puntos) {
 
     // Cadena inferior: de izquierda a derecha.
     for (int i = 0; i < n; ++i) {
-        while (k >= 2 && (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
+        while (k >= 2 &&
+               (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
             --k;
         }
         envolvente[k++] = puntos[i];
@@ -41,7 +42,8 @@ inline std::vector<Punto> envolventeConvexa(std::vector<Punto> puntos) {
     // Cadena superior: de derecha a izquierda. tamanoInferior evita borrar la cadena inferior.
     int tamanoInferior = k + 1;
     for (int i = n - 2; i >= 0; --i) {
-        while (k >= tamanoInferior && (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
+        while (k >= tamanoInferior &&
+               (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
             --k;
         }
         envolvente[k++] = puntos[i];

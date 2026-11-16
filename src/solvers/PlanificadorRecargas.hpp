@@ -13,9 +13,9 @@ namespace geodrone {
  */
 struct PlanRecargas {
     bool factible = false;
-    std::vector<int> secuenciaClaves;   // Empieza y termina en la base (clave 0)
-    int recargas = 0;              // Paradas en estaciones o en la base a mitad de ruta
-    double costo = 0.0;              // Distancia total volada, incluidos los desvíos
+    std::vector<int> secuenciaClaves;  // Empieza y termina en la base (clave 0)
+    int recargas = 0;                  // Paradas en estaciones o en la base a mitad de ruta
+    double costo = 0.0;                // Distancia total volada, incluidos los desvíos
 };
 
 /**

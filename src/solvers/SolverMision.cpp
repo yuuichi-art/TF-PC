@@ -89,11 +89,12 @@ std::vector<int> SolverMision::elegirOrden(Algoritmo algoritmo) const {
         }
         case Algoritmo::BUSQUEDA_LOCAL_ITERADA: {
             // Presupuesto: el 90 % del límite de la categoría menos lo que ya costó la preparación.
-            double presupuestoMs = std::max(0.0, FRACCION_PRESUPUESTO * limiteTiempoSegundos_ * 1000.0 - preparacionMs_);
+            double presupuestoMs =
+                std::max(0.0, FRACCION_PRESUPUESTO * limiteTiempoSegundos_ * 1000.0 - preparacionMs_);
             auto limite = Reloj::now() + std::chrono::microseconds(static_cast<long long>(presupuestoMs * 1000.0));
             std::vector<int> inicio = SolverHeuristico::vecinoMasCercano(distancias, base, atendibles_);
             return SolverHeuristico::busquedaLocalIterada(distancias, base, inicio, semilla_,
-                                                        SolverHeuristico::ITERACIONES_POR_DEFECTO, limite).orden;
+                                                          SolverHeuristico::ITERACIONES_POR_DEFECTO, limite).orden;
         }
     }
     return {};

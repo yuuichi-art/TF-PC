@@ -27,7 +27,7 @@ struct ResultadoDijkstra {
 class Dijkstra {
 public:
     /**
-     * @brief Calcula las distancias mínimas y predecesores desde un nodo origen `origen`
+     * @brief Calcula las distancias mínimas y predecesores desde el nodo `origen`
      * a todos los vértices del grafo de visibilidad.
      * @param nodosClaveComoExtremos Si es true, la base, las estaciones y los clientes (salvo el
      *        origen) se alcanzan pero no se expanden. Las distancias no cambian: un camino mínimo

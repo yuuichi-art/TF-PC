@@ -79,7 +79,7 @@ Las guardas de inclusión siguen el nombre del archivo (`GEODRONE_GRAFOMISION_HP
 | `length`, `midpoint` | `longitud`, `puntoMedio` |
 | `Polygon` | `Poligono` |
 | `name`, `vertices` | `nombre`, `vertices` |
-| `size`, `addVertex`, `getEdges` | `numVertices`, `agregarVertice`, `aristas` |
+| `size`, `addVertex`, `getEdges` | `numVertices`, `agregarVertice`, `lados` |
 | `perimeter`, `signedArea`, `area` | `perimetro`, `areaConSigno`, `area` |
 | `PointLocation`: `OUTSIDE`, `BOUNDARY`, `INSIDE` | `UbicacionPunto`: `FUERA`, `BORDE`, `DENTRO` |
 | namespace `GeometryUtils` | namespace `Geometria` |
@@ -152,7 +152,7 @@ Las guardas de inclusión siguen el nombre del archivo (`GEODRONE_GRAFOMISION_HP
 | `primMst` | `arbolMinimoPrim` |
 | `ChargingNetwork` | `RedRecarga` |
 | `BATTERY_TOLERANCE` | `TOLERANCIA_BATERIA` |
-| `battery`, `linked` | `bateria`, `conectados` |
+| `battery`, `linked` | `bateria`, `enlazados` |
 | `isReachable`, `reachablePoints` | `esAlcanzable`, `puntosAlcanzables` |
 | `distanceToRecharge`, `canServe` | `distanciaARecarga`, `puedeAtender` |
 | `criticalStations` | `estacionesCriticas` |
