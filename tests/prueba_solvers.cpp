@@ -24,13 +24,13 @@ const double TOLERANCE = 1e-6;
 
 // Costo del ciclo base -> clientes en ese orden -> base.
 double tourCost(const Matrix& dist, int base, const std::vector<int>& order) {
-    double cost = 0.0;
+    double costo = 0.0;
     int position = base;
     for (int client : order) {
-        cost += dist[position][client];
+        costo += dist[position][client];
         position = client;
     }
-    return cost + dist[position][base];
+    return costo + dist[position][base];
 }
 
 // Fuerza bruta: prueba todos los órdenes. O(n! · n); solo para n pequeño.
@@ -62,8 +62,8 @@ Matrix euclideanMatrix(const std::vector<Punto>& points) {
 ExactResult assertOptimal(const Matrix& dist, int base, const std::vector<int>& clientes) {
     ExactResult result = ExactSolver::solve(dist, base, clientes);
     assert(isPermutationOf(result.order, clientes));
-    assert(std::abs(tourCost(dist, base, result.order) - result.cost) < TOLERANCE);
-    assert(std::abs(result.cost - bruteForce(dist, base, clientes)) < TOLERANCE);
+    assert(std::abs(tourCost(dist, base, result.order) - result.costo) < TOLERANCE);
+    assert(std::abs(result.costo - bruteForce(dist, base, clientes)) < TOLERANCE);
     return result;
 }
 
@@ -72,13 +72,13 @@ void testHandExamples() {
 
     // Cuadrado de lado 10 con la base en una esquina: el óptimo es el perímetro, 40.
     Matrix square = euclideanMatrix({Punto(0, 0), Punto(10, 0), Punto(10, 10), Punto(0, 10)});
-    assert(std::abs(assertOptimal(square, 0, {1, 2, 3}).cost - 40.0) < TOLERANCE);
+    assert(std::abs(assertOptimal(square, 0, {1, 2, 3}).costo - 40.0) < TOLERANCE);
 
     // Puntos en una recta: base en 0 y clientes en 1, -2 y 4. El vecino más cercano haría
     // 0 -> 1 -> -2 -> 4 -> 0 = 14; el óptimo es 12 (por ejemplo 0 -> 1 -> 4 -> -2 -> 0).
     Matrix line = euclideanMatrix({Punto(0, 0), Punto(1, 0), Punto(-2, 0), Punto(4, 0)});
     assert(std::abs(tourCost(line, 0, {1, 2, 3}) - 14.0) < TOLERANCE);
-    assert(std::abs(assertOptimal(line, 0, {1, 2, 3}).cost - 12.0) < TOLERANCE);
+    assert(std::abs(assertOptimal(line, 0, {1, 2, 3}).costo - 12.0) < TOLERANCE);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
@@ -88,10 +88,10 @@ void testEdgeCases() {
 
     Matrix dist = euclideanMatrix({Punto(0, 0), Punto(3, 4)});
     ExactResult empty = ExactSolver::solve(dist, 0, {});
-    assert(empty.order.empty() && empty.cost == 0.0);
+    assert(empty.order.empty() && empty.costo == 0.0);
 
     ExactResult single = ExactSolver::solve(dist, 0, {1});
-    assert(single.order == std::vector<int>{1} && std::abs(single.cost - 10.0) < TOLERANCE);
+    assert(single.order == std::vector<int>{1} && std::abs(single.costo - 10.0) < TOLERANCE);
 
     std::vector<int> tooMany(ExactSolver::MAX_CLIENTS + 1, 1);
     bool rejected = false;
@@ -136,15 +136,15 @@ void testScenariosWithObstacles(const std::string& adversarialFolder) {
     }
 
     for (const Escenario& s : scenarios) {
-        MissionGraph mission(s);
-        std::vector<int> unreachable = mission.unreachableClients();
+        GrafoMision mision(s);
+        std::vector<int> unreachable = mision.clientesInalcanzables();
         std::vector<int> clientes;
-        for (int c = 0; c < mission.numClientes() && clientes.size() < 8; ++c) {
+        for (int c = 0; c < mision.numClientes() && clientes.size() < 8; ++c) {
             if (std::find(unreachable.begin(), unreachable.end(), c) == unreachable.end()) {
-                clientes.push_back(mission.clientKey(c));
+                clientes.push_back(mision.claveCliente(c));
             }
         }
-        assertOptimal(mission.distances(), mission.depotKey(), clientes);
+        assertOptimal(mision.distancias(), mision.claveBase(), clientes);
     }
 
     std::cout << "  -> PASSED\n" << std::endl;
@@ -175,7 +175,7 @@ void testPruning() {
 // ---------------------------------------------------------------------------------------------
 
 struct Instance {
-    Matrix dist;
+    Matrix distancias;
     int base;
     std::vector<int> clientes;
 };
@@ -191,9 +191,9 @@ Instance randomInstance(int n, std::mt19937& rng) {
 
 // Instancia con obstáculos a partir de un escenario generado (solo geometría).
 Instance scenarioInstance(Categoria categoria, uint64_t semilla) {
-    MissionGraph mission(GeneradorDatasets::generarGeometria(GeneradorDatasets::rangosDe(categoria), categoria, semilla));
-    Instance instance{mission.distances(), mission.depotKey(), {}};
-    for (int c = 0; c < mission.numClientes(); ++c) instance.clientes.push_back(mission.clientKey(c));
+    GrafoMision mision(GeneradorDatasets::generarGeometria(GeneradorDatasets::rangosDe(categoria), categoria, semilla));
+    Instance instance{mision.distancias(), mision.claveBase(), {}};
+    for (int c = 0; c < mision.numClientes(); ++c) instance.clientes.push_back(mision.claveCliente(c));
     return instance;
 }
 
@@ -243,19 +243,19 @@ void testHeuristicsProduceValidOrders() {
     instances.push_back(scenarioInstance(Categoria::LARGE, 1));
 
     for (const Instance& in : instances) {
-        std::vector<int> greedy = HeuristicSolver::nearestNeighbor(in.dist, in.base, in.clientes);
-        std::vector<int> approx = HeuristicSolver::mstApproximation(in.dist, in.base, in.clientes);
+        std::vector<int> greedy = HeuristicSolver::nearestNeighbor(in.distancias, in.base, in.clientes);
+        std::vector<int> approx = HeuristicSolver::mstApproximation(in.distancias, in.base, in.clientes);
         assert(isPermutationOf(greedy, in.clientes) && isPermutationOf(approx, in.clientes));
 
         for (std::vector<int> start : {greedy, approx}) {
-            double before = HeuristicSolver::tourCost(in.dist, in.base, start);
-            assert(HeuristicSolver::twoOpt(in.dist, in.base, start));
+            double before = HeuristicSolver::tourCost(in.distancias, in.base, start);
+            assert(HeuristicSolver::twoOpt(in.distancias, in.base, start));
             assert(isPermutationOf(start, in.clientes));
-            assert(HeuristicSolver::tourCost(in.dist, in.base, start) <= before + TOLERANCE);
-            assert(isTwoOptLocalOptimum(in.dist, in.base, start));
+            assert(HeuristicSolver::tourCost(in.distancias, in.base, start) <= before + TOLERANCE);
+            assert(isTwoOptLocalOptimum(in.distancias, in.base, start));
         }
 
-        HeuristicSolver::IlsResult ils = HeuristicSolver::iteratedLocalSearch(in.dist, in.base, greedy, 7, 30);
+        HeuristicSolver::IlsResult ils = HeuristicSolver::iteratedLocalSearch(in.distancias, in.base, greedy, 7, 30);
         assert(isPermutationOf(ils.order, in.clientes) && !ils.stoppedByTime);
     }
 
@@ -269,9 +269,9 @@ void testApproximationGuarantee() {
     for (int n = 1; n <= 9; ++n) {
         for (int instance = 0; instance < 5; ++instance) {
             Instance in = randomInstance(n, rng);
-            double approx = HeuristicSolver::tourCost(in.dist, in.base,
-                                                      HeuristicSolver::mstApproximation(in.dist, in.base, in.clientes));
-            double optimum = ExactSolver::solve(in.dist, in.base, in.clientes).cost;
+            double approx = HeuristicSolver::tourCost(in.distancias, in.base,
+                                                      HeuristicSolver::mstApproximation(in.distancias, in.base, in.clientes));
+            double optimum = ExactSolver::solve(in.distancias, in.base, in.clientes).costo;
             assert(approx <= 2.0 * optimum + TOLERANCE);
         }
     }
@@ -281,9 +281,9 @@ void testApproximationGuarantee() {
         Instance in = scenarioInstance(Categoria::LARGE, semilla);
         std::vector<int> nodes = {in.base};
         nodes.insert(nodes.end(), in.clientes.begin(), in.clientes.end());
-        double treeCost = primMst(in.dist, nodes).cost;
-        double approx = HeuristicSolver::tourCost(in.dist, in.base,
-                                                  HeuristicSolver::mstApproximation(in.dist, in.base, in.clientes));
+        double treeCost = arbolMinimoPrim(in.distancias, nodes).costo;
+        double approx = HeuristicSolver::tourCost(in.distancias, in.base,
+                                                  HeuristicSolver::mstApproximation(in.distancias, in.base, in.clientes));
         assert(treeCost <= approx + TOLERANCE && approx <= 2.0 * treeCost + TOLERANCE);
     }
 
@@ -296,34 +296,34 @@ void testIteratedLocalSearch() {
     // Nunca peor que el 2-opt de su ruta inicial, y la misma semilla da la misma ruta.
     for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
         Instance in = scenarioInstance(Categoria::MEDIUM, semilla);
-        std::vector<int> start = HeuristicSolver::nearestNeighbor(in.dist, in.base, in.clientes);
+        std::vector<int> start = HeuristicSolver::nearestNeighbor(in.distancias, in.base, in.clientes);
         std::vector<int> localOptimum = start;
-        HeuristicSolver::twoOpt(in.dist, in.base, localOptimum);
+        HeuristicSolver::twoOpt(in.distancias, in.base, localOptimum);
 
-        HeuristicSolver::IlsResult first = HeuristicSolver::iteratedLocalSearch(in.dist, in.base, start, semilla);
-        HeuristicSolver::IlsResult second = HeuristicSolver::iteratedLocalSearch(in.dist, in.base, start, semilla);
+        HeuristicSolver::IlsResult first = HeuristicSolver::iteratedLocalSearch(in.distancias, in.base, start, semilla);
+        HeuristicSolver::IlsResult second = HeuristicSolver::iteratedLocalSearch(in.distancias, in.base, start, semilla);
         assert(first.order == second.order);
         assert(first.iterations == HeuristicSolver::DEFAULT_ILS_ITERATIONS);
-        assert(HeuristicSolver::tourCost(in.dist, in.base, first.order) <=
-               HeuristicSolver::tourCost(in.dist, in.base, localOptimum) + TOLERANCE);
+        assert(HeuristicSolver::tourCost(in.distancias, in.base, first.order) <=
+               HeuristicSolver::tourCost(in.distancias, in.base, localOptimum) + TOLERANCE);
     }
 
     // En instancias Small llega al óptimo del branch and bound.
     for (uint64_t semilla = 1; semilla <= 10; ++semilla) {
         Instance in = scenarioInstance(Categoria::SMALL, semilla);
-        std::vector<int> start = HeuristicSolver::nearestNeighbor(in.dist, in.base, in.clientes);
-        double ils = HeuristicSolver::tourCost(in.dist, in.base,
-                                               HeuristicSolver::iteratedLocalSearch(in.dist, in.base, start, semilla).order);
-        double optimum = ExactSolver::solve(in.dist, in.base, in.clientes).cost;
+        std::vector<int> start = HeuristicSolver::nearestNeighbor(in.distancias, in.base, in.clientes);
+        double ils = HeuristicSolver::tourCost(in.distancias, in.base,
+                                               HeuristicSolver::iteratedLocalSearch(in.distancias, in.base, start, semilla).order);
+        double optimum = ExactSolver::solve(in.distancias, in.base, in.clientes).costo;
         assert(ils <= optimum + TOLERANCE);
     }
 
     // Con un límite de 30 ms y muchas iteraciones pedidas, se detiene a tiempo.
     Instance large = scenarioInstance(Categoria::LARGE, 2);
-    std::vector<int> start = HeuristicSolver::nearestNeighbor(large.dist, large.base, large.clientes);
+    std::vector<int> start = HeuristicSolver::nearestNeighbor(large.distancias, large.base, large.clientes);
     auto begin = HeuristicSolver::Clock::now();
     HeuristicSolver::IlsResult limited = HeuristicSolver::iteratedLocalSearch(
-        large.dist, large.base, start, 1, 1000000, begin + std::chrono::milliseconds(30));
+        large.distancias, large.base, start, 1, 1000000, begin + std::chrono::milliseconds(30));
     double elapsedMs = std::chrono::duration<double, std::milli>(HeuristicSolver::Clock::now() - begin).count();
     assert(limited.stoppedByTime && isPermutationOf(limited.order, large.clientes));
     assert(elapsedMs < 30.0 + 200.0);   // Margen para la última pasada de 2-opt y el sistema

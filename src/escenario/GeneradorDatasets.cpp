@@ -124,8 +124,8 @@ Escenario GeneradorDatasets::generar(Categoria categoria, uint64_t semilla, doub
 }
 
 double GeneradorDatasets::bateriaPara(const Escenario& geometria) {
-    MissionGraph mision(geometria);
-    double autonomia = ChargingNetwork::minimumAutonomy(mision);
+    GrafoMision mision(geometria);
+    double autonomia = RedRecarga::autonomiaMinima(mision);
     return std::max(1.0, std::ceil(autonomia * MARGEN_BATERIA));
 }
 

@@ -5,14 +5,14 @@
 namespace geodrone {
 
 namespace {
-const double TOL = ChargingNetwork::BATTERY_TOLERANCE;
+const double TOL = RedRecarga::TOLERANCIA_BATERIA;
 }
 
-RechargePlanner::RechargePlanner(const MissionGraph& mission, const ChargingNetwork& network)
-    : mission_(mission), network_(network) {}
+RechargePlanner::RechargePlanner(const GrafoMision& mision, const RedRecarga& red)
+    : mision_(mision), red_(red) {}
 
 std::vector<double> RechargePlanner::networkDistances(int from, double bateria, std::vector<int>& previous) const {
-    const std::vector<int>& points = network_.reachablePoints();
+    const std::vector<int>& points = red_.puntosAlcanzables();
     int r = static_cast<int>(points.size());
     std::vector<double> best(r, INF);
     std::vector<char> done(r, 0);
@@ -20,7 +20,7 @@ std::vector<double> RechargePlanner::networkDistances(int from, double bateria, 
 
     // Orígenes: los puntos alcanzables con la batería actual, con su distancia como costo inicial.
     for (int i = 0; i < r; ++i) {
-        double d = mission_.distance(from, points[i]);
+        double d = mision_.distancia(from, points[i]);
         if (d <= bateria + TOL) best[i] = d;
     }
     // Dijkstra sin cola de prioridad: con pocos nodos (R ≤ 26) basta buscar el mínimo en cada paso.
@@ -32,8 +32,8 @@ std::vector<double> RechargePlanner::networkDistances(int from, double bateria, 
         if (u == -1) break;
         done[u] = 1;
         for (int v = 0; v < r; ++v) {
-            if (done[v] || !network_.linked(points[u], points[v])) continue;
-            double candidate = best[u] + mission_.distance(points[u], points[v]);
+            if (done[v] || !red_.conectados(points[u], points[v])) continue;
+            double candidate = best[u] + mision_.distancia(points[u], points[v]);
             if (candidate < best[v]) {
                 best[v] = candidate;
                 previous[v] = u;
@@ -44,13 +44,13 @@ std::vector<double> RechargePlanner::networkDistances(int from, double bateria, 
 }
 
 int RechargePlanner::chooseLastRecharge(const std::vector<double>& best, int target) const {
-    const std::vector<int>& points = network_.reachablePoints();
+    const std::vector<int>& points = red_.puntosAlcanzables();
     int chosen = -1;
     double bestTotal = INF;
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         if (best[i] == INF) continue;
-        double leg = mission_.distance(points[i], target);
-        bool safe = network_.bateria() - leg + TOL >= network_.distanceToRecharge(target);
+        double leg = mision_.distancia(points[i], target);
+        bool safe = red_.bateria() - leg + TOL >= red_.distanciaARecarga(target);
         if (safe && best[i] + leg < bestTotal) {
             bestTotal = best[i] + leg;
             chosen = i;
@@ -66,7 +66,7 @@ bool RechargePlanner::findRechargePath(int from, double bateria, int target, std
     if (last == -1) return false;
 
     // Paso 3: reconstruir el camino de recargas siguiendo los predecesores.
-    const std::vector<int>& points = network_.reachablePoints();
+    const std::vector<int>& points = red_.puntosAlcanzables();
     path.clear();
     for (int i = last; i != -1; i = previous[i]) path.push_back(points[i]);
     std::reverse(path.begin(), path.end());
@@ -78,9 +78,9 @@ bool RechargePlanner::findRechargePath(int from, double bateria, int target, std
 
 RechargePlan RechargePlanner::plan(const std::vector<int>& clientOrder) const {
     RechargePlan result;
-    const double full = network_.bateria();
+    const double full = red_.bateria();
     double bateria = full;
-    int position = mission_.depotKey();
+    int position = mision_.claveBase();
     result.keySequence.push_back(position);
 
     // Sin clientes el dron no despega: la ruta es solo la base.
@@ -90,20 +90,20 @@ RechargePlan RechargePlanner::plan(const std::vector<int>& clientOrder) const {
     }
 
     auto flyTo = [&](int key) {
-        double d = mission_.distance(position, key);
-        result.cost += d;
+        double d = mision_.distancia(position, key);
+        result.costo += d;
         bateria -= d;
         position = key;
         result.keySequence.push_back(key);
     };
 
     std::vector<int> targets = clientOrder;
-    targets.push_back(mission_.depotKey());   // Al final se vuelve a la base
+    targets.push_back(mision_.claveBase());   // Al final se vuelve a la base
 
     for (int target : targets) {
         // Directo es seguro si, al llegar, queda batería para alcanzar la recarga más cercana del
         // destino: así nunca se llega a un punto del que no se pueda salir.
-        bool safeDirect = bateria - mission_.distance(position, target) + TOL >= network_.distanceToRecharge(target);
+        bool safeDirect = bateria - mision_.distancia(position, target) + TOL >= red_.distanciaARecarga(target);
         if (!safeDirect) {
             std::vector<int> recharges;
             if (!findRechargePath(position, bateria, target, recharges)) {

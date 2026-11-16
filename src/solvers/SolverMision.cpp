@@ -47,15 +47,15 @@ MissionSolver::MissionSolver(const Escenario& escenario)
       seed_(escenario.semilla),
       timeLimitSeconds_(limitesDe(escenario.categoria).limiteTiempoSegundos),
       constructionStart_(Clock::now()),
-      mission_(escenario),
-      network_(mission_, escenario.bateria) {
+      mision_(escenario),
+      red_(mision_, escenario.bateria) {
     // Exclusiones (docs/decisiones.md §1): primero los que separan los obstáculos, luego los de batería.
-    for (int c = 0; c < mission_.numClientes(); ++c) {
-        int key = mission_.clientKey(c);
-        if (!mission_.isConnectedToDepot(key)) {
-            excluded_.push_back({mission_.label(key), "OBSTACLES"});
-        } else if (!network_.canServe(key)) {
-            excluded_.push_back({mission_.label(key), "BATTERY"});
+    for (int c = 0; c < mision_.numClientes(); ++c) {
+        int key = mision_.claveCliente(c);
+        if (!mision_.conectadoABase(key)) {
+            excluded_.push_back({mision_.etiqueta(key), "OBSTACLES"});
+        } else if (!red_.puedeAtender(key)) {
+            excluded_.push_back({mision_.etiqueta(key), "BATTERY"});
         } else {
             servable_.push_back(key);
         }
@@ -68,8 +68,8 @@ bool MissionSolver::supportsExact() const {
 }
 
 std::vector<int> MissionSolver::chooseOrder(Algorithm algorithm) const {
-    const auto& dist = mission_.distances();
-    int base = mission_.depotKey();
+    const auto& dist = mision_.distancias();
+    int base = mision_.claveBase();
     switch (algorithm) {
         case Algorithm::BRANCH_AND_BOUND:
             return ExactSolver::solve(dist, base, servable_).order;
@@ -101,17 +101,17 @@ std::vector<int> MissionSolver::chooseOrder(Algorithm algorithm) const {
 
 // Cada tramo entre nodos clave se reemplaza por su camino real en el grafo de visibilidad.
 std::vector<RoutePoint> MissionSolver::expandPath(const std::vector<int>& keySequence) const {
-    const VisibilityGraph& graph = mission_.graph();
+    const GrafoVisibilidad& grafo = mision_.grafo();
     auto toPoint = [&](int node) {
-        const Node& n = graph.getNode(node);
-        return RoutePoint{n.pt, n.isKeyNode() ? n.nombre : "V"};
+        const Nodo& n = grafo.nodo(node);
+        return RoutePoint{n.punto, n.esNodoClave() ? n.nombre : "V"};
     };
 
     std::vector<RoutePoint> path;
     if (keySequence.empty()) return path;
     path.push_back(toPoint(keySequence.front()));
     for (size_t i = 0; i + 1 < keySequence.size(); ++i) {
-        std::vector<int> leg = mission_.pathNodes(keySequence[i], keySequence[i + 1]);
+        std::vector<int> leg = mision_.nodosCamino(keySequence[i], keySequence[i + 1]);
         for (size_t j = 1; j < leg.size(); ++j) {   // El primer nodo ya está en el camino
             path.push_back(toPoint(leg[j]));
         }
@@ -132,12 +132,12 @@ Route MissionSolver::solve(Algorithm algorithm) const {
     route.excluded = excluded_;
     route.preparationMs = preparationMs_;
 
-    RechargePlan plan = RechargePlanner(mission_, network_).plan(chooseOrder(algorithm));
+    RechargePlan plan = RechargePlanner(mision_, red_).plan(chooseOrder(algorithm));
     route.feasible = plan.feasible;
-    route.cost = plan.cost;
+    route.costo = plan.costo;
     route.recharges = plan.recharges;
     for (int key : plan.keySequence) {
-        route.order.push_back(mission_.label(key));
+        route.order.push_back(mision_.etiqueta(key));
     }
     route.path = expandPath(plan.keySequence);
 

@@ -10,7 +10,7 @@ namespace geodrone {
  */
 struct ExactResult {
     std::vector<int> order;         // Claves de los clientes en el orden de visita óptimo
-    double cost = 0.0;              // Costo del ciclo base -> clientes -> base, sin recargas
+    double costo = 0.0;              // Costo del ciclo base -> clientes -> base, sin recargas
     long long nodesExplored = 0;    // Nodos del árbol de búsqueda visitados
     long long nodesPruned = 0;      // Ramas descartadas por la cota
 };

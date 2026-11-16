@@ -23,48 +23,48 @@ namespace geodrone {
  * - Conectividad: un DFS desde la base, O(V + E).
  * Espacio: O(V + E) del grafo, más O(K^2) de la matriz y O(K · V) de predecesores.
  */
-class MissionGraph {
+class GrafoMision {
 public:
-    explicit MissionGraph(const Escenario& escenario);
+    explicit GrafoMision(const Escenario& escenario);
 
-    int numKeyNodes() const { return 1 + numStations_ + numClients_; }
-    int numEstaciones() const { return numStations_; }
-    int numClientes() const { return numClients_; }
+    int numNodosClave() const { return 1 + numEstaciones_ + numClientes_; }
+    int numEstaciones() const { return numEstaciones_; }
+    int numClientes() const { return numClientes_; }
 
-    int depotKey() const { return 0; }
-    int stationKey(int station) const { return 1 + station; }
-    int clientKey(int client) const { return 1 + numStations_ + client; }
+    int claveBase() const { return 0; }
+    int claveEstacion(int estacion) const { return 1 + estacion; }
+    int claveCliente(int cliente) const { return 1 + numEstaciones_ + cliente; }
 
-    const Punto& keyPoint(int key) const { return graph_.getNode(key).pt; }
+    const Punto& puntoClave(int clave) const { return grafo_.nodo(clave).punto; }
 
     // Etiqueta del nodo clave: "D0", "S1".."S<S>" o "C1".."C<N>", como en los archivos de ruta.
-    const std::string& label(int key) const { return graph_.getNode(key).nombre; }
+    const std::string& etiqueta(int clave) const { return grafo_.nodo(clave).nombre; }
 
     // Distancia de vuelo mínima entre dos nodos clave (infinito si no hay camino).
-    double distance(int fromKey, int toKey) const { return dist_[fromKey][toKey]; }
-    const std::vector<std::vector<double>>& distances() const { return dist_; }
+    double distancia(int claveOrigen, int claveDestino) const { return distancias_[claveOrigen][claveDestino]; }
+    const std::vector<std::vector<double>>& distancias() const { return distancias_; }
 
     // Resultado del DFS desde la base.
-    bool isConnectedToDepot(int key) const { return connected_[key] != 0; }
+    bool conectadoABase(int clave) const { return conectados_[clave] != 0; }
 
     // Clientes (índices 0..N-1) que los obstáculos separan de la base.
-    std::vector<int> unreachableClients() const;
+    std::vector<int> clientesInalcanzables() const;
 
     // Nodos del grafo de visibilidad que forma el camino mínimo entre dos nodos clave,
     // incluidos ambos extremos. Vacío si no hay camino.
-    std::vector<int> pathNodes(int fromKey, int toKey) const;
+    std::vector<int> nodosCamino(int claveOrigen, int claveDestino) const;
 
-    const VisibilityGraph& graph() const { return graph_; }
+    const GrafoVisibilidad& grafo() const { return grafo_; }
 
 private:
-    VisibilityGraph graph_;
-    int numStations_ = 0;
-    int numClients_ = 0;
-    std::vector<std::vector<double>> dist_;     // dist_[a][b] entre nodos clave
-    std::vector<std::vector<int>> parent_;      // parent_[a][v]: predecesor de v en el camino desde a
-    std::vector<char> connected_;               // connected_[v]: v se alcanza desde la base
+    GrafoVisibilidad grafo_;
+    int numEstaciones_ = 0;
+    int numClientes_ = 0;
+    std::vector<std::vector<double>> distancias_;     // distancias_[a][b] entre nodos clave
+    std::vector<std::vector<int>> padres_;      // padres_[a][v]: predecesor de v en el camino desde a
+    std::vector<char> conectados_;               // conectados_[v]: v se alcanza desde la base
 
-    void markConnected(int node);
+    void marcarConectados(int nodo);
 };
 
 } // namespace geodrone

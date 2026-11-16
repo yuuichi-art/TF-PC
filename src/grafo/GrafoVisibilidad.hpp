@@ -15,42 +15,42 @@ namespace geodrone {
 /**
  * @brief Tipo de nodo del grafo. Base, clientes y estaciones son los nodos clave.
  */
-enum class NodeType {
-    DEPOT,              // Base logística (D)
-    CLIENT,             // Cliente con entrega obligatoria (C)
-    CHARGING_STATION,   // Estación de recarga (S)
-    OBSTACLE_VERTEX     // Vértice de un obstáculo, para rodearlo
+enum class TipoNodo {
+    BASE,              // Base logística (D)
+    CLIENTE,             // Cliente con entrega obligatoria (C)
+    ESTACION,   // Estación de recarga (S)
+    VERTICE_OBSTACULO     // Vértice de un obstáculo, para rodearlo
 };
 
 /**
  * @brief Nodo del grafo de visibilidad G = (V, E).
  */
-struct Node {
-    Punto pt;
-    NodeType type;
+struct Nodo {
+    Punto punto;
+    TipoNodo tipo;
     std::string nombre;   // "D0", "S1", "C3"... o "Obs2_V0" para un vértice de obstáculo
 
-    bool isKeyNode() const {
-        return type != NodeType::OBSTACLE_VERTEX;
+    bool esNodoClave() const {
+        return tipo != TipoNodo::VERTICE_OBSTACULO;
     }
 };
 
 /**
  * @brief Arista ponderada en el grafo de visibilidad: vecino y distancia.
  */
-struct GraphEdge {
-    int to;
-    double weight;
+struct Arista {
+    int destino;
+    double peso;
 };
 
 /**
  * @brief Caja envolvente alineada a los ejes: el rectángulo mínimo que contiene una figura.
  */
-struct BoundingBox {
+struct CajaEnvolvente {
     double minX, minY, maxX, maxY;
 
     // Dos cajas son disjuntas si una queda completamente a un lado de la otra.
-    bool isDisjointFrom(const BoundingBox& o) const {
+    bool esDisjuntaDe(const CajaEnvolvente& o) const {
         return maxX < o.minX - EPS || o.maxX < minX - EPS ||
                maxY < o.minY - EPS || o.maxY < minY - EPS;
     }
@@ -61,56 +61,56 @@ struct BoundingBox {
  * Transforma el espacio continuo 2D en un grafo ponderado discreto conectando nodos
  * visibles cuyos trayectos no intersecan el interior de ningún polígono obstáculo.
  */
-class VisibilityGraph {
+class GrafoVisibilidad {
 private:
-    std::vector<Node> nodes_;
-    std::vector<Poligono> obstacles_;
-    std::vector<BoundingBox> obstacleBoxes_;   // Caja envolvente de cada obstáculo
-    std::vector<std::vector<GraphEdge>> adj_;
-    int edgeCount_ = 0;
+    std::vector<Nodo> nodos_;
+    std::vector<Poligono> obstaculos_;
+    std::vector<CajaEnvolvente> cajasObstaculos_;   // Caja envolvente de cada obstáculo
+    std::vector<std::vector<Arista>> adyacencia_;
+    int numAristas_ = 0;
 
     // Un tramo es válido si no atraviesa el interior de ningún obstáculo. Con el filtro activo,
     // los obstáculos cuya caja no toca la caja del tramo se descartan sin revisar sus aristas:
     // si las cajas no se tocan, el tramo no puede entrar al polígono.
-    bool isSegmentClear(const Segmento& seg, bool useBoundingBoxFilter) const {
-        BoundingBox segBox{std::min(seg.a.x, seg.b.x), std::min(seg.a.y, seg.b.y),
-                           std::max(seg.a.x, seg.b.x), std::max(seg.a.y, seg.b.y)};
-        for (size_t k = 0; k < obstacles_.size(); ++k) {
-            if (useBoundingBoxFilter && segBox.isDisjointFrom(obstacleBoxes_[k])) continue;
-            if (Geometria::segmentoCruzaInterior(seg, obstacles_[k])) return false;
+    bool tramoVisible(const Segmento& segmento, bool usarFiltroCajas) const {
+        CajaEnvolvente cajaTramo{std::min(segmento.a.x, segmento.b.x), std::min(segmento.a.y, segmento.b.y),
+                           std::max(segmento.a.x, segmento.b.x), std::max(segmento.a.y, segmento.b.y)};
+        for (size_t k = 0; k < obstaculos_.size(); ++k) {
+            if (usarFiltroCajas && cajaTramo.esDisjuntaDe(cajasObstaculos_[k])) continue;
+            if (Geometria::segmentoCruzaInterior(segmento, obstaculos_[k])) return false;
         }
         return true;
     }
 
-    static BoundingBox boxOf(const Poligono& poly) {
-        BoundingBox box{poly[0].x, poly[0].y, poly[0].x, poly[0].y};
-        for (const Punto& v : poly.vertices) {
-            box.minX = std::min(box.minX, v.x);
-            box.minY = std::min(box.minY, v.y);
-            box.maxX = std::max(box.maxX, v.x);
-            box.maxY = std::max(box.maxY, v.y);
+    static CajaEnvolvente cajaDe(const Poligono& poligono) {
+        CajaEnvolvente caja{poligono[0].x, poligono[0].y, poligono[0].x, poligono[0].y};
+        for (const Punto& v : poligono.vertices) {
+            caja.minX = std::min(caja.minX, v.x);
+            caja.minY = std::min(caja.minY, v.y);
+            caja.maxX = std::max(caja.maxX, v.x);
+            caja.maxY = std::max(caja.maxY, v.y);
         }
-        return box;
+        return caja;
     }
 
 public:
     /**
      * @brief Agrega un nodo (base, cliente o estación) y devuelve su índice en el grafo.
      */
-    int addNode(const Punto& pt, NodeType type, const std::string& nombre) {
-        nodes_.push_back({pt, type, nombre});
-        adj_.emplace_back();
-        return static_cast<int>(nodes_.size()) - 1;
+    int agregarNodo(const Punto& punto, TipoNodo tipo, const std::string& nombre) {
+        nodos_.push_back({punto, tipo, nombre});
+        adyacencia_.emplace_back();
+        return static_cast<int>(nodos_.size()) - 1;
     }
 
     /**
      * @brief Agrega un polígono obstáculo e incorpora sus vértices al conjunto de nodos V.
      */
-    void addObstacle(const Poligono& poly) {
-        obstacles_.push_back(poly);
-        obstacleBoxes_.push_back(boxOf(poly));
-        for (int i = 0; i < poly.numVertices(); ++i) {
-            addNode(poly[i], NodeType::OBSTACLE_VERTEX, "Obs" + std::to_string(poly.id) + "_V" + std::to_string(i));
+    void agregarObstaculo(const Poligono& poligono) {
+        obstaculos_.push_back(poligono);
+        cajasObstaculos_.push_back(cajaDe(poligono));
+        for (int i = 0; i < poligono.numVertices(); ++i) {
+            agregarNodo(poligono[i], TipoNodo::VERTICE_OBSTACULO, "Obs" + std::to_string(poligono.id) + "_V" + std::to_string(i));
         }
     }
 
@@ -120,34 +120,34 @@ public:
      * obstáculos. El filtro por caja envolvente no cambia el peor caso, pero en la práctica
      * descarta casi todos los obstáculos lejanos con 4 comparaciones cada uno.
      * Espacio: O(|V| + |E|).
-     * @param useBoundingBoxFilter Se desactiva solo en las pruebas, para comprobar que el
+     * @param usarFiltroCajas Se desactiva solo en las pruebas, para comprobar que el
      *        filtro produce exactamente las mismas aristas.
      */
-    void buildVisibilityEdges(bool useBoundingBoxFilter = true) {
-        int n = static_cast<int>(nodes_.size());
-        edgeCount_ = 0;
+    void construirAristas(bool usarFiltroCajas = true) {
+        int n = static_cast<int>(nodos_.size());
+        numAristas_ = 0;
         for (int i = 0; i < n; ++i) {
-            adj_[i].clear();
+            adyacencia_[i].clear();
         }
 
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
-                Segmento seg(nodes_[i].pt, nodes_[j].pt);
-                if (isSegmentClear(seg, useBoundingBoxFilter)) {
-                    double dist = nodes_[i].pt.distancia(nodes_[j].pt);
-                    adj_[i].push_back({j, dist});
-                    adj_[j].push_back({i, dist});
-                    edgeCount_++;
+                Segmento segmento(nodos_[i].punto, nodos_[j].punto);
+                if (tramoVisible(segmento, usarFiltroCajas)) {
+                    double distancia = nodos_[i].punto.distancia(nodos_[j].punto);
+                    adyacencia_[i].push_back({j, distancia});
+                    adyacencia_[j].push_back({i, distancia});
+                    numAristas_++;
                 }
             }
         }
     }
 
-    int numVertices() const { return static_cast<int>(nodes_.size()); }
-    int numEdges() const { return edgeCount_; }
-    const Node& getNode(int index) const { return nodes_[index]; }
-    const std::vector<std::vector<GraphEdge>>& getAdj() const { return adj_; }
-    const std::vector<GraphEdge>& getNeighbors(int u) const { return adj_[u]; }
+    int numNodos() const { return static_cast<int>(nodos_.size()); }
+    int numAristas() const { return numAristas_; }
+    const Nodo& nodo(int indice) const { return nodos_[indice]; }
+    const std::vector<std::vector<Arista>>& adyacencia() const { return adyacencia_; }
+    const std::vector<Arista>& vecinos(int u) const { return adyacencia_[u]; }
 };
 
 } // namespace geodrone

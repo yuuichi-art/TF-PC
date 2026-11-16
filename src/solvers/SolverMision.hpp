@@ -57,8 +57,8 @@ public:
      */
     Route solve(Algorithm algorithm) const;
 
-    const MissionGraph& mission() const { return mission_; }
-    const ChargingNetwork& network() const { return network_; }
+    const GrafoMision& mision() const { return mision_; }
+    const RedRecarga& red() const { return red_; }
     const std::vector<ExcludedClient>& excluded() const { return excluded_; }
     const std::vector<int>& servableClients() const { return servable_; }   // Claves
     double preparationMs() const { return preparationMs_; }
@@ -71,8 +71,8 @@ private:
     // Los miembros se construyen en el orden en que se declaran: este va antes que el grafo
     // para que la medición de la preparación lo incluya.
     std::chrono::steady_clock::time_point constructionStart_;
-    MissionGraph mission_;
-    ChargingNetwork network_;              // Referencia a mission_: se declara después
+    GrafoMision mision_;
+    RedRecarga red_;              // Referencia a mision_: se declara después
     std::vector<int> servable_;
     std::vector<ExcludedClient> excluded_;
 

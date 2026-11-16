@@ -72,7 +72,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     MissionSolver trapSolver(trap);
     Route straight = trapSolver.solve(Algorithm::BRANCH_AND_BOUND);
     straight.path.erase(std::remove_if(straight.path.begin(), straight.path.end(),
-                                       [](const RoutePoint& p) { return p.label == "V"; }),
+                                       [](const RoutePoint& p) { return p.etiqueta == "V"; }),
                         straight.path.end());
     expectRejected(trap, trapSolver, straight, "cruza un obstaculo");
 
@@ -103,7 +103,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     expectRejected(hand, solver, r, "no empieza y termina en la base");
 
     r = good;
-    r.cost += 5;
+    r.costo += 5;
     expectRejected(hand, solver, r, "costo informado");
 
     r = good;
@@ -115,7 +115,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     expectRejected(hand, solver, r, "orden informado");
 
     r = good;
-    r.path[1].label = "X9";
+    r.path[1].etiqueta = "X9";
     expectRejected(hand, solver, r, "etiqueta desconocida");
 
     r = good;
@@ -126,7 +126,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     r = good;
     r.path = {good.path.front()};
     r.order = {"D0"};
-    r.cost = 0;
+    r.costo = 0;
     r.recharges = 0;
     r.excluded = {{"C1", "BATTERY"}};
     expectRejected(hand, solver, r, "C1 se excluyo por BATTERY pero se puede atender");

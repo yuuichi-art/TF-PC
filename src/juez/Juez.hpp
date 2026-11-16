@@ -29,7 +29,7 @@ struct JudgeRow {
     std::string algorithm;
     std::string verdict;            // OK, WA, TLE o MLE
     std::string problem;            // Motivo del WA (se muestra en consola, no va al CSV)
-    double cost = 0.0;
+    double costo = 0.0;
     int recharges = 0;
     int excluded = 0;
     double timeMs = 0.0;            // Preparación + resolución

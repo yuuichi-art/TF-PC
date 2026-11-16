@@ -6,69 +6,69 @@
 
 namespace geodrone {
 
-MissionGraph::MissionGraph(const Escenario& escenario)
-    : numStations_(escenario.numEstaciones()), numClients_(escenario.numClientes()) {
+GrafoMision::GrafoMision(const Escenario& escenario)
+    : numEstaciones_(escenario.numEstaciones()), numClientes_(escenario.numClientes()) {
     // Primero los nodos clave, en el orden base, estaciones, clientes; después los obstáculos.
-    graph_.addNode(escenario.base, NodeType::DEPOT, "D0");
-    for (int i = 0; i < numStations_; ++i) {
-        graph_.addNode(escenario.estaciones[i], NodeType::CHARGING_STATION, "S" + std::to_string(i + 1));
+    grafo_.agregarNodo(escenario.base, TipoNodo::BASE, "D0");
+    for (int i = 0; i < numEstaciones_; ++i) {
+        grafo_.agregarNodo(escenario.estaciones[i], TipoNodo::ESTACION, "S" + std::to_string(i + 1));
     }
-    for (int i = 0; i < numClients_; ++i) {
-        graph_.addNode(escenario.clientes[i], NodeType::CLIENT, "C" + std::to_string(i + 1));
+    for (int i = 0; i < numClientes_; ++i) {
+        grafo_.agregarNodo(escenario.clientes[i], TipoNodo::CLIENTE, "C" + std::to_string(i + 1));
     }
-    for (const Poligono& poly : escenario.obstaculos) {
-        graph_.addObstacle(poly);
+    for (const Poligono& poligono : escenario.obstaculos) {
+        grafo_.agregarObstaculo(poligono);
     }
-    graph_.buildVisibilityEdges();
+    grafo_.construirAristas();
 
     // Un Dijkstra por nodo clave: da una fila de la matriz y los predecesores para
     // reconstruir los caminos reales desde ese nodo.
-    int keyCount = numKeyNodes();
-    dist_.assign(keyCount, std::vector<double>(keyCount, INF));
-    parent_.resize(keyCount);
-    for (int a = 0; a < keyCount; ++a) {
-        DijkstraResult result = Dijkstra::run(graph_, a, true);
-        for (int b = 0; b < keyCount; ++b) {
-            dist_[a][b] = result.dist[b];
+    int numClaves = numNodosClave();
+    distancias_.assign(numClaves, std::vector<double>(numClaves, INF));
+    padres_.resize(numClaves);
+    for (int a = 0; a < numClaves; ++a) {
+        ResultadoDijkstra resultado = Dijkstra::ejecutar(grafo_, a, true);
+        for (int b = 0; b < numClaves; ++b) {
+            distancias_[a][b] = resultado.distancia[b];
         }
-        parent_[a] = std::move(result.parent);
+        padres_[a] = std::move(resultado.padre);
     }
 
-    connected_.assign(graph_.numVertices(), 0);
-    markConnected(depotKey());
+    conectados_.assign(grafo_.numNodos(), 0);
+    marcarConectados(claveBase());
 }
 
-// DFS recursivo: marca todo lo alcanzable desde node. Cada nodo se visita una vez y cada
+// DFS recursivo: marca todo lo alcanzable desde nodo. Cada nodo se visita una vez y cada
 // arista se revisa dos veces: O(V + E). La profundidad máxima es V (unos pocos miles).
-void MissionGraph::markConnected(int node) {
-    connected_[node] = 1;
-    for (const GraphEdge& edge : graph_.getNeighbors(node)) {
-        if (!connected_[edge.to]) {
-            markConnected(edge.to);
+void GrafoMision::marcarConectados(int nodo) {
+    conectados_[nodo] = 1;
+    for (const Arista& arista : grafo_.vecinos(nodo)) {
+        if (!conectados_[arista.destino]) {
+            marcarConectados(arista.destino);
         }
     }
 }
 
-std::vector<int> MissionGraph::unreachableClients() const {
+std::vector<int> GrafoMision::clientesInalcanzables() const {
     std::vector<int> clientes;
-    for (int i = 0; i < numClients_; ++i) {
-        if (!isConnectedToDepot(clientKey(i))) {
+    for (int i = 0; i < numClientes_; ++i) {
+        if (!conectadoABase(claveCliente(i))) {
             clientes.push_back(i);
         }
     }
     return clientes;
 }
 
-std::vector<int> MissionGraph::pathNodes(int fromKey, int toKey) const {
-    std::vector<int> path;
-    if (dist_[fromKey][toKey] == INF) return path;
+std::vector<int> GrafoMision::nodosCamino(int claveOrigen, int claveDestino) const {
+    std::vector<int> camino;
+    if (distancias_[claveOrigen][claveDestino] == INF) return camino;
 
-    for (int node = toKey; node != -1; node = parent_[fromKey][node]) {
-        path.push_back(node);
-        if (node == fromKey) break;
+    for (int nodo = claveDestino; nodo != -1; nodo = padres_[claveOrigen][nodo]) {
+        camino.push_back(nodo);
+        if (nodo == claveOrigen) break;
     }
-    std::reverse(path.begin(), path.end());
-    return path;
+    std::reverse(camino.begin(), camino.end());
+    return camino;
 }
 
 } // namespace geodrone

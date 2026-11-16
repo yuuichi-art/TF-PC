@@ -11,13 +11,13 @@ namespace geodrone {
  * @brief Resultado de Dijkstra desde un origen: distancia mínima a cada nodo (INF si no se
  * alcanza) y su predecesor en el camino mínimo (-1 para el origen y los no alcanzados).
  */
-struct DijkstraResult {
-    int source;
-    std::vector<double> dist;
-    std::vector<int> parent;
+struct ResultadoDijkstra {
+    int origen;
+    std::vector<double> distancia;
+    std::vector<int> padre;
 
-    DijkstraResult(int n = 0, int src = -1)
-        : source(src), dist(n, INF), parent(n, -1) {}
+    ResultadoDijkstra(int n = 0, int inicio = -1)
+        : origen(inicio), distancia(n, INF), padre(n, -1) {}
 };
 
 /**
@@ -27,51 +27,51 @@ struct DijkstraResult {
 class Dijkstra {
 public:
     /**
-     * @brief Calcula las distancias mínimas y predecesores desde un nodo origen `source`
+     * @brief Calcula las distancias mínimas y predecesores desde un nodo origen `origen`
      * a todos los vértices del grafo de visibilidad.
-     * @param keyNodesAsEndpoints Si es true, la base, las estaciones y los clientes (salvo el
+     * @param nodosClaveComoExtremos Si es true, la base, las estaciones y los clientes (salvo el
      *        origen) se alcanzan pero no se expanden. Las distancias no cambian: un camino mínimo
      *        entre obstáculos solo dobla en vértices de obstáculos, porque doblar en otro punto
      *        se puede acortar. Así se ahorra trabajo y los caminos no cruzan otros clientes.
      */
-    static DijkstraResult run(const VisibilityGraph& graph, int source, bool keyNodesAsEndpoints = false) {
-        int n = graph.numVertices();
-        DijkstraResult res(n, source);
-        if (source < 0 || source >= n) return res;
+    static ResultadoDijkstra ejecutar(const GrafoVisibilidad& grafo, int origen, bool nodosClaveComoExtremos = false) {
+        int n = grafo.numNodos();
+        ResultadoDijkstra resultado(n, origen);
+        if (origen < 0 || origen >= n) return resultado;
 
         // Cola de mínimos ordenada por distancia acumulada: pair<distancia, nodo>
-        using QueueElement = std::pair<double, int>;
-        std::priority_queue<QueueElement, std::vector<QueueElement>, std::greater<QueueElement>> pq;
+        using ElementoCola = std::pair<double, int>;
+        std::priority_queue<ElementoCola, std::vector<ElementoCola>, std::greater<ElementoCola>> cola;
 
-        res.dist[source] = 0.0;
-        pq.emplace(0.0, source);
+        resultado.distancia[origen] = 0.0;
+        cola.emplace(0.0, origen);
 
-        const auto& adj = graph.getAdj();
+        const auto& adyacencia = grafo.adyacencia();
 
-        while (!pq.empty()) {
-            auto [d, u] = pq.top();
-            pq.pop();
+        while (!cola.empty()) {
+            auto [d, u] = cola.top();
+            cola.pop();
 
             // Entrada vieja: el nodo ya se sacó antes con una distancia menor
-            if (d > res.dist[u] + EPS) {
+            if (d > resultado.distancia[u] + EPS) {
                 continue;
             }
-            if (keyNodesAsEndpoints && u != source && graph.getNode(u).isKeyNode()) {
+            if (nodosClaveComoExtremos && u != origen && grafo.nodo(u).esNodoClave()) {
                 continue;
             }
 
-            for (const auto& edge : adj[u]) {
-                int v = edge.to;
-                double w = edge.weight;
-                if (res.dist[u] + w < res.dist[v] - EPS) {
-                    res.dist[v] = res.dist[u] + w;
-                    res.parent[v] = u;
-                    pq.emplace(res.dist[v], v);
+            for (const auto& arista : adyacencia[u]) {
+                int v = arista.destino;
+                double w = arista.peso;
+                if (resultado.distancia[u] + w < resultado.distancia[v] - EPS) {
+                    resultado.distancia[v] = resultado.distancia[u] + w;
+                    resultado.padre[v] = u;
+                    cola.emplace(resultado.distancia[v], v);
                 }
             }
         }
 
-        return res;
+        return resultado;
     }
 };
 

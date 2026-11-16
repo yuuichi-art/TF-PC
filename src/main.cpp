@@ -171,10 +171,10 @@ void solveScenario() {
 
     std::cout << "\n  Algoritmo:  " << route.algorithm << "\n";
     std::cout << "  Estado:     " << (route.feasible ? "OK" : "INFACTIBLE") << "\n";
-    std::cout << std::setprecision(2) << "  Costo:      " << route.cost << " (distancia volada, con recargas)\n";
+    std::cout << std::setprecision(2) << "  Costo:      " << route.costo << " (distancia volada, con recargas)\n";
     std::cout << "  Recargas:   " << route.recharges << "\n";
     std::cout << "  Excluidos:  " << route.excluded.size();
-    for (const ExcludedClient& client : route.excluded) std::cout << "  " << client.label << " (" << client.reason << ")";
+    for (const ExcludedClient& client : route.excluded) std::cout << "  " << client.etiqueta << " (" << client.reason << ")";
     std::cout << '\n';
     std::cout << "  Tiempo:     " << route.totalMs() << " ms = " << route.preparationMs << " de preparacion + "
               << route.solveMs << " de resolucion (limite " << static_cast<int>(limits.limiteTiempoSegundos * 1000)
@@ -264,18 +264,18 @@ void analyzeNetwork() {
 
     // El solver prepara el grafo de misión y la red de recarga, y clasifica a los excluidos.
     MissionSolver solver(escenario);
-    const MissionGraph& mission = solver.mission();
-    const ChargingNetwork& network = solver.network();
+    const GrafoMision& mision = solver.mision();
+    const RedRecarga& red = solver.red();
     std::cout << std::fixed << std::setprecision(2);
 
     // Alcance de la red con la batería del escenario (DFS desde la base).
     std::vector<std::string> unreachable;
-    for (int s = 0; s < mission.numEstaciones(); ++s) {
-        int key = mission.stationKey(s);
-        if (!network.isReachable(key)) unreachable.push_back(mission.label(key));
+    for (int s = 0; s < mision.numEstaciones(); ++s) {
+        int key = mision.claveEstacion(s);
+        if (!red.esAlcanzable(key)) unreachable.push_back(mision.etiqueta(key));
     }
-    std::cout << "  Estaciones alcanzables desde la base: " << mission.numEstaciones() - unreachable.size()
-              << " de " << mission.numEstaciones() << '\n';
+    std::cout << "  Estaciones alcanzables desde la base: " << mision.numEstaciones() - unreachable.size()
+              << " de " << mision.numEstaciones() << '\n';
     if (!unreachable.empty()) {
         std::cout << "  Sin conexion con la base:";
         printLabels(unreachable);
@@ -283,7 +283,7 @@ void analyzeNetwork() {
 
     // Estaciones críticas: puntos de articulación (Tarjan).
     std::vector<std::string> critical;
-    for (int key : network.criticalStations()) critical.push_back(mission.label(key));
+    for (int key : red.estacionesCriticas()) critical.push_back(mision.etiqueta(key));
     std::cout << "  Estaciones criticas (puntos de articulacion): ";
     if (critical.empty()) {
         std::cout << "ninguna\n";
@@ -293,26 +293,26 @@ void analyzeNetwork() {
 
     // Red mínima de soporte: árbol de expansión mínima entre la base y las estaciones (Prim).
     std::vector<int> nodes;
-    MstResult tree = ChargingNetwork::supportTree(mission, nodes);
-    std::cout << "  Red minima de soporte: costo " << tree.cost << ", tramo mas largo " << tree.maxEdge << '\n';
+    ArbolMinimo tree = RedRecarga::arbolSoporte(mision, nodes);
+    std::cout << "  Red minima de soporte: costo " << tree.costo << ", tramo mas largo " << tree.aristaMaxima << '\n';
     for (size_t i = 1; i < nodes.size(); ++i) {
-        if (tree.parent[i] < 0) continue;
-        int from = nodes[tree.parent[i]];
-        std::cout << "    " << mission.label(from) << " - " << mission.label(nodes[i])
-                  << "  " << mission.distance(from, nodes[i]) << '\n';
+        if (tree.padre[i] < 0) continue;
+        int from = nodes[tree.padre[i]];
+        std::cout << "    " << mision.etiqueta(from) << " - " << mision.etiqueta(nodes[i])
+                  << "  " << mision.distancia(from, nodes[i]) << '\n';
     }
 
     // Autonomía mínima (búsqueda binaria) frente a la del escenario.
-    double minimum = ChargingNetwork::minimumAutonomy(mission);
+    double minimum = RedRecarga::autonomiaMinima(mision);
     std::cout << "  Autonomia minima para atender a todos los clientes: " << minimum
               << " (el escenario tiene " << escenario.bateria << ")\n";
 
     std::vector<std::string> byObstacles, byBattery;
     for (const ExcludedClient& client : solver.excluded()) {
         if (client.reason == "OBSTACLES") {
-            byObstacles.push_back(client.label);
+            byObstacles.push_back(client.etiqueta);
         } else {
-            byBattery.push_back(client.label);
+            byBattery.push_back(client.etiqueta);
         }
     }
     std::cout << "  Clientes separados por obstaculos: " << byObstacles.size();

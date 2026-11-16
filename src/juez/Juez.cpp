@@ -17,7 +17,7 @@ namespace Judge {
 
 namespace {
 
-const double TOL = ChargingNetwork::BATTERY_TOLERANCE;
+const double TOL = RedRecarga::TOLERANCIA_BATERIA;
 const double NOT_AVAILABLE = std::numeric_limits<double>::quiet_NaN();   // Gap de una fila que no es OK
 
 VerificationResult fail(const std::string& problem) {
@@ -26,26 +26,26 @@ VerificationResult fail(const std::string& problem) {
 
 // Interpreta una etiqueta "D0", "S2" o "C5": tipo y número (1..S o 1..N; 0 para la base).
 // Devuelve false si no corresponde a ningún punto del escenario.
-bool parseLabel(const Escenario& s, const std::string& label, char& type, int& number) {
-    if (label.size() < 2) return false;
-    type = label[0];
+bool parseLabel(const Escenario& s, const std::string& etiqueta, char& tipo, int& number) {
+    if (etiqueta.size() < 2) return false;
+    tipo = etiqueta[0];
     try {
         size_t used = 0;
-        number = std::stoi(label.substr(1), &used);
-        if (used != label.size() - 1) return false;
+        number = std::stoi(etiqueta.substr(1), &used);
+        if (used != etiqueta.size() - 1) return false;
     } catch (const std::exception&) {
         return false;
     }
-    if (type == 'D') return number == 0;
-    if (type == 'S') return number >= 1 && number <= s.numEstaciones();
-    if (type == 'C') return number >= 1 && number <= s.numClientes();
+    if (tipo == 'D') return number == 0;
+    if (tipo == 'S') return number >= 1 && number <= s.numEstaciones();
+    if (tipo == 'C') return number >= 1 && number <= s.numClientes();
     return false;
 }
 
 // Coordenadas que el escenario asigna a la etiqueta (ya validada con parseLabel).
-Punto pointOf(const Escenario& s, char type, int number) {
-    if (type == 'D') return s.base;
-    if (type == 'S') return s.estaciones[number - 1];
+Punto pointOf(const Escenario& s, char tipo, int number) {
+    if (tipo == 'D') return s.base;
+    if (tipo == 'S') return s.estaciones[number - 1];
     return s.clientes[number - 1];
 }
 
@@ -55,10 +55,10 @@ double percentOver(double value, double reference) {
 
 // Una exclusión es real si el grafo de misión la confirma.
 bool exclusionIsGenuine(const MissionSolver& solver, int clientIndex, const std::string& reason) {
-    int key = solver.mission().clientKey(clientIndex);
-    bool connected = solver.mission().isConnectedToDepot(key);
+    int key = solver.mision().claveCliente(clientIndex);
+    bool connected = solver.mision().conectadoABase(key);
     if (reason == "OBSTACLES") return !connected;
-    if (reason == "BATTERY") return connected && !solver.network().canServe(key);
+    if (reason == "BATTERY") return connected && !solver.red().puedeAtender(key);
     return false;
 }
 
@@ -72,7 +72,7 @@ int sizeOf(const Escenario& s) {
 VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& solver, const Route& route) {
     if (!route.feasible) return fail("el solver no encontro una ruta factible");
     if (route.path.empty()) return fail("la trayectoria esta vacia");
-    if (route.path.front().label != "D0" || route.path.back().label != "D0") {
+    if (route.path.front().etiqueta != "D0" || route.path.back().etiqueta != "D0") {
         return fail("la ruta no empieza y termina en la base");
     }
 
@@ -84,47 +84,47 @@ VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& 
 
     for (size_t i = 0; i < route.path.size(); ++i) {
         const RoutePoint& p = route.path[i];
-        char type = 'V';
+        char tipo = 'V';
         int number = 0;
-        if (p.label != "V") {
-            if (!parseLabel(escenario, p.label, type, number)) return fail("etiqueta desconocida '" + p.label + "'");
-            if (p.point != pointOf(escenario, type, number)) {
-                return fail(p.label + " no esta en las coordenadas del escenario");
+        if (p.etiqueta != "V") {
+            if (!parseLabel(escenario, p.etiqueta, tipo, number)) return fail("etiqueta desconocida '" + p.etiqueta + "'");
+            if (p.point != pointOf(escenario, tipo, number)) {
+                return fail(p.etiqueta + " no esta en las coordenadas del escenario");
             }
-            keyLabels.push_back(p.label);
+            keyLabels.push_back(p.etiqueta);
         }
         if (i == 0) continue;
 
         Segmento leg(route.path[i - 1].point, p.point);
         if (!Geometria::tramoLibre(leg, escenario.obstaculos)) {
-            return fail("el tramo " + std::to_string(i) + " (hacia " + p.label + ") cruza un obstaculo");
+            return fail("el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ") cruza un obstaculo");
         }
         length += leg.longitud();
         bateria -= leg.longitud();
         if (bateria < -TOL) {
-            return fail("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.label + ")");
+            return fail("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ")");
         }
 
         // Llegar a la base o a una estación llena la batería. La llegada final a la base no
         // cuenta como recarga, porque ahí termina la misión.
-        if (type == 'D' || type == 'S') {
+        if (tipo == 'D' || tipo == 'S') {
             bateria = escenario.bateria;
             if (i + 1 < route.path.size()) ++recharges;
-        } else if (type == 'C' && ++visits[number - 1] > 1) {
-            return fail(p.label + " se visita mas de una vez");
+        } else if (tipo == 'C' && ++visits[number - 1] > 1) {
+            return fail(p.etiqueta + " se visita mas de una vez");
         }
     }
 
     std::vector<char> excluded(escenario.numClientes(), 0);
     for (const ExcludedClient& client : route.excluded) {
-        char type = 'V';
+        char tipo = 'V';
         int number = 0;
-        if (!parseLabel(escenario, client.label, type, number) || type != 'C') {
-            return fail("excluido desconocido '" + client.label + "'");
+        if (!parseLabel(escenario, client.etiqueta, tipo, number) || tipo != 'C') {
+            return fail("excluido desconocido '" + client.etiqueta + "'");
         }
-        if (visits[number - 1] > 0) return fail(client.label + " esta excluido y tambien se visita");
+        if (visits[number - 1] > 0) return fail(client.etiqueta + " esta excluido y tambien se visita");
         if (!exclusionIsGenuine(solver, number - 1, client.reason)) {
-            return fail(client.label + " se excluyo por " + client.reason + " pero se puede atender");
+            return fail(client.etiqueta + " se excluyo por " + client.reason + " pero se puede atender");
         }
         excluded[number - 1] = 1;
     }
@@ -132,7 +132,7 @@ VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& 
         if (visits[c] == 0 && !excluded[c]) return fail("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
     }
 
-    if (std::abs(length - route.cost) > TOL * std::max(1.0, length)) {
+    if (std::abs(length - route.costo) > TOL * std::max(1.0, length)) {
         return fail("el costo informado no coincide con la trayectoria");
     }
     if (recharges != route.recharges) return fail("las recargas informadas no coinciden con la trayectoria");
@@ -180,7 +180,7 @@ std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& route
         row.clientes = s.numClientes();
         row.algorithm = route.algorithm;
         row.problem = check.problem;
-        row.cost = route.cost;
+        row.costo = route.costo;
         row.recharges = route.recharges;
         row.excluded = static_cast<int>(route.excluded.size());
         row.timeMs = route.totalMs();
@@ -195,18 +195,18 @@ std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& route
     for (size_t i = 0; i < rows.size(); ++i) {
         rows[i].memoryMB = memory;
         rows[i].verdict = verdictFor(valid[i], rows[i].timeMs, memory, limits);
-        if (rows[i].verdict == "OK") best = std::min(best, rows[i].cost);
+        if (rows[i].verdict == "OK") best = std::min(best, rows[i].costo);
     }
 
     // Gap contra la mejor ruta OK y contra la cota inferior: el árbol de expansión mínima de la
     // base y los clientes atendibles.
-    std::vector<int> nodes = {solver.mission().depotKey()};
+    std::vector<int> nodes = {solver.mision().claveBase()};
     nodes.insert(nodes.end(), solver.servableClients().begin(), solver.servableClients().end());
-    double bound = primMst(solver.mission().distances(), nodes).cost;
+    double bound = arbolMinimoPrim(solver.mision().distancias(), nodes).costo;
     for (JudgeRow& row : rows) {
         bool isOk = row.verdict == "OK";
-        row.gapBest = isOk ? percentOver(row.cost, best) : NOT_AVAILABLE;
-        row.gapBound = isOk ? percentOver(row.cost, bound) : NOT_AVAILABLE;
+        row.gapBest = isOk ? percentOver(row.costo, best) : NOT_AVAILABLE;
+        row.gapBound = isOk ? percentOver(row.costo, bound) : NOT_AVAILABLE;
     }
     return rows;
 }
@@ -218,7 +218,7 @@ void printCase(std::ostream& log, size_t number, size_t total, const Escenario& 
     for (const JudgeRow& row : rows) {
         if (row.verdict == "OK") {
             ++ok;
-            best = std::min(best, row.cost);
+            best = std::min(best, row.costo);
         }
     }
     log << "  [" << std::setw(2) << number << "/" << total << "] " << std::left << std::setw(26) << s.nombre

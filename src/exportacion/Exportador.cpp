@@ -15,12 +15,12 @@ void writeRoute(const Route& route, std::ostream& out) {
     out << "ALGORITHM " << route.algorithm << '\n';
     out << "STATUS " << (route.feasible ? "OK" : "INFEASIBLE") << '\n';
     // Seis decimales: suficientes para que el juez compare el costo con el que recalcula.
-    out << "COST " << std::fixed << std::setprecision(6) << route.cost << '\n';
+    out << "COST " << std::fixed << std::setprecision(6) << route.costo << '\n';
     out << "RECHARGES " << route.recharges << '\n';
 
     out << "EXCLUDED " << route.excluded.size() << '\n';
     for (const ExcludedClient& client : route.excluded) {
-        out << client.label << ' ' << client.reason << '\n';
+        out << client.etiqueta << ' ' << client.reason << '\n';
     }
 
     out << "ORDER " << route.order.size() << '\n';
@@ -33,7 +33,7 @@ void writeRoute(const Route& route, std::ostream& out) {
     out << std::defaultfloat << std::setprecision(15);
     out << "PATH " << route.path.size() << '\n';
     for (const RoutePoint& p : route.path) {
-        out << p.point.x << ' ' << p.point.y << ' ' << p.label << '\n';
+        out << p.point.x << ' ' << p.point.y << ' ' << p.etiqueta << '\n';
     }
 }
 
@@ -51,7 +51,7 @@ void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
     out << std::fixed << std::setprecision(3);
     for (const JudgeRow& row : rows) {
         out << row.escenario << ',' << nombreCategoria(row.categoria) << ',' << row.clientes << ',' << row.algorithm << ','
-            << row.verdict << ',' << row.cost << ',' << row.recharges << ',' << row.excluded << ',' << row.timeMs
+            << row.verdict << ',' << row.costo << ',' << row.recharges << ',' << row.excluded << ',' << row.timeMs
             << ',' << row.memoryMB << ',';
         if (!std::isnan(row.gapBest)) out << row.gapBest;
         out << ',';
@@ -147,7 +147,7 @@ void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out)
     out << "<rect width=\"" << width << "\" height=\"" << height << "\" fill=\"#ffffff\"/>\n";
     out << "<text x=\"" << margin << "\" y=\"26\" font-family=\"sans-serif\" font-size=\"15\" fill=\"#111827\">"
         << "<tspan font-weight=\"bold\">" << escapeXml(route.escenario) << "</tspan>  " << escapeXml(route.algorithm)
-        << "  |  costo " << route.cost << "  |  recargas " << route.recharges << "  |  excluidos "
+        << "  |  costo " << route.costo << "  |  recargas " << route.recharges << "  |  excluidos "
         << route.excluded.size() << (route.feasible ? "" : "  |  INFACTIBLE") << "</text>\n";
 
     // Área del escenario y obstáculos.
@@ -169,17 +169,17 @@ void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out)
 
     // Clientes: círculo si se atiende, cruz roja si se excluyó.
     std::vector<std::string> excluded;
-    for (const ExcludedClient& client : route.excluded) excluded.push_back(client.label);
+    for (const ExcludedClient& client : route.excluded) excluded.push_back(client.etiqueta);
     for (int c = 0; c < escenario.numClientes(); ++c) {
-        std::string label = "C" + std::to_string(c + 1);
+        std::string etiqueta = "C" + std::to_string(c + 1);
         double x = canvas.x(escenario.clientes[c].x), y = canvas.y(escenario.clientes[c].y);
-        if (std::find(excluded.begin(), excluded.end(), label) != excluded.end()) {
+        if (std::find(excluded.begin(), excluded.end(), etiqueta) != excluded.end()) {
             writeCross(out, x, y, radius + 1, "class=\"excluded\"");
         } else {
             out << "<circle class=\"client\" cx=\"" << x << "\" cy=\"" << y << "\" r=\"" << radius
                 << "\" fill=\"#111827\"/>\n";
         }
-        if (withLabels) writeLabel(out, x, y, label);
+        if (withLabels) writeLabel(out, x, y, etiqueta);
     }
 
     // Estaciones (triángulos) y base (cuadrado).

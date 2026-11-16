@@ -24,12 +24,12 @@ using namespace geodrone;
 
 const double TOLERANCE = 1e-6;
 
-bool isRechargeLabel(const std::string& label) { return label[0] == 'D' || label[0] == 'S'; }
+bool isRechargeLabel(const std::string& etiqueta) { return etiqueta[0] == 'D' || etiqueta[0] == 'S'; }
 
 // Verificación independiente del solver, solo con la ruta y el escenario: lo mismo que hará el juez.
 void assertValidRoute(const Escenario& s, const Route& route, size_t expectedClients) {
     assert(route.feasible);
-    assert(!route.path.empty() && route.path.front().label == "D0" && route.path.back().label == "D0");
+    assert(!route.path.empty() && route.path.front().etiqueta == "D0" && route.path.back().etiqueta == "D0");
     assert(route.order.front() == "D0" && route.order.back() == "D0");
     assert(route.preparationMs >= 0 && route.solveMs >= 0);
 
@@ -37,7 +37,7 @@ void assertValidRoute(const Escenario& s, const Route& route, size_t expectedCli
     double length = 0.0;
     int recharges = 0;
     std::set<std::string> visited;
-    std::vector<std::string> keyLabels = {route.path.front().label};
+    std::vector<std::string> keyLabels = {route.path.front().etiqueta};
     for (size_t i = 1; i < route.path.size(); ++i) {
         Segmento leg(route.path[i - 1].point, route.path[i].point);
         assert(Geometria::tramoLibre(leg, s.obstaculos));   // Ningún tramo cruza un obstáculo
@@ -45,17 +45,17 @@ void assertValidRoute(const Escenario& s, const Route& route, size_t expectedCli
         bateria -= leg.longitud();
         assert(bateria >= -TOLERANCE);                                 // La batería nunca baja de 0
 
-        const std::string& label = route.path[i].label;
-        if (label == "V") continue;
-        keyLabels.push_back(label);
-        if (isRechargeLabel(label)) {
+        const std::string& etiqueta = route.path[i].etiqueta;
+        if (etiqueta == "V") continue;
+        keyLabels.push_back(etiqueta);
+        if (isRechargeLabel(etiqueta)) {
             bateria = s.bateria;
             if (i + 1 < route.path.size()) ++recharges;
         } else {
-            assert(visited.insert(label).second);                      // Cada cliente una sola vez
+            assert(visited.insert(etiqueta).second);                      // Cada cliente una sola vez
         }
     }
-    assert(std::abs(length - route.cost) < TOLERANCE);
+    assert(std::abs(length - route.costo) < TOLERANCE);
     assert(recharges == route.recharges);
     assert(visited.size() == expectedClients);
     assert(keyLabels == route.order);                                  // La trayectoria sigue el orden
@@ -82,7 +82,7 @@ void testHandRouteAndExport() {
     Route route = solver.solve(Algorithm::BRANCH_AND_BOUND);
     assertValidRoute(s, route, 1);
     assert(route.order == std::vector<std::string>({"D0", "S1", "C1", "S1", "D0"}));
-    assert(std::abs(route.cost - 32.0) < TOLERANCE && route.recharges == 2);
+    assert(std::abs(route.costo - 32.0) < TOLERANCE && route.recharges == 2);
 
     std::ostringstream out;
     Exporter::writeRoute(route, out);
@@ -150,13 +150,13 @@ void testExclusions(const std::string& folder) {
     Escenario enclosed = ArchivoEscenario::cargar(folder + "/adv_enclosed.txt");
     MissionSolver enclosedSolver(enclosed);
     assert(enclosedSolver.excluded().size() == 1);
-    assert(enclosedSolver.excluded()[0].label == "C1" && enclosedSolver.excluded()[0].reason == "OBSTACLES");
+    assert(enclosedSolver.excluded()[0].etiqueta == "C1" && enclosedSolver.excluded()[0].reason == "OBSTACLES");
     assertValidRoute(enclosed, enclosedSolver.solve(Algorithm::BRANCH_AND_BOUND), 2);
 
     Escenario bateria = ArchivoEscenario::cargar(folder + "/adv_unreachable_battery.txt");
     MissionSolver batterySolver(bateria);
     assert(batterySolver.excluded().size() == 1);
-    assert(batterySolver.excluded()[0].label == "C4" && batterySolver.excluded()[0].reason == "BATTERY");
+    assert(batterySolver.excluded()[0].etiqueta == "C4" && batterySolver.excluded()[0].reason == "BATTERY");
     Route route = batterySolver.solve(Algorithm::ITERATED_LOCAL_SEARCH);
     assertValidRoute(bateria, route, 3);
     assert(route.excluded.size() == 1);
@@ -190,7 +190,7 @@ void testNoClients() {
     MissionSolver solver(s);
     for (Algorithm algorithm : allAlgorithms()) {
         Route route = solver.solve(algorithm);
-        assert(route.feasible && route.cost == 0.0 && route.recharges == 0);
+        assert(route.feasible && route.costo == 0.0 && route.recharges == 0);
         assert(route.order == std::vector<std::string>{"D0"} && route.path.size() == 1);
     }
 

@@ -14,14 +14,14 @@ namespace geodrone {
  */
 struct RoutePoint {
     Punto point;
-    std::string label;
+    std::string etiqueta;
 };
 
 /**
  * @brief Cliente que quedó fuera de la misión (docs/decisiones.md §1) y por qué.
  */
 struct ExcludedClient {
-    std::string label;      // "C3"
+    std::string etiqueta;      // "C3"
     std::string reason;     // "OBSTACLES" (los obstáculos lo separan de la base) o "BATTERY"
 };
 
@@ -33,7 +33,7 @@ struct Route {
     std::string escenario;
     std::string algorithm;
     bool feasible = false;
-    double cost = 0.0;                      // Distancia total volada, con los desvíos a recargar
+    double costo = 0.0;                      // Distancia total volada, con los desvíos a recargar
     int recharges = 0;
     std::vector<ExcludedClient> excluded;
     std::vector<std::string> order;         // Nodos clave visitados: D0 C2 S1 C1 ... D0

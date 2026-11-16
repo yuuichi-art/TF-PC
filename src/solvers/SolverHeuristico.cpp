@@ -38,13 +38,13 @@ std::vector<int> doubleBridge(const std::vector<int>& order, std::mt19937_64& rn
 } // namespace
 
 double tourCost(const std::vector<std::vector<double>>& dist, int base, const std::vector<int>& order) {
-    double cost = 0.0;
+    double costo = 0.0;
     int position = base;
     for (int client : order) {
-        cost += dist[position][client];
+        costo += dist[position][client];
         position = client;
     }
-    return cost + dist[position][base];
+    return costo + dist[position][base];
 }
 
 std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int base,
@@ -71,15 +71,15 @@ std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, 
                                   const std::vector<int>& clientes) {
     std::vector<int> nodes = {base};
     nodes.insert(nodes.end(), clientes.begin(), clientes.end());
-    MstResult tree = primMst(dist, nodes);
+    ArbolMinimo tree = arbolMinimoPrim(dist, nodes);
 
     // Hijos de cada nodo del árbol (posiciones dentro de nodes), del más cercano al más lejano.
     // Un nodo sin padre solo aparece si no tiene camino (no debería pasar: los clientes deben ser
     // alcanzables); se cuelga de la raíz para no acceder fuera del vector.
     std::vector<std::vector<int>> children(nodes.size());
     for (size_t i = 1; i < nodes.size(); ++i) {
-        int parent = tree.parent[i] >= 0 ? tree.parent[i] : 0;
-        children[parent].push_back(static_cast<int>(i));
+        int padre = tree.padre[i] >= 0 ? tree.padre[i] : 0;
+        children[padre].push_back(static_cast<int>(i));
     }
     for (size_t p = 0; p < nodes.size(); ++p) {
         std::sort(children[p].begin(), children[p].end(), [&](int a, int b) {
@@ -152,10 +152,10 @@ IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int 
             result.stoppedByTime = true;   // La candidata quedó a medias: no se considera
             break;
         }
-        double cost = tourCost(dist, base, candidate);
-        if (cost < bestCost - MIN_IMPROVEMENT) {
+        double costo = tourCost(dist, base, candidate);
+        if (costo < bestCost - MIN_IMPROVEMENT) {
             result.order = std::move(candidate);
-            bestCost = cost;
+            bestCost = costo;
         }
     }
     return result;
