@@ -42,12 +42,12 @@ public:
 
     /**
      * @param dist     Matriz de distancias entre nodos clave (la del grafo de misión).
-     * @param depot    Clave de la base.
-     * @param clients  Claves de los clientes a visitar. Deben ser alcanzables desde la base.
+     * @param base    Clave de la base.
+     * @param clientes  Claves de los clientes a visitar. Deben ser alcanzables desde la base.
      * Lanza std::invalid_argument si hay más de MAX_CLIENTS clientes.
      */
-    static ExactResult solve(const std::vector<std::vector<double>>& dist, int depot,
-                             const std::vector<int>& clients);
+    static ExactResult solve(const std::vector<std::vector<double>>& dist, int base,
+                             const std::vector<int>& clientes);
 };
 
 } // namespace geodrone

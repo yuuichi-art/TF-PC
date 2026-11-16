@@ -26,9 +26,9 @@ enum class NodeType {
  * @brief Nodo del grafo de visibilidad G = (V, E).
  */
 struct Node {
-    Point pt;
+    Punto pt;
     NodeType type;
-    std::string name;   // "D0", "S1", "C3"... o "Obs2_V0" para un vértice de obstáculo
+    std::string nombre;   // "D0", "S1", "C3"... o "Obs2_V0" para un vértice de obstáculo
 
     bool isKeyNode() const {
         return type != NodeType::OBSTACLE_VERTEX;
@@ -64,7 +64,7 @@ struct BoundingBox {
 class VisibilityGraph {
 private:
     std::vector<Node> nodes_;
-    std::vector<Polygon> obstacles_;
+    std::vector<Poligono> obstacles_;
     std::vector<BoundingBox> obstacleBoxes_;   // Caja envolvente de cada obstáculo
     std::vector<std::vector<GraphEdge>> adj_;
     int edgeCount_ = 0;
@@ -72,19 +72,19 @@ private:
     // Un tramo es válido si no atraviesa el interior de ningún obstáculo. Con el filtro activo,
     // los obstáculos cuya caja no toca la caja del tramo se descartan sin revisar sus aristas:
     // si las cajas no se tocan, el tramo no puede entrar al polígono.
-    bool isSegmentClear(const Segment& seg, bool useBoundingBoxFilter) const {
+    bool isSegmentClear(const Segmento& seg, bool useBoundingBoxFilter) const {
         BoundingBox segBox{std::min(seg.a.x, seg.b.x), std::min(seg.a.y, seg.b.y),
                            std::max(seg.a.x, seg.b.x), std::max(seg.a.y, seg.b.y)};
         for (size_t k = 0; k < obstacles_.size(); ++k) {
             if (useBoundingBoxFilter && segBox.isDisjointFrom(obstacleBoxes_[k])) continue;
-            if (GeometryUtils::segmentIntersectsPolygonInterior(seg, obstacles_[k])) return false;
+            if (Geometria::segmentoCruzaInterior(seg, obstacles_[k])) return false;
         }
         return true;
     }
 
-    static BoundingBox boxOf(const Polygon& poly) {
+    static BoundingBox boxOf(const Poligono& poly) {
         BoundingBox box{poly[0].x, poly[0].y, poly[0].x, poly[0].y};
-        for (const Point& v : poly.vertices) {
+        for (const Punto& v : poly.vertices) {
             box.minX = std::min(box.minX, v.x);
             box.minY = std::min(box.minY, v.y);
             box.maxX = std::max(box.maxX, v.x);
@@ -97,8 +97,8 @@ public:
     /**
      * @brief Agrega un nodo (base, cliente o estación) y devuelve su índice en el grafo.
      */
-    int addNode(const Point& pt, NodeType type, const std::string& name) {
-        nodes_.push_back({pt, type, name});
+    int addNode(const Punto& pt, NodeType type, const std::string& nombre) {
+        nodes_.push_back({pt, type, nombre});
         adj_.emplace_back();
         return static_cast<int>(nodes_.size()) - 1;
     }
@@ -106,10 +106,10 @@ public:
     /**
      * @brief Agrega un polígono obstáculo e incorpora sus vértices al conjunto de nodos V.
      */
-    void addObstacle(const Polygon& poly) {
+    void addObstacle(const Poligono& poly) {
         obstacles_.push_back(poly);
         obstacleBoxes_.push_back(boxOf(poly));
-        for (int i = 0; i < poly.size(); ++i) {
+        for (int i = 0; i < poly.numVertices(); ++i) {
             addNode(poly[i], NodeType::OBSTACLE_VERTEX, "Obs" + std::to_string(poly.id) + "_V" + std::to_string(i));
         }
     }
@@ -132,9 +132,9 @@ public:
 
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
-                Segment seg(nodes_[i].pt, nodes_[j].pt);
+                Segmento seg(nodes_[i].pt, nodes_[j].pt);
                 if (isSegmentClear(seg, useBoundingBoxFilter)) {
-                    double dist = nodes_[i].pt.dist(nodes_[j].pt);
+                    double dist = nodes_[i].pt.distancia(nodes_[j].pt);
                     adj_[i].push_back({j, dist});
                     adj_[j].push_back({i, dist});
                     edgeCount_++;

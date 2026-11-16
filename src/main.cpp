@@ -84,10 +84,10 @@ void printBanner() {
     std::cout << "========================================================================\n";
 }
 
-void printScenarioSummary(const Scenario& s) {
-    std::cout << "  Escenario " << s.name << " (" << categoryName(s.category) << ", semilla " << s.seed << "): "
-              << "clientes " << s.numClients() << ", estaciones " << s.numStations() << ", obstaculos "
-              << s.numObstacles() << " (" << s.totalObstacleVertices() << " vertices), bateria " << s.battery << "\n";
+void printScenarioSummary(const Escenario& s) {
+    std::cout << "  Escenario " << s.nombre << " (" << nombreCategoria(s.categoria) << ", semilla " << s.semilla << "): "
+              << "clientes " << s.numClientes() << ", estaciones " << s.numEstaciones() << ", obstaculos "
+              << s.numObstaculos() << " (" << s.totalVerticesObstaculos() << " vertices), bateria " << s.bateria << "\n";
 }
 
 // Lista de etiquetas; si es muy larga muestra el inicio y el final.
@@ -110,25 +110,25 @@ void printLabels(const std::vector<std::string>& labels) {
 void generateDatasets() {
     std::cout << "\n--- GENERAR DATASETS ---\n";
     std::cout << "  Categoria  Clientes   Estaciones  Obstaculos  Tiempo  Memoria\n";
-    for (DatasetCategory c : {DatasetCategory::SMALL, DatasetCategory::MEDIUM, DatasetCategory::LARGE,
-                              DatasetCategory::EXTREME}) {
-        CategorySpec spec = DatasetGenerator::specFor(c);
-        CategoryLimits limits = limitsFor(c);
-        std::cout << "  " << std::left << std::setw(10) << categoryName(c) << std::right
-                  << std::setw(5) << spec.minClients << "-" << std::left << std::setw(6) << spec.maxClients
-                  << std::right << std::setw(5) << spec.minStations << "-" << std::left << std::setw(6) << spec.maxStations
-                  << std::right << std::setw(5) << spec.minObstacles << "-" << std::left << std::setw(6) << spec.maxObstacles
-                  << std::right << std::setw(4) << limits.timeLimitSeconds << " s" << std::setw(6)
-                  << limits.memoryLimitMB << " MB\n";
+    for (Categoria c : {Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE,
+                              Categoria::EXTREME}) {
+        RangosCategoria spec = GeneradorDatasets::rangosDe(c);
+        LimitesCategoria limits = limitesDe(c);
+        std::cout << "  " << std::left << std::setw(10) << nombreCategoria(c) << std::right
+                  << std::setw(5) << spec.minClientes << "-" << std::left << std::setw(6) << spec.maxClientes
+                  << std::right << std::setw(5) << spec.minEstaciones << "-" << std::left << std::setw(6) << spec.maxEstaciones
+                  << std::right << std::setw(5) << spec.minObstaculos << "-" << std::left << std::setw(6) << spec.maxObstaculos
+                  << std::right << std::setw(4) << limits.limiteTiempoSegundos << " s" << std::setw(6)
+                  << limits.limiteMemoriaMB << " MB\n";
     }
 
     std::string folder = askText("Carpeta de destino", "data/generated");
     int seeds = askNumber("Semillas por categoria", 5, 1, 50);
     std::cout << "  Generando (cada escenario calcula su bateria con la busqueda binaria)...\n" << std::flush;
 
-    std::vector<std::string> paths = DatasetGenerator::generateBenchmarkSet(folder, seeds);
+    std::vector<std::string> paths = GeneradorDatasets::generarConjuntoBenchmark(folder, seeds);
     for (const std::string& path : paths) {
-        printScenarioSummary(ScenarioIO::load(path));
+        printScenarioSummary(ArchivoEscenario::cargar(path));
     }
     std::cout << "  " << paths.size() << " escenarios guardados en " << folder << "\n";
 }
@@ -140,10 +140,10 @@ void generateDatasets() {
 void solveScenario() {
     std::cout << "\n--- RESOLVER UN ESCENARIO ---\n";
     std::string path = askText("Archivo de escenario", "data/generated/small_1.txt");
-    Scenario scenario = ScenarioIO::load(path);
-    printScenarioSummary(scenario);
+    Escenario escenario = ArchivoEscenario::cargar(path);
+    printScenarioSummary(escenario);
 
-    MissionSolver solver(scenario);
+    MissionSolver solver(escenario);
     std::cout << std::fixed << std::setprecision(2)
               << "  Grafo de mision y red de recarga listos en " << solver.preparationMs() << " ms\n";
 
@@ -167,7 +167,7 @@ void solveScenario() {
     }
 
     Route route = solver.solve(algorithms[choice - 1]);
-    CategoryLimits limits = limitsFor(scenario.category);
+    LimitesCategoria limits = limitesDe(escenario.categoria);
 
     std::cout << "\n  Algoritmo:  " << route.algorithm << "\n";
     std::cout << "  Estado:     " << (route.feasible ? "OK" : "INFACTIBLE") << "\n";
@@ -177,16 +177,16 @@ void solveScenario() {
     for (const ExcludedClient& client : route.excluded) std::cout << "  " << client.label << " (" << client.reason << ")";
     std::cout << '\n';
     std::cout << "  Tiempo:     " << route.totalMs() << " ms = " << route.preparationMs << " de preparacion + "
-              << route.solveMs << " de resolucion (limite " << static_cast<int>(limits.timeLimitSeconds * 1000)
+              << route.solveMs << " de resolucion (limite " << static_cast<int>(limits.limiteTiempoSegundos * 1000)
               << " ms)\n";
     std::cout << "  Memoria:    " << peakMemoryMB() << " MB pico del proceso (limite "
-              << static_cast<int>(limits.memoryLimitMB) << " MB)\n";
+              << static_cast<int>(limits.limiteMemoriaMB) << " MB)\n";
     std::cout << "  Orden:     ";
     printLabels(route.order);
 
-    std::string output = "output/" + route.scenario + "_" + route.algorithm;
+    std::string output = "output/" + route.escenario + "_" + route.algorithm;
     Exporter::saveRoute(route, output + ".txt");
-    Exporter::saveSvg(scenario, route, output + ".svg");
+    Exporter::saveSvg(escenario, route, output + ".svg");
     std::cout << "  Ruta completa (" << route.path.size() << " puntos) exportada en " << output << ".txt\n"
               << "  Dibujo de la ruta en " << output << ".svg (se abre con cualquier navegador)\n";
 }
@@ -196,11 +196,11 @@ void solveScenario() {
 // ---------------------------------------------------------------------------------------------
 
 void printRanking(const std::vector<RankingRow>& ranking) {
-    int category = -1;
+    int categoria = -1;
     for (const RankingRow& row : ranking) {
-        if (static_cast<int>(row.category) != category) {
-            category = static_cast<int>(row.category);
-            std::cout << "\n  " << categoryName(row.category) << "\n"
+        if (static_cast<int>(row.categoria) != categoria) {
+            categoria = static_cast<int>(row.categoria);
+            std::cout << "\n  " << nombreCategoria(row.categoria) << "\n"
                       << "    #  algoritmo                 OK/casos   gap medio   tiempo medio\n";
         }
         std::cout << "    " << row.position << "  " << std::left << std::setw(26) << row.algorithm << std::right
@@ -259,23 +259,23 @@ void runJudge() {
 void analyzeNetwork() {
     std::cout << "\n--- ANALIZAR RED DE RECARGA ---\n";
     std::string path = askText("Archivo de escenario", "data/generated/medium_1.txt");
-    Scenario scenario = ScenarioIO::load(path);
-    printScenarioSummary(scenario);
+    Escenario escenario = ArchivoEscenario::cargar(path);
+    printScenarioSummary(escenario);
 
     // El solver prepara el grafo de misión y la red de recarga, y clasifica a los excluidos.
-    MissionSolver solver(scenario);
+    MissionSolver solver(escenario);
     const MissionGraph& mission = solver.mission();
     const ChargingNetwork& network = solver.network();
     std::cout << std::fixed << std::setprecision(2);
 
     // Alcance de la red con la batería del escenario (DFS desde la base).
     std::vector<std::string> unreachable;
-    for (int s = 0; s < mission.numStations(); ++s) {
+    for (int s = 0; s < mission.numEstaciones(); ++s) {
         int key = mission.stationKey(s);
         if (!network.isReachable(key)) unreachable.push_back(mission.label(key));
     }
-    std::cout << "  Estaciones alcanzables desde la base: " << mission.numStations() - unreachable.size()
-              << " de " << mission.numStations() << '\n';
+    std::cout << "  Estaciones alcanzables desde la base: " << mission.numEstaciones() - unreachable.size()
+              << " de " << mission.numEstaciones() << '\n';
     if (!unreachable.empty()) {
         std::cout << "  Sin conexion con la base:";
         printLabels(unreachable);
@@ -305,7 +305,7 @@ void analyzeNetwork() {
     // Autonomía mínima (búsqueda binaria) frente a la del escenario.
     double minimum = ChargingNetwork::minimumAutonomy(mission);
     std::cout << "  Autonomia minima para atender a todos los clientes: " << minimum
-              << " (el escenario tiene " << scenario.battery << ")\n";
+              << " (el escenario tiene " << escenario.bateria << ")\n";
 
     std::vector<std::string> byObstacles, byBattery;
     for (const ExcludedClient& client : solver.excluded()) {

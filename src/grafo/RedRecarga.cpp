@@ -4,8 +4,8 @@
 
 namespace geodrone {
 
-ChargingNetwork::ChargingNetwork(const MissionGraph& mission, double battery)
-    : mission_(mission), battery_(battery), rechargeCount_(mission.numStations() + 1) {
+ChargingNetwork::ChargingNetwork(const MissionGraph& mission, double bateria)
+    : mission_(mission), battery_(bateria), rechargeCount_(mission.numEstaciones() + 1) {
     // DFS de Tarjan desde la base: marca los alcanzables (discovery > 0) y las articulaciones.
     std::vector<int> discovery(rechargeCount_, 0);
     std::vector<int> low(rechargeCount_, 0);
@@ -62,16 +62,16 @@ bool ChargingNetwork::canServe(int clientKey) const {
 }
 
 std::vector<int> ChargingNetwork::criticalStations() const {
-    std::vector<int> stations;
+    std::vector<int> estaciones;
     for (int r = 1; r < rechargeCount_; ++r) {     // La base (0) no se considera: no puede fallar
-        if (articulation_[r]) stations.push_back(r);
+        if (articulation_[r]) estaciones.push_back(r);
     }
-    return stations;
+    return estaciones;
 }
 
-bool ChargingNetwork::isFeasible(const MissionGraph& mission, double battery) {
-    ChargingNetwork network(mission, battery);
-    for (int c = 0; c < mission.numClients(); ++c) {
+bool ChargingNetwork::isFeasible(const MissionGraph& mission, double bateria) {
+    ChargingNetwork network(mission, bateria);
+    for (int c = 0; c < mission.numClientes(); ++c) {
         int key = mission.clientKey(c);
         if (mission.isConnectedToDepot(key) && !network.canServe(key)) return false;
     }
@@ -104,7 +104,7 @@ double ChargingNetwork::minimumAutonomy(const MissionGraph& mission) {
 
 MstResult ChargingNetwork::supportTree(const MissionGraph& mission, std::vector<int>& nodes) {
     nodes.clear();
-    for (int r = 0; r <= mission.numStations(); ++r) {
+    for (int r = 0; r <= mission.numEstaciones(); ++r) {
         if (mission.isConnectedToDepot(r)) nodes.push_back(r);
     }
     return primMst(mission.distances(), nodes);

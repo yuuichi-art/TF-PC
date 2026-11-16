@@ -26,7 +26,7 @@ VerificationResult fail(const std::string& problem) {
 
 // Interpreta una etiqueta "D0", "S2" o "C5": tipo y número (1..S o 1..N; 0 para la base).
 // Devuelve false si no corresponde a ningún punto del escenario.
-bool parseLabel(const Scenario& s, const std::string& label, char& type, int& number) {
+bool parseLabel(const Escenario& s, const std::string& label, char& type, int& number) {
     if (label.size() < 2) return false;
     type = label[0];
     try {
@@ -37,16 +37,16 @@ bool parseLabel(const Scenario& s, const std::string& label, char& type, int& nu
         return false;
     }
     if (type == 'D') return number == 0;
-    if (type == 'S') return number >= 1 && number <= s.numStations();
-    if (type == 'C') return number >= 1 && number <= s.numClients();
+    if (type == 'S') return number >= 1 && number <= s.numEstaciones();
+    if (type == 'C') return number >= 1 && number <= s.numClientes();
     return false;
 }
 
 // Coordenadas que el escenario asigna a la etiqueta (ya validada con parseLabel).
-Point pointOf(const Scenario& s, char type, int number) {
-    if (type == 'D') return s.depot;
-    if (type == 'S') return s.stations[number - 1];
-    return s.clients[number - 1];
+Punto pointOf(const Escenario& s, char type, int number) {
+    if (type == 'D') return s.base;
+    if (type == 'S') return s.estaciones[number - 1];
+    return s.clientes[number - 1];
 }
 
 double percentOver(double value, double reference) {
@@ -63,23 +63,23 @@ bool exclusionIsGenuine(const MissionSolver& solver, int clientIndex, const std:
 }
 
 // Tamaño de un escenario para ordenarlos de menor a mayor.
-int sizeOf(const Scenario& s) {
-    return s.numClients() + s.numStations() + s.totalObstacleVertices();
+int sizeOf(const Escenario& s) {
+    return s.numClientes() + s.numEstaciones() + s.totalVerticesObstaculos();
 }
 
 } // namespace
 
-VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& solver, const Route& route) {
+VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& solver, const Route& route) {
     if (!route.feasible) return fail("el solver no encontro una ruta factible");
     if (route.path.empty()) return fail("la trayectoria esta vacia");
     if (route.path.front().label != "D0" || route.path.back().label != "D0") {
         return fail("la ruta no empieza y termina en la base");
     }
 
-    double battery = scenario.battery;
+    double bateria = escenario.bateria;
     double length = 0.0;
     int recharges = 0;
-    std::vector<int> visits(scenario.numClients(), 0);
+    std::vector<int> visits(escenario.numClientes(), 0);
     std::vector<std::string> keyLabels;     // Nodos clave de la trayectoria, para compararlos con ORDER
 
     for (size_t i = 0; i < route.path.size(); ++i) {
@@ -87,39 +87,39 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
         char type = 'V';
         int number = 0;
         if (p.label != "V") {
-            if (!parseLabel(scenario, p.label, type, number)) return fail("etiqueta desconocida '" + p.label + "'");
-            if (p.point != pointOf(scenario, type, number)) {
+            if (!parseLabel(escenario, p.label, type, number)) return fail("etiqueta desconocida '" + p.label + "'");
+            if (p.point != pointOf(escenario, type, number)) {
                 return fail(p.label + " no esta en las coordenadas del escenario");
             }
             keyLabels.push_back(p.label);
         }
         if (i == 0) continue;
 
-        Segment leg(route.path[i - 1].point, p.point);
-        if (!GeometryUtils::isFlightPathClear(leg, scenario.obstacles)) {
+        Segmento leg(route.path[i - 1].point, p.point);
+        if (!Geometria::tramoLibre(leg, escenario.obstaculos)) {
             return fail("el tramo " + std::to_string(i) + " (hacia " + p.label + ") cruza un obstaculo");
         }
-        length += leg.length();
-        battery -= leg.length();
-        if (battery < -TOL) {
+        length += leg.longitud();
+        bateria -= leg.longitud();
+        if (bateria < -TOL) {
             return fail("la bateria se agota en el tramo " + std::to_string(i) + " (hacia " + p.label + ")");
         }
 
         // Llegar a la base o a una estación llena la batería. La llegada final a la base no
         // cuenta como recarga, porque ahí termina la misión.
         if (type == 'D' || type == 'S') {
-            battery = scenario.battery;
+            bateria = escenario.bateria;
             if (i + 1 < route.path.size()) ++recharges;
         } else if (type == 'C' && ++visits[number - 1] > 1) {
             return fail(p.label + " se visita mas de una vez");
         }
     }
 
-    std::vector<char> excluded(scenario.numClients(), 0);
+    std::vector<char> excluded(escenario.numClientes(), 0);
     for (const ExcludedClient& client : route.excluded) {
         char type = 'V';
         int number = 0;
-        if (!parseLabel(scenario, client.label, type, number) || type != 'C') {
+        if (!parseLabel(escenario, client.label, type, number) || type != 'C') {
             return fail("excluido desconocido '" + client.label + "'");
         }
         if (visits[number - 1] > 0) return fail(client.label + " esta excluido y tambien se visita");
@@ -128,7 +128,7 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
         }
         excluded[number - 1] = 1;
     }
-    for (int c = 0; c < scenario.numClients(); ++c) {
+    for (int c = 0; c < escenario.numClientes(); ++c) {
         if (visits[c] == 0 && !excluded[c]) return fail("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
     }
 
@@ -140,10 +140,10 @@ VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& so
     return {};
 }
 
-std::string verdictFor(bool valid, double timeMs, double memoryMB, const CategoryLimits& limits) {
+std::string verdictFor(bool valid, double timeMs, double memoryMB, const LimitesCategoria& limits) {
     if (!valid) return "WA";
-    if (timeMs > limits.timeLimitSeconds * 1000.0) return "TLE";
-    if (memoryMB > limits.memoryLimitMB) return "MLE";
+    if (timeMs > limits.limiteTiempoSegundos * 1000.0) return "TLE";
+    if (memoryMB > limits.limiteMemoriaMB) return "MLE";
     return "OK";
 }
 
@@ -162,22 +162,22 @@ std::vector<std::string> findScenarioFiles(const std::string& folder) {
 namespace {
 
 // Resuelve un escenario con cada algoritmo, guarda y verifica cada ruta, y le da veredicto y gap.
-std::vector<JudgeRow> judgeScenario(const Scenario& s, const std::string& routesFolder) {
+std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& routesFolder) {
     MissionSolver solver(s);
-    bool smallCase = s.category == DatasetCategory::SMALL || s.category == DatasetCategory::ADVERSARIAL;
+    bool smallCase = s.categoria == Categoria::SMALL || s.categoria == Categoria::ADVERSARIAL;
 
     std::vector<JudgeRow> rows;
     std::vector<bool> valid;
     for (Algorithm algorithm : allAlgorithms()) {
         if (algorithm == Algorithm::BRANCH_AND_BOUND && !(smallCase && solver.supportsExact())) continue;
         Route route = solver.solve(algorithm);
-        Exporter::saveRoute(route, routesFolder + "/" + route.scenario + "_" + route.algorithm + ".txt");
+        Exporter::saveRoute(route, routesFolder + "/" + route.escenario + "_" + route.algorithm + ".txt");
         VerificationResult check = verifyRoute(s, solver, route);
 
         JudgeRow row;
-        row.scenario = s.name;
-        row.category = s.category;
-        row.clients = s.numClients();
+        row.escenario = s.nombre;
+        row.categoria = s.categoria;
+        row.clientes = s.numClientes();
         row.algorithm = route.algorithm;
         row.problem = check.problem;
         row.cost = route.cost;
@@ -190,7 +190,7 @@ std::vector<JudgeRow> judgeScenario(const Scenario& s, const std::string& routes
 
     // Memoria pico al terminar el caso; los veredictos se dan después de medirla.
     double memory = peakMemoryMB();
-    CategoryLimits limits = limitsFor(s.category);
+    LimitesCategoria limits = limitesDe(s.categoria);
     double best = INF;
     for (size_t i = 0; i < rows.size(); ++i) {
         rows[i].memoryMB = memory;
@@ -212,7 +212,7 @@ std::vector<JudgeRow> judgeScenario(const Scenario& s, const std::string& routes
 }
 
 // Avance en consola: una línea por caso y el motivo de cada ruta que no dio OK.
-void printCase(std::ostream& log, size_t number, size_t total, const Scenario& s, const std::vector<JudgeRow>& rows) {
+void printCase(std::ostream& log, size_t number, size_t total, const Escenario& s, const std::vector<JudgeRow>& rows) {
     int ok = 0;
     double best = INF;
     for (const JudgeRow& row : rows) {
@@ -221,8 +221,8 @@ void printCase(std::ostream& log, size_t number, size_t total, const Scenario& s
             best = std::min(best, row.cost);
         }
     }
-    log << "  [" << std::setw(2) << number << "/" << total << "] " << std::left << std::setw(26) << s.name
-        << std::right << std::setw(5) << s.numClients() << " clientes  " << ok << "/" << rows.size()
+    log << "  [" << std::setw(2) << number << "/" << total << "] " << std::left << std::setw(26) << s.nombre
+        << std::right << std::setw(5) << s.numClientes() << " clientes  " << ok << "/" << rows.size()
         << " OK  mejor " << std::fixed << std::setprecision(2) << best << "\n" << std::flush;
     for (const JudgeRow& row : rows) {
         if (row.verdict != "OK") {
@@ -236,10 +236,10 @@ void printCase(std::ostream& log, size_t number, size_t total, const Scenario& s
 
 std::vector<JudgeRow> run(const std::vector<std::string>& scenarioFiles, const std::string& routesFolder,
                           std::ostream& log) {
-    std::vector<Scenario> scenarios;
-    for (const std::string& file : scenarioFiles) scenarios.push_back(ScenarioIO::load(file));
+    std::vector<Escenario> scenarios;
+    for (const std::string& file : scenarioFiles) scenarios.push_back(ArchivoEscenario::cargar(file));
     std::stable_sort(scenarios.begin(), scenarios.end(),
-                     [](const Scenario& a, const Scenario& b) { return sizeOf(a) < sizeOf(b); });
+                     [](const Escenario& a, const Escenario& b) { return sizeOf(a) < sizeOf(b); });
 
     std::vector<JudgeRow> rows;
     for (size_t i = 0; i < scenarios.size(); ++i) {
@@ -254,8 +254,8 @@ std::vector<RankingRow> rank(const std::vector<JudgeRow>& rows) {
     // Acumulados por categoría y algoritmo.
     std::map<std::pair<int, std::string>, RankingRow> totals;
     for (const JudgeRow& row : rows) {
-        RankingRow& total = totals[{static_cast<int>(row.category), row.algorithm}];
-        total.category = row.category;
+        RankingRow& total = totals[{static_cast<int>(row.categoria), row.algorithm}];
+        total.categoria = row.categoria;
         total.algorithm = row.algorithm;
         ++total.cases;
         if (row.verdict == "OK") {

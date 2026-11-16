@@ -42,15 +42,15 @@ const std::vector<Algorithm>& allAlgorithms() {
     return algorithms;
 }
 
-MissionSolver::MissionSolver(const Scenario& scenario)
-    : name_(scenario.name),
-      seed_(scenario.seed),
-      timeLimitSeconds_(limitsFor(scenario.category).timeLimitSeconds),
+MissionSolver::MissionSolver(const Escenario& escenario)
+    : name_(escenario.nombre),
+      seed_(escenario.semilla),
+      timeLimitSeconds_(limitesDe(escenario.categoria).limiteTiempoSegundos),
       constructionStart_(Clock::now()),
-      mission_(scenario),
-      network_(mission_, scenario.battery) {
+      mission_(escenario),
+      network_(mission_, escenario.bateria) {
     // Exclusiones (docs/decisiones.md §1): primero los que separan los obstáculos, luego los de batería.
-    for (int c = 0; c < mission_.numClients(); ++c) {
+    for (int c = 0; c < mission_.numClientes(); ++c) {
         int key = mission_.clientKey(c);
         if (!mission_.isConnectedToDepot(key)) {
             excluded_.push_back({mission_.label(key), "OBSTACLES"});
@@ -69,30 +69,30 @@ bool MissionSolver::supportsExact() const {
 
 std::vector<int> MissionSolver::chooseOrder(Algorithm algorithm) const {
     const auto& dist = mission_.distances();
-    int depot = mission_.depotKey();
+    int base = mission_.depotKey();
     switch (algorithm) {
         case Algorithm::BRANCH_AND_BOUND:
-            return ExactSolver::solve(dist, depot, servable_).order;
+            return ExactSolver::solve(dist, base, servable_).order;
         case Algorithm::NEAREST_NEIGHBOR:
-            return HeuristicSolver::nearestNeighbor(dist, depot, servable_);
+            return HeuristicSolver::nearestNeighbor(dist, base, servable_);
         case Algorithm::MST_APPROXIMATION:
-            return HeuristicSolver::mstApproximation(dist, depot, servable_);
+            return HeuristicSolver::mstApproximation(dist, base, servable_);
         case Algorithm::NEAREST_NEIGHBOR_2OPT: {
-            std::vector<int> order = HeuristicSolver::nearestNeighbor(dist, depot, servable_);
-            HeuristicSolver::twoOpt(dist, depot, order);
+            std::vector<int> order = HeuristicSolver::nearestNeighbor(dist, base, servable_);
+            HeuristicSolver::twoOpt(dist, base, order);
             return order;
         }
         case Algorithm::MST_APPROXIMATION_2OPT: {
-            std::vector<int> order = HeuristicSolver::mstApproximation(dist, depot, servable_);
-            HeuristicSolver::twoOpt(dist, depot, order);
+            std::vector<int> order = HeuristicSolver::mstApproximation(dist, base, servable_);
+            HeuristicSolver::twoOpt(dist, base, order);
             return order;
         }
         case Algorithm::ITERATED_LOCAL_SEARCH: {
             // Presupuesto: el 90 % del límite de la categoría menos lo que ya costó la preparación.
             double budgetMs = std::max(0.0, TIME_BUDGET_FRACTION * timeLimitSeconds_ * 1000.0 - preparationMs_);
             auto deadline = Clock::now() + std::chrono::microseconds(static_cast<long long>(budgetMs * 1000.0));
-            std::vector<int> start = HeuristicSolver::nearestNeighbor(dist, depot, servable_);
-            return HeuristicSolver::iteratedLocalSearch(dist, depot, start, seed_,
+            std::vector<int> start = HeuristicSolver::nearestNeighbor(dist, base, servable_);
+            return HeuristicSolver::iteratedLocalSearch(dist, base, start, seed_,
                                                         HeuristicSolver::DEFAULT_ILS_ITERATIONS, deadline).order;
         }
     }
@@ -104,7 +104,7 @@ std::vector<RoutePoint> MissionSolver::expandPath(const std::vector<int>& keySeq
     const VisibilityGraph& graph = mission_.graph();
     auto toPoint = [&](int node) {
         const Node& n = graph.getNode(node);
-        return RoutePoint{n.pt, n.isKeyNode() ? n.name : "V"};
+        return RoutePoint{n.pt, n.isKeyNode() ? n.nombre : "V"};
     };
 
     std::vector<RoutePoint> path;
@@ -127,7 +127,7 @@ Route MissionSolver::solve(Algorithm algorithm) const {
     auto start = Clock::now();
 
     Route route;
-    route.scenario = name_;
+    route.escenario = name_;
     route.algorithm = algorithmName(algorithm);
     route.excluded = excluded_;
     route.preparationMs = preparationMs_;

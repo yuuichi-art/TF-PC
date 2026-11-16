@@ -15,199 +15,199 @@
 
 using namespace geodrone;
 
-void testCCW() {
+void probarOrientacion() {
     std::cout << "[TEST] 1. Giro horario, antihorario y colinealidad (CCW)..." << std::endl;
 
-    Point a(0.0, 0.0);
-    Point b(4.0, 0.0);
+    Punto a(0.0, 0.0);
+    Punto b(4.0, 0.0);
 
     // Punto hacia arriba -> Giro antihorario (izquierda)
-    Point c_left(2.0, 3.0);
-    assert(GeometryUtils::ccw(a, b, c_left) == 1);
+    Punto cIzquierda(2.0, 3.0);
+    assert(Geometria::orientacion(a, b, cIzquierda) == 1);
 
     // Punto hacia abajo -> Giro horario (derecha)
-    Point c_right(2.0, -3.0);
-    assert(GeometryUtils::ccw(a, b, c_right) == -1);
+    Punto cDerecha(2.0, -3.0);
+    assert(Geometria::orientacion(a, b, cDerecha) == -1);
 
     // Puntos estrictamente colineales
-    Point c_collinear(8.0, 0.0);
-    Point c_between(2.0, 0.0);
-    Point c_behind(-2.0, 0.0);
-    assert(GeometryUtils::ccw(a, b, c_collinear) == 0);
-    assert(GeometryUtils::ccw(a, b, c_between) == 0);
-    assert(GeometryUtils::ccw(a, b, c_behind) == 0);
+    Punto cColineal(8.0, 0.0);
+    Punto cEntre(2.0, 0.0);
+    Punto cDetras(-2.0, 0.0);
+    assert(Geometria::orientacion(a, b, cColineal) == 0);
+    assert(Geometria::orientacion(a, b, cEntre) == 0);
+    assert(Geometria::orientacion(a, b, cDetras) == 0);
 
     // Casos con precisión épsilon (1e-10 de perturbación debe considerarse colineal con EPS = 1e-9)
-    Point c_near_collinear(2.0, 1e-10);
-    assert(GeometryUtils::ccw(a, b, c_near_collinear) == 0);
+    Punto cCasiColineal(2.0, 1e-10);
+    assert(Geometria::orientacion(a, b, cCasiColineal) == 0);
 
     std::cout << "  -> PASSED: Orientacion CCW verificada exitosamente.\n" << std::endl;
 }
 
-void testSegmentIntersections() {
+void probarInterseccionSegmentos() {
     std::cout << "[TEST] 2. Interseccion propia e impropia de segmentos..." << std::endl;
 
     // 2.1 Intersección propia en cruz perfecta
-    Segment s1(Point(0.0, 2.0), Point(4.0, 2.0));
-    Segment s2(Point(2.0, 0.0), Point(2.0, 4.0));
-    assert(GeometryUtils::segmentsIntersect(s1, s2, false) == true);
-    assert(GeometryUtils::properIntersection(s1, s2) == true);
+    Segmento s1(Punto(0.0, 2.0), Punto(4.0, 2.0));
+    Segmento s2(Punto(2.0, 0.0), Punto(2.0, 4.0));
+    assert(Geometria::segmentosSeIntersecan(s1, s2, false) == true);
+    assert(Geometria::interseccionPropia(s1, s2) == true);
 
     // 2.2 Segmentos en forma de 'T' (intersección impropia en un extremo)
-    Segment s_horiz(Point(0.0, 0.0), Point(4.0, 0.0));
-    Segment s_touch(Point(2.0, 0.0), Point(2.0, 3.0));
-    assert(GeometryUtils::segmentsIntersect(s_horiz, s_touch, false) == true);
+    Segmento sHorizontal(Punto(0.0, 0.0), Punto(4.0, 0.0));
+    Segmento sToca(Punto(2.0, 0.0), Punto(2.0, 3.0));
+    assert(Geometria::segmentosSeIntersecan(sHorizontal, sToca, false) == true);
     // En intersección propia no debe contar porque toca en el borde
-    assert(GeometryUtils::properIntersection(s_horiz, s_touch) == false);
+    assert(Geometria::interseccionPropia(sHorizontal, sToca) == false);
 
     // 2.3 Segmentos colineales solapados
-    Segment s_col1(Point(0.0, 0.0), Point(4.0, 0.0));
-    Segment s_col2(Point(2.0, 0.0), Point(6.0, 0.0));
-    assert(GeometryUtils::segmentsIntersect(s_col1, s_col2, false) == true);
-    assert(GeometryUtils::properIntersection(s_col1, s_col2) == false);
+    Segmento sColineal1(Punto(0.0, 0.0), Punto(4.0, 0.0));
+    Segmento sColineal2(Punto(2.0, 0.0), Punto(6.0, 0.0));
+    assert(Geometria::segmentosSeIntersecan(sColineal1, sColineal2, false) == true);
+    assert(Geometria::interseccionPropia(sColineal1, sColineal2) == false);
 
     // 2.4 Segmentos colineales disjuntos
-    Segment s_col3(Point(5.0, 0.0), Point(8.0, 0.0));
-    assert(GeometryUtils::segmentsIntersect(s_col1, s_col3, false) == false);
-    assert(GeometryUtils::properIntersection(s_col1, s_col3) == false);
+    Segmento sColineal3(Punto(5.0, 0.0), Punto(8.0, 0.0));
+    assert(Geometria::segmentosSeIntersecan(sColineal1, sColineal3, false) == false);
+    assert(Geometria::interseccionPropia(sColineal1, sColineal3) == false);
 
     // 2.5 Segmentos paralelos no colineales
-    Segment s_par1(Point(0.0, 0.0), Point(4.0, 0.0));
-    Segment s_par2(Point(0.0, 1.0), Point(4.0, 1.0));
-    assert(GeometryUtils::segmentsIntersect(s_par1, s_par2, false) == false);
-    assert(GeometryUtils::properIntersection(s_par1, s_par2) == false);
+    Segmento sParalelo1(Punto(0.0, 0.0), Punto(4.0, 0.0));
+    Segmento sParalelo2(Punto(0.0, 1.0), Punto(4.0, 1.0));
+    assert(Geometria::segmentosSeIntersecan(sParalelo1, sParalelo2, false) == false);
+    assert(Geometria::interseccionPropia(sParalelo1, sParalelo2) == false);
 
     std::cout << "  -> PASSED: Interseccion de segmentos verificada exitosamente.\n" << std::endl;
 }
 
-void testPointInPolygon() {
+void probarPuntoEnPoligono() {
     std::cout << "[TEST] 3. Prueba de pertenencia Punto en Poligono (Ray Casting)..." << std::endl;
 
     // Cuadrado unitario de 10x10: [0, 10] x [0, 10]
-    Polygon square(1, "Obstaculo_Cuadrado");
-    square.addVertex(Point(0.0, 0.0));
-    square.addVertex(Point(10.0, 0.0));
-    square.addVertex(Point(10.0, 10.0));
-    square.addVertex(Point(0.0, 10.0));
+    Poligono cuadrado(1, "Obstaculo_Cuadrado");
+    cuadrado.agregarVertice(Punto(0.0, 0.0));
+    cuadrado.agregarVertice(Punto(10.0, 0.0));
+    cuadrado.agregarVertice(Punto(10.0, 10.0));
+    cuadrado.agregarVertice(Punto(0.0, 10.0));
 
     // Puntos estrictamente interiores
-    assert(GeometryUtils::pointInPolygon(Point(5.0, 5.0), square) == PointLocation::INSIDE);
-    assert(GeometryUtils::isPointStrictlyInside(Point(5.0, 5.0), square) == true);
-    assert(GeometryUtils::pointInPolygon(Point(1.0, 1.0), square) == PointLocation::INSIDE);
-    assert(GeometryUtils::pointInPolygon(Point(9.9, 9.9), square) == PointLocation::INSIDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(5.0, 5.0), cuadrado) == UbicacionPunto::DENTRO);
+    assert(Geometria::estaEstrictamenteDentro(Punto(5.0, 5.0), cuadrado) == true);
+    assert(Geometria::ubicacionEnPoligono(Punto(1.0, 1.0), cuadrado) == UbicacionPunto::DENTRO);
+    assert(Geometria::ubicacionEnPoligono(Punto(9.9, 9.9), cuadrado) == UbicacionPunto::DENTRO);
 
     // Puntos estrictamente exteriores
-    assert(GeometryUtils::pointInPolygon(Point(-1.0, 5.0), square) == PointLocation::OUTSIDE);
-    assert(GeometryUtils::isPointStrictlyInside(Point(-1.0, 5.0), square) == false);
-    assert(GeometryUtils::pointInPolygon(Point(15.0, 5.0), square) == PointLocation::OUTSIDE);
-    assert(GeometryUtils::pointInPolygon(Point(5.0, -0.5), square) == PointLocation::OUTSIDE);
-    assert(GeometryUtils::pointInPolygon(Point(5.0, 10.5), square) == PointLocation::OUTSIDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(-1.0, 5.0), cuadrado) == UbicacionPunto::FUERA);
+    assert(Geometria::estaEstrictamenteDentro(Punto(-1.0, 5.0), cuadrado) == false);
+    assert(Geometria::ubicacionEnPoligono(Punto(15.0, 5.0), cuadrado) == UbicacionPunto::FUERA);
+    assert(Geometria::ubicacionEnPoligono(Punto(5.0, -0.5), cuadrado) == UbicacionPunto::FUERA);
+    assert(Geometria::ubicacionEnPoligono(Punto(5.0, 10.5), cuadrado) == UbicacionPunto::FUERA);
 
     // Puntos sobre el borde (Boundary)
-    assert(GeometryUtils::pointInPolygon(Point(0.0, 5.0), square) == PointLocation::BOUNDARY);
-    assert(GeometryUtils::pointInPolygon(Point(10.0, 5.0), square) == PointLocation::BOUNDARY);
-    assert(GeometryUtils::pointInPolygon(Point(5.0, 0.0), square) == PointLocation::BOUNDARY);
-    assert(GeometryUtils::pointInPolygon(Point(5.0, 10.0), square) == PointLocation::BOUNDARY);
+    assert(Geometria::ubicacionEnPoligono(Punto(0.0, 5.0), cuadrado) == UbicacionPunto::BORDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(10.0, 5.0), cuadrado) == UbicacionPunto::BORDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(5.0, 0.0), cuadrado) == UbicacionPunto::BORDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(5.0, 10.0), cuadrado) == UbicacionPunto::BORDE);
 
     // Vértices del polígono
-    assert(GeometryUtils::pointInPolygon(Point(0.0, 0.0), square) == PointLocation::BOUNDARY);
-    assert(GeometryUtils::pointInPolygon(Point(10.0, 10.0), square) == PointLocation::BOUNDARY);
+    assert(Geometria::ubicacionEnPoligono(Punto(0.0, 0.0), cuadrado) == UbicacionPunto::BORDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(10.0, 10.0), cuadrado) == UbicacionPunto::BORDE);
 
     // Polígono no convexo (Forma de 'L')
-    Polygon polyL(2, "Edificio_L");
-    polyL.addVertex(Point(0.0, 0.0));
-    polyL.addVertex(Point(6.0, 0.0));
-    polyL.addVertex(Point(6.0, 2.0));
-    polyL.addVertex(Point(2.0, 2.0));
-    polyL.addVertex(Point(2.0, 6.0));
-    polyL.addVertex(Point(0.0, 6.0));
+    Poligono poligonoL(2, "Edificio_L");
+    poligonoL.agregarVertice(Punto(0.0, 0.0));
+    poligonoL.agregarVertice(Punto(6.0, 0.0));
+    poligonoL.agregarVertice(Punto(6.0, 2.0));
+    poligonoL.agregarVertice(Punto(2.0, 2.0));
+    poligonoL.agregarVertice(Punto(2.0, 6.0));
+    poligonoL.agregarVertice(Punto(0.0, 6.0));
 
-    // Punto en la hendidura exterior de la 'L' (debe ser OUTSIDE)
-    assert(GeometryUtils::pointInPolygon(Point(4.0, 4.0), polyL) == PointLocation::OUTSIDE);
+    // Punto en la hendidura exterior de la 'L' (debe ser FUERA)
+    assert(Geometria::ubicacionEnPoligono(Punto(4.0, 4.0), poligonoL) == UbicacionPunto::FUERA);
     // Punto en el interior de la 'L'
-    assert(GeometryUtils::pointInPolygon(Point(1.0, 1.0), polyL) == PointLocation::INSIDE);
-    assert(GeometryUtils::pointInPolygon(Point(1.0, 4.0), polyL) == PointLocation::INSIDE);
-    assert(GeometryUtils::pointInPolygon(Point(4.0, 1.0), polyL) == PointLocation::INSIDE);
+    assert(Geometria::ubicacionEnPoligono(Punto(1.0, 1.0), poligonoL) == UbicacionPunto::DENTRO);
+    assert(Geometria::ubicacionEnPoligono(Punto(1.0, 4.0), poligonoL) == UbicacionPunto::DENTRO);
+    assert(Geometria::ubicacionEnPoligono(Punto(4.0, 1.0), poligonoL) == UbicacionPunto::DENTRO);
 
     std::cout << "  -> PASSED: Point in Polygon (Ray Casting) verificado exitosamente.\n" << std::endl;
 }
 
-void testPolygonMetrics() {
+void probarMetricasPoligono() {
     std::cout << "[TEST] 4. Metricas de Poligonos (Area Shoelace y Perimetro)..." << std::endl;
 
-    Polygon rect(1, "Rectangulo");
-    rect.addVertex(Point(0.0, 0.0));
-    rect.addVertex(Point(8.0, 0.0));
-    rect.addVertex(Point(8.0, 5.0));
-    rect.addVertex(Point(0.0, 5.0));
+    Poligono rectangulo(1, "Rectangulo");
+    rectangulo.agregarVertice(Punto(0.0, 0.0));
+    rectangulo.agregarVertice(Punto(8.0, 0.0));
+    rectangulo.agregarVertice(Punto(8.0, 5.0));
+    rectangulo.agregarVertice(Punto(0.0, 5.0));
 
-    assert(std::abs(rect.area() - 40.0) < EPS);
-    assert(std::abs(rect.perimeter() - 26.0) < EPS);
+    assert(std::abs(rectangulo.area() - 40.0) < EPS);
+    assert(std::abs(rectangulo.perimetro() - 26.0) < EPS);
 
     std::cout << "  -> PASSED: Area y perimetro calculados con precision.\n" << std::endl;
 }
 
-void testTrajectoryValidation() {
+void probarValidacionTramos() {
     std::cout << "[TEST] 5. Validacion de Trayectorias de Vuelo vs Obstaculos..." << std::endl;
 
-    Polygon obstacle(1, "Edificio");
-    obstacle.addVertex(Point(2.0, 2.0));
-    obstacle.addVertex(Point(6.0, 2.0));
-    obstacle.addVertex(Point(6.0, 6.0));
-    obstacle.addVertex(Point(2.0, 6.0));
+    Poligono obstaculo(1, "Edificio");
+    obstaculo.agregarVertice(Punto(2.0, 2.0));
+    obstaculo.agregarVertice(Punto(6.0, 2.0));
+    obstaculo.agregarVertice(Punto(6.0, 6.0));
+    obstaculo.agregarVertice(Punto(2.0, 6.0));
 
     // 5.1 Trayectoria que atraviesa directamente el obstáculo (Infactible)
-    Segment invalidPath(Point(0.0, 4.0), Point(8.0, 4.0));
-    assert(GeometryUtils::segmentIntersectsPolygonInterior(invalidPath, obstacle) == true);
+    Segmento tramoInvalido(Punto(0.0, 4.0), Punto(8.0, 4.0));
+    assert(Geometria::segmentoCruzaInterior(tramoInvalido, obstaculo) == true);
 
     // 5.2 Trayectoria totalmente libre y separada (Factible)
-    Segment validPath(Point(0.0, 0.0), Point(8.0, 0.0));
-    assert(GeometryUtils::segmentIntersectsPolygonInterior(validPath, obstacle) == false);
+    Segmento tramoValido(Punto(0.0, 0.0), Punto(8.0, 0.0));
+    assert(Geometria::segmentoCruzaInterior(tramoValido, obstaculo) == false);
 
     // 5.3 Trayectoria tangencial que roza exactamente el vértice (2,2) por el exterior (Factible)
-    Segment tangentPath(Point(0.0, 4.0), Point(4.0, 0.0));
-    assert(GeometryUtils::segmentIntersectsPolygonInterior(tangentPath, obstacle) == false);
+    Segmento tramoTangente(Punto(0.0, 4.0), Punto(4.0, 0.0));
+    assert(Geometria::segmentoCruzaInterior(tramoTangente, obstaculo) == false);
 
     // 5.4 Diagonal que entra y sale por los vértices (2,2) y (6,6): no cruza ninguna arista
     // en forma propia, pero recorre el interior (Infactible)
-    Segment diagonalPath(Point(0.0, 0.0), Point(8.0, 8.0));
-    assert(GeometryUtils::segmentIntersectsPolygonInterior(diagonalPath, obstacle) == true);
+    Segmento tramoDiagonal(Punto(0.0, 0.0), Punto(8.0, 8.0));
+    assert(Geometria::segmentoCruzaInterior(tramoDiagonal, obstaculo) == true);
 
     // 5.5 Trayectoria que vuela sobre el borde izquierdo x = 2 (Factible: tocar el borde está permitido)
-    Segment edgePath(Point(2.0, 0.0), Point(2.0, 8.0));
-    assert(GeometryUtils::segmentIntersectsPolygonInterior(edgePath, obstacle) == false);
+    Segmento tramoBorde(Punto(2.0, 0.0), Punto(2.0, 8.0));
+    assert(Geometria::segmentoCruzaInterior(tramoBorde, obstaculo) == false);
 
     std::cout << "  -> PASSED: Validacion de trayectorias verificada exitosamente.\n" << std::endl;
 }
 
-void testConvexHull() {
+void probarEnvolventeConvexa() {
     std::cout << "[TEST] 6. Envolvente convexa (monotone chain)..." << std::endl;
 
     // Cuadrado con puntos interiores, puntos colineales en los bordes y un duplicado.
-    std::vector<Point> points = {
-        Point(0, 0), Point(4, 0), Point(4, 4), Point(0, 4),   // Esquinas
-        Point(2, 2), Point(1, 3), Point(3, 1),                // Interiores
-        Point(2, 0), Point(4, 2), Point(0, 2),                // Colineales sobre bordes
-        Point(4, 4)                                           // Duplicado
+    std::vector<Punto> puntos = {
+        Punto(0, 0), Punto(4, 0), Punto(4, 4), Punto(0, 4),   // Esquinas
+        Punto(2, 2), Punto(1, 3), Punto(3, 1),                // Interiores
+        Punto(2, 0), Punto(4, 2), Punto(0, 2),                // Colineales sobre bordes
+        Punto(4, 4)                                           // Duplicado
     };
-    std::vector<Point> hull = convexHull(points);
-    assert(hull.size() == 4);
+    std::vector<Punto> envolvente = envolventeConvexa(puntos);
+    assert(envolvente.size() == 4);
 
     // Las cuatro esquinas, en sentido antihorario: el área con signo es positiva.
-    Polygon hullPoly(1, hull);
-    assert(std::abs(hullPoly.signedArea() - 16.0) < EPS);
-    for (const Point& corner : {Point(0, 0), Point(4, 0), Point(4, 4), Point(0, 4)}) {
-        assert(std::find(hull.begin(), hull.end(), corner) != hull.end());
+    Poligono poligonoEnvolvente(1, envolvente);
+    assert(std::abs(poligonoEnvolvente.areaConSigno() - 16.0) < EPS);
+    for (const Punto& esquina : {Punto(0, 0), Punto(4, 0), Punto(4, 4), Punto(0, 4)}) {
+        assert(std::find(envolvente.begin(), envolvente.end(), esquina) != envolvente.end());
     }
 
     // Todos los puntos de entrada quedan dentro o sobre el borde de la envolvente.
-    for (const Point& p : points) {
-        assert(GeometryUtils::pointInPolygon(p, hullPoly) != PointLocation::OUTSIDE);
+    for (const Punto& p : puntos) {
+        assert(Geometria::ubicacionEnPoligono(p, poligonoEnvolvente) != UbicacionPunto::FUERA);
     }
 
     // Casos degenerados: puntos colineales o menos de 3 puntos no forman polígono.
-    assert(convexHull({Point(0, 0), Point(1, 1), Point(2, 2), Point(3, 3)}).size() < 3);
-    assert(convexHull({Point(5, 5), Point(5, 5), Point(6, 7)}).size() < 3);
+    assert(envolventeConvexa({Punto(0, 0), Punto(1, 1), Punto(2, 2), Punto(3, 3)}).size() < 3);
+    assert(envolventeConvexa({Punto(5, 5), Punto(5, 5), Punto(6, 7)}).size() < 3);
 
     std::cout << "  -> PASSED: Envolvente convexa verificada exitosamente.\n" << std::endl;
 }
@@ -221,12 +221,12 @@ int main() {
     std::cout << "        USIL - Programacion Competitiva (2026)          " << std::endl;
     std::cout << "=========================================================\n" << std::endl;
 
-    testCCW();
-    testSegmentIntersections();
-    testPointInPolygon();
-    testPolygonMetrics();
-    testTrajectoryValidation();
-    testConvexHull();
+    probarOrientacion();
+    probarInterseccionSegmentos();
+    probarPuntoEnPoligono();
+    probarMetricasPoligono();
+    probarValidacionTramos();
+    probarEnvolventeConvexa();
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   ¡TODAS LAS PRUEBAS GEOMETRICAS PASARON CON EXITO!    " << std::endl;

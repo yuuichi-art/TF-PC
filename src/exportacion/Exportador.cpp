@@ -11,7 +11,7 @@ namespace geodrone {
 namespace Exporter {
 
 void writeRoute(const Route& route, std::ostream& out) {
-    out << "SCENARIO " << route.scenario << '\n';
+    out << "SCENARIO " << route.escenario << '\n';
     out << "ALGORITHM " << route.algorithm << '\n';
     out << "STATUS " << (route.feasible ? "OK" : "INFEASIBLE") << '\n';
     // Seis decimales: suficientes para que el juez compare el costo con el que recalcula.
@@ -38,7 +38,7 @@ void writeRoute(const Route& route, std::ostream& out) {
 }
 
 void saveRoute(const Route& route, const std::string& path) {
-    std::ofstream file = ScenarioIO::openForWriting(path);
+    std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
     writeRoute(route, file);
     if (!file) {
         throw std::runtime_error("error al escribir el archivo " + path);
@@ -50,7 +50,7 @@ void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
            "gap_mejor,gap_cota\n";
     out << std::fixed << std::setprecision(3);
     for (const JudgeRow& row : rows) {
-        out << row.scenario << ',' << categoryName(row.category) << ',' << row.clients << ',' << row.algorithm << ','
+        out << row.escenario << ',' << nombreCategoria(row.categoria) << ',' << row.clientes << ',' << row.algorithm << ','
             << row.verdict << ',' << row.cost << ',' << row.recharges << ',' << row.excluded << ',' << row.timeMs
             << ',' << row.memoryMB << ',';
         if (!std::isnan(row.gapBest)) out << row.gapBest;
@@ -61,7 +61,7 @@ void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
 }
 
 void saveResultsCsv(const std::vector<JudgeRow>& rows, const std::string& path) {
-    std::ofstream file = ScenarioIO::openForWriting(path);
+    std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
     writeResultsCsv(rows, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
@@ -70,13 +70,13 @@ void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out) 
     out << "categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms\n";
     out << std::fixed << std::setprecision(3);
     for (const RankingRow& row : ranking) {
-        out << categoryName(row.category) << ',' << row.position << ',' << row.algorithm << ',' << row.okCases
+        out << nombreCategoria(row.categoria) << ',' << row.position << ',' << row.algorithm << ',' << row.okCases
             << ',' << row.cases << ',' << row.meanGap << ',' << row.meanTimeMs << '\n';
     }
 }
 
 void saveRankingCsv(const std::vector<RankingRow>& ranking, const std::string& path) {
-    std::ofstream file = ScenarioIO::openForWriting(path);
+    std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
     writeRankingCsv(ranking, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
@@ -88,10 +88,10 @@ struct Canvas {
     double scale;
     double left;
     double top;
-    double areaHeight;
+    double altoArea;
 
     double x(double value) const { return left + value * scale; }
-    double y(double value) const { return top + (areaHeight - value) * scale; }   // y crece hacia abajo en SVG
+    double y(double value) const { return top + (altoArea - value) * scale; }   // y crece hacia abajo en SVG
 };
 
 std::string escapeXml(const std::string& text) {
@@ -106,7 +106,7 @@ std::string escapeXml(const std::string& text) {
     return result;
 }
 
-void writePoints(std::ostream& out, const Canvas& canvas, const std::vector<Point>& points) {
+void writePoints(std::ostream& out, const Canvas& canvas, const std::vector<Punto>& points) {
     for (size_t i = 0; i < points.size(); ++i) {
         out << (i > 0 ? " " : "") << canvas.x(points[i].x) << ',' << canvas.y(points[i].y);
     }
@@ -130,38 +130,38 @@ void writeLabel(std::ostream& out, double x, double y, const std::string& text) 
 
 } // namespace
 
-void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
+void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out) {
     const double mapSize = 800.0, margin = 20.0, header = 40.0, footer = 34.0;
-    double scale = mapSize / std::max(scenario.areaWidth, scenario.areaHeight);
-    Canvas canvas{scale, margin, header, scenario.areaHeight};
-    double width = scenario.areaWidth * scale + 2 * margin;
-    double height = header + scenario.areaHeight * scale + margin + footer;
+    double scale = mapSize / std::max(escenario.anchoArea, escenario.altoArea);
+    Canvas canvas{scale, margin, header, escenario.altoArea};
+    double width = escenario.anchoArea * scale + 2 * margin;
+    double height = header + escenario.altoArea * scale + margin + footer;
 
     // Con muchos clientes los puntos se achican y se omiten las etiquetas para que se lea.
-    bool withLabels = scenario.numClients() <= 40;
-    double radius = scenario.numClients() > 200 ? 2.5 : 4.0;
+    bool withLabels = escenario.numClientes() <= 40;
+    double radius = escenario.numClientes() > 200 ? 2.5 : 4.0;
 
     out << std::fixed << std::setprecision(2);
     out << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height
         << "\" viewBox=\"0 0 " << width << ' ' << height << "\">\n";
     out << "<rect width=\"" << width << "\" height=\"" << height << "\" fill=\"#ffffff\"/>\n";
     out << "<text x=\"" << margin << "\" y=\"26\" font-family=\"sans-serif\" font-size=\"15\" fill=\"#111827\">"
-        << "<tspan font-weight=\"bold\">" << escapeXml(route.scenario) << "</tspan>  " << escapeXml(route.algorithm)
+        << "<tspan font-weight=\"bold\">" << escapeXml(route.escenario) << "</tspan>  " << escapeXml(route.algorithm)
         << "  |  costo " << route.cost << "  |  recargas " << route.recharges << "  |  excluidos "
         << route.excluded.size() << (route.feasible ? "" : "  |  INFACTIBLE") << "</text>\n";
 
     // Área del escenario y obstáculos.
-    out << "<rect class=\"area\" x=\"" << canvas.x(0) << "\" y=\"" << canvas.y(scenario.areaHeight) << "\" width=\""
-        << scenario.areaWidth * scale << "\" height=\"" << scenario.areaHeight * scale
+    out << "<rect class=\"area\" x=\"" << canvas.x(0) << "\" y=\"" << canvas.y(escenario.altoArea) << "\" width=\""
+        << escenario.anchoArea * scale << "\" height=\"" << escenario.altoArea * scale
         << "\" fill=\"#f9fafb\" stroke=\"#d1d5db\"/>\n";
-    for (const Polygon& poly : scenario.obstacles) {
+    for (const Poligono& poly : escenario.obstaculos) {
         out << "<polygon class=\"obstacle\" points=\"";
         writePoints(out, canvas, poly.vertices);
         out << "\" fill=\"#9ca3af\" fill-opacity=\"0.6\" stroke=\"#4b5563\" stroke-width=\"1\"/>\n";
     }
 
     // Trayectoria volada.
-    std::vector<Point> path;
+    std::vector<Punto> path;
     for (const RoutePoint& p : route.path) path.push_back(p.point);
     out << "<polyline class=\"route\" points=\"";
     writePoints(out, canvas, path);
@@ -170,9 +170,9 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
     // Clientes: círculo si se atiende, cruz roja si se excluyó.
     std::vector<std::string> excluded;
     for (const ExcludedClient& client : route.excluded) excluded.push_back(client.label);
-    for (int c = 0; c < scenario.numClients(); ++c) {
+    for (int c = 0; c < escenario.numClientes(); ++c) {
         std::string label = "C" + std::to_string(c + 1);
-        double x = canvas.x(scenario.clients[c].x), y = canvas.y(scenario.clients[c].y);
+        double x = canvas.x(escenario.clientes[c].x), y = canvas.y(escenario.clientes[c].y);
         if (std::find(excluded.begin(), excluded.end(), label) != excluded.end()) {
             writeCross(out, x, y, radius + 1, "class=\"excluded\"");
         } else {
@@ -183,12 +183,12 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
     }
 
     // Estaciones (triángulos) y base (cuadrado).
-    for (int s = 0; s < scenario.numStations(); ++s) {
-        double x = canvas.x(scenario.stations[s].x), y = canvas.y(scenario.stations[s].y);
+    for (int s = 0; s < escenario.numEstaciones(); ++s) {
+        double x = canvas.x(escenario.estaciones[s].x), y = canvas.y(escenario.estaciones[s].y);
         writeStation(out, x, y, radius + 3, "class=\"station\"");
         if (withLabels) writeLabel(out, x, y, "S" + std::to_string(s + 1));
     }
-    double depotX = canvas.x(scenario.depot.x), depotY = canvas.y(scenario.depot.y);
+    double depotX = canvas.x(escenario.base.x), depotY = canvas.y(escenario.base.y);
     out << "<rect class=\"depot\" x=\"" << depotX - 6 << "\" y=\"" << depotY - 6
         << "\" width=\"12\" height=\"12\" fill=\"#dc2626\"/>\n";
     if (withLabels) writeLabel(out, depotX, depotY, "D0");
@@ -221,9 +221,9 @@ void writeSvg(const Scenario& scenario, const Route& route, std::ostream& out) {
     out << "</svg>\n";
 }
 
-void saveSvg(const Scenario& scenario, const Route& route, const std::string& path) {
-    std::ofstream file = ScenarioIO::openForWriting(path);
-    writeSvg(scenario, route, file);
+void saveSvg(const Escenario& escenario, const Route& route, const std::string& path) {
+    std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
+    writeSvg(escenario, route, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
 

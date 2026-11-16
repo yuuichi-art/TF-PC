@@ -16,7 +16,7 @@
 using namespace geodrone;
 
 // Ejemplo de docs/decisiones.md §6, copiado tal cual.
-const std::string DECISIONS_EXAMPLE =
+const std::string EJEMPLO_DECISIONES =
     "NAME small_001\n"
     "CATEGORY SMALL\n"
     "SEED 42\n"
@@ -35,15 +35,15 @@ const std::string DECISIONS_EXAMPLE =
     "3  600 600  700 600  650 690\n";
 
 // Encabezado válido de 6 líneas para armar los casos de error.
-const std::string VALID_HEADER =
+const std::string ENCABEZADO_VALIDO =
     "NAME x\nCATEGORY SMALL\nSEED 1\nAREA 100 100\nBATTERY 50\nDEPOT 0 0\n";
 
-Scenario readText(const std::string& text) {
-    std::istringstream in(text);
-    return ScenarioIO::read(in);
+Escenario leerTexto(const std::string& texto) {
+    std::istringstream entrada(texto);
+    return ArchivoEscenario::leer(entrada);
 }
 
-bool samePoints(const std::vector<Point>& a, const std::vector<Point>& b) {
+bool mismosPuntos(const std::vector<Punto>& a, const std::vector<Punto>& b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
         if (a[i] != b[i]) return false;
@@ -51,209 +51,209 @@ bool samePoints(const std::vector<Point>& a, const std::vector<Point>& b) {
     return true;
 }
 
-void assertSameScenario(const Scenario& a, const Scenario& b) {
-    assert(a.name == b.name);
-    assert(a.category == b.category);
-    assert(a.seed == b.seed);
-    assert(a.areaWidth == b.areaWidth && a.areaHeight == b.areaHeight);
-    assert(a.battery == b.battery);
-    assert(a.depot == b.depot);
-    assert(samePoints(a.stations, b.stations));
-    assert(samePoints(a.clients, b.clients));
-    assert(a.obstacles.size() == b.obstacles.size());
-    for (size_t i = 0; i < a.obstacles.size(); ++i) {
-        assert(samePoints(a.obstacles[i].vertices, b.obstacles[i].vertices));
+void verificarMismoEscenario(const Escenario& a, const Escenario& b) {
+    assert(a.nombre == b.nombre);
+    assert(a.categoria == b.categoria);
+    assert(a.semilla == b.semilla);
+    assert(a.anchoArea == b.anchoArea && a.altoArea == b.altoArea);
+    assert(a.bateria == b.bateria);
+    assert(a.base == b.base);
+    assert(mismosPuntos(a.estaciones, b.estaciones));
+    assert(mismosPuntos(a.clientes, b.clientes));
+    assert(a.obstaculos.size() == b.obstaculos.size());
+    for (size_t i = 0; i < a.obstaculos.size(); ++i) {
+        assert(mismosPuntos(a.obstaculos[i].vertices, b.obstaculos[i].vertices));
     }
 }
 
 // Comprueba que el texto produce un error y que el mensaje contiene el fragmento esperado.
-void expectError(const std::string& text, const std::string& expectedFragment) {
+void esperarError(const std::string& texto, const std::string& fragmentoEsperado) {
     try {
-        readText(text);
+        leerTexto(texto);
     } catch (const std::runtime_error& error) {
-        std::string message = error.what();
-        if (message.find(expectedFragment) == std::string::npos) {
-            std::cerr << "  Mensaje recibido: " << message << "\n  Se esperaba: " << expectedFragment << std::endl;
+        std::string mensaje = error.what();
+        if (mensaje.find(fragmentoEsperado) == std::string::npos) {
+            std::cerr << "  Mensaje recibido: " << mensaje << "\n  Se esperaba: " << fragmentoEsperado << std::endl;
             assert(false);
         }
         return;
     }
-    std::cerr << "  No hubo error; se esperaba: " << expectedFragment << std::endl;
+    std::cerr << "  No hubo error; se esperaba: " << fragmentoEsperado << std::endl;
     assert(false);
 }
 
-void testDecisionsExample() {
+void probarEjemploDecisiones() {
     std::cout << "[TEST] 1. Lectura del ejemplo de docs/decisiones.md..." << std::endl;
 
-    Scenario s = readText(DECISIONS_EXAMPLE);
-    assert(s.name == "small_001");
-    assert(s.category == DatasetCategory::SMALL);
-    assert(s.seed == 42);
-    assert(s.areaWidth == 1000.0 && s.areaHeight == 1000.0);
-    assert(s.battery == 450.0);
-    assert(s.depot == Point(500, 500));
-    assert(s.numStations() == 2 && s.stations[1] == Point(800, 700));
-    assert(s.numClients() == 3 && s.clients[2] == Point(900, 420));
-    assert(s.numObstacles() == 2);
-    assert(s.obstacles[0].size() == 4 && s.obstacles[1].size() == 3);
-    assert(s.obstacles[1][2] == Point(650, 690));
-    assert(s.totalObstacleVertices() == 7);
+    Escenario s = leerTexto(EJEMPLO_DECISIONES);
+    assert(s.nombre == "small_001");
+    assert(s.categoria == Categoria::SMALL);
+    assert(s.semilla == 42);
+    assert(s.anchoArea == 1000.0 && s.altoArea == 1000.0);
+    assert(s.bateria == 450.0);
+    assert(s.base == Punto(500, 500));
+    assert(s.numEstaciones() == 2 && s.estaciones[1] == Punto(800, 700));
+    assert(s.numClientes() == 3 && s.clientes[2] == Punto(900, 420));
+    assert(s.numObstaculos() == 2);
+    assert(s.obstaculos[0].numVertices() == 4 && s.obstaculos[1].numVertices() == 3);
+    assert(s.obstaculos[1][2] == Punto(650, 690));
+    assert(s.totalVerticesObstaculos() == 7);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testRoundTrip() {
+void probarIdaYVuelta() {
     std::cout << "[TEST] 2. Escribir y volver a leer conserva el escenario..." << std::endl;
 
-    Scenario original = readText(DECISIONS_EXAMPLE);
-    original.battery = 450.5;                   // Valor no entero
-    original.seed = 18446744073709551615ULL;    // Semilla máxima de 64 bits
+    Escenario original = leerTexto(EJEMPLO_DECISIONES);
+    original.bateria = 450.5;                   // Valor no entero
+    original.semilla = 18446744073709551615ULL;    // Semilla máxima de 64 bits
 
-    std::stringstream buffer;
-    ScenarioIO::write(original, buffer);
-    assertSameScenario(original, ScenarioIO::read(buffer));
+    std::stringstream flujo;
+    ArchivoEscenario::escribir(original, flujo);
+    verificarMismoEscenario(original, ArchivoEscenario::leer(flujo));
 
     // El ejemplo escrito de nuevo debe ser idéntico al texto original.
-    std::stringstream rewritten;
-    ScenarioIO::write(readText(DECISIONS_EXAMPLE), rewritten);
-    assert(rewritten.str() == DECISIONS_EXAMPLE);
+    std::stringstream reescrito;
+    ArchivoEscenario::escribir(leerTexto(EJEMPLO_DECISIONES), reescrito);
+    assert(reescrito.str() == EJEMPLO_DECISIONES);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testSaveAndLoadFile() {
+void probarGuardarYCargar() {
     std::cout << "[TEST] 3. Guardar en archivo (creando carpetas) y cargar..." << std::endl;
 
-    const std::string folder = "tmp_test_scenario";
-    const std::string path = folder + "/sub/escenario.txt";
-    std::filesystem::remove_all(folder);
+    const std::string carpeta = "tmp_test_scenario";
+    const std::string ruta = carpeta + "/sub/escenario.txt";
+    std::filesystem::remove_all(carpeta);
 
-    Scenario original = readText(DECISIONS_EXAMPLE);
-    ScenarioIO::save(original, path);
-    assertSameScenario(original, ScenarioIO::load(path));
-    std::filesystem::remove_all(folder);
+    Escenario original = leerTexto(EJEMPLO_DECISIONES);
+    ArchivoEscenario::guardar(original, ruta);
+    verificarMismoEscenario(original, ArchivoEscenario::cargar(ruta));
+    std::filesystem::remove_all(carpeta);
 
-    bool failed = false;
+    bool fallo = false;
     try {
-        ScenarioIO::load("no_existe.txt");
+        ArchivoEscenario::cargar("no_existe.txt");
     } catch (const std::runtime_error& error) {
-        failed = std::string(error.what()).find("no se pudo abrir") != std::string::npos;
+        fallo = std::string(error.what()).find("no se pudo abrir") != std::string::npos;
     }
-    assert(failed);
+    assert(fallo);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testErrors() {
+void probarErrores() {
     std::cout << "[TEST] 4. Errores con linea y descripcion..." << std::endl;
 
-    expectError("NAME x\nCATEGORY HUGE\n", "linea 2: categoria desconocida 'HUGE'");
-    expectError("NAME x\nCATEGORY SMALL\nSEED -3\n", "linea 3: la semilla debe ser un entero no negativo");
-    expectError("NAME x\nCATEGORY SMALL\nSEED 1\nAREA 100 100\nBATTERY -5\n",
+    esperarError("NAME x\nCATEGORY HUGE\n", "linea 2: categoria desconocida 'HUGE'");
+    esperarError("NAME x\nCATEGORY SMALL\nSEED -3\n", "linea 3: la semilla debe ser un entero no negativo");
+    esperarError("NAME x\nCATEGORY SMALL\nSEED 1\nAREA 100 100\nBATTERY -5\n",
                 "linea 5: la autonomia de la bateria debe ser positiva");
-    expectError(VALID_HEADER + "STATION 1\n5 5\nCLIENTS 0\nOBSTACLES 0\n",
+    esperarError(ENCABEZADO_VALIDO + "STATION 1\n5 5\nCLIENTS 0\nOBSTACLES 0\n",
                 "linea 7: se esperaba la etiqueta STATIONS y se encontro 'STATION'");
-    expectError(VALID_HEADER + "STATIONS 1.5\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 1.5\n",
                 "linea 7: la cantidad de estaciones debe ser un entero no negativo");
-    expectError(VALID_HEADER + "STATIONS 1\n5 cinco\nCLIENTS 0\nOBSTACLES 0\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 1\n5 cinco\nCLIENTS 0\nOBSTACLES 0\n",
                 "linea 8: se esperaba la coordenada y de la estacion 1 (un numero) y se encontro 'cinco'");
-    expectError(VALID_HEADER + "STATIONS 0\nCLIENTS 2\n1 1\nOBSTACLES 0\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 2\n1 1\nOBSTACLES 0\n",
                 "linea 10: se esperaba la coordenada x del cliente 2 (un numero) y se encontro 'OBSTACLES'");
-    expectError(VALID_HEADER + "STATIONS 0\nCLIENTS 0\nOBSTACLES 1\n2  0 0  1 1\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\nOBSTACLES 1\n2  0 0  1 1\n",
                 "linea 10: el obstaculo 1 necesita al menos 3 vertices");
-    expectError(VALID_HEADER + "STATIONS 0\nCLIENTS 0\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\n",
                 "linea 8: el archivo termina antes de la etiqueta OBSTACLES");
-    expectError(VALID_HEADER + "STATIONS 0\nCLIENTS 0\nOBSTACLES 0\nextra\n",
+    esperarError(ENCABEZADO_VALIDO + "STATIONS 0\nCLIENTS 0\nOBSTACLES 0\nextra\n",
                 "linea 10: contenido inesperado 'extra'");
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
 // Ningún punto de interés puede estar dentro ni sobre el borde de un obstáculo.
-void assertPointsOutsideObstacles(const Scenario& s) {
-    std::vector<Point> points = s.stations;
-    points.insert(points.end(), s.clients.begin(), s.clients.end());
-    points.push_back(s.depot);
-    for (const Point& p : points) {
-        for (const Polygon& poly : s.obstacles) {
-            assert(GeometryUtils::pointInPolygon(p, poly) == PointLocation::OUTSIDE);
+void verificarPuntosFueraDeObstaculos(const Escenario& s) {
+    std::vector<Punto> puntos = s.estaciones;
+    puntos.insert(puntos.end(), s.clientes.begin(), s.clientes.end());
+    puntos.push_back(s.base);
+    for (const Punto& p : puntos) {
+        for (const Poligono& poligono : s.obstaculos) {
+            assert(Geometria::ubicacionEnPoligono(p, poligono) == UbicacionPunto::FUERA);
         }
     }
 }
 
-bool clear(const Scenario& s, const Point& a, const Point& b) {
-    return GeometryUtils::isFlightPathClear(Segment(a, b), s.obstacles);
+bool clear(const Escenario& s, const Punto& a, const Punto& b) {
+    return Geometria::tramoLibre(Segmento(a, b), s.obstaculos);
 }
 
-void testAdversarialFiles(const std::string& folder) {
-    std::cout << "[TEST] 5. Casos adversariales de " << folder << "..." << std::endl;
+void probarArchivosAdversariales(const std::string& carpeta) {
+    std::cout << "[TEST] 5. Casos adversariales de " << carpeta << "..." << std::endl;
 
-    const std::vector<std::string> names = {
+    const std::vector<std::string> nombres = {
         "adv_collinear", "adv_enclosed", "adv_corridor", "adv_concave_trap", "adv_unreachable_battery"
     };
-    for (const std::string& name : names) {
-        Scenario s = ScenarioIO::load(folder + "/" + name + ".txt");
-        assert(s.name == name);
-        assert(s.category == DatasetCategory::ADVERSARIAL);
-        assert(s.numClients() > 0);
-        assertPointsOutsideObstacles(s);
+    for (const std::string& nombre : nombres) {
+        Escenario s = ArchivoEscenario::cargar(carpeta + "/" + nombre + ".txt");
+        assert(s.nombre == nombre);
+        assert(s.categoria == Categoria::ADVERSARIAL);
+        assert(s.numClientes() > 0);
+        verificarPuntosFueraDeObstaculos(s);
     }
 
     // Comprobaciones geométricas de cada caso, para confirmar que miden lo que dicen.
-    Scenario collinear = ScenarioIO::load(folder + "/adv_collinear.txt");
-    assert(clear(collinear, collinear.depot, collinear.clients[0]));          // Vuela sobre el borde inferior
-    assert(!clear(collinear, collinear.stations[0], collinear.clients[3]));   // x = 50 cruza el obstáculo
+    Escenario colineal = ArchivoEscenario::cargar(carpeta + "/adv_collinear.txt");
+    assert(clear(colineal, colineal.base, colineal.clientes[0]));          // Vuela sobre el borde inferior
+    assert(!clear(colineal, colineal.estaciones[0], colineal.clientes[3]));   // x = 50 cruza el obstáculo
 
-    Scenario enclosed = ScenarioIO::load(folder + "/adv_enclosed.txt");
-    Point trapped = enclosed.clients[0];
-    const std::vector<Point> outside = {enclosed.depot, enclosed.stations[0], enclosed.clients[1], enclosed.clients[2],
-                                        Point(50, 0), Point(50, 100), Point(0, 50), Point(100, 50)};
-    for (const Point& p : outside) {
-        assert(!clear(enclosed, trapped, p));                                  // Ninguna salida directa
+    Escenario encerrado = ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt");
+    Punto atrapado = encerrado.clientes[0];
+    const std::vector<Punto> exterior = {encerrado.base, encerrado.estaciones[0], encerrado.clientes[1], encerrado.clientes[2],
+                                        Punto(50, 0), Punto(50, 100), Punto(0, 50), Punto(100, 50)};
+    for (const Punto& p : exterior) {
+        assert(!clear(encerrado, atrapado, p));                                  // Ninguna salida directa
     }
 
-    Scenario corridor = ScenarioIO::load(folder + "/adv_corridor.txt");
-    assert(clear(corridor, corridor.depot, corridor.clients[0]));             // Recto por el pasillo
+    Escenario pasillo = ArchivoEscenario::cargar(carpeta + "/adv_corridor.txt");
+    assert(clear(pasillo, pasillo.base, pasillo.clientes[0]));             // Recto por el pasillo
 
-    Scenario trap = ScenarioIO::load(folder + "/adv_concave_trap.txt");
-    assert(clear(trap, trap.depot, trap.clients[0]));                         // Entra al hueco de la U
-    assert(!clear(trap, trap.depot, trap.clients[1]));                        // El cliente de atrás está bloqueado
+    Escenario trampa = ArchivoEscenario::cargar(carpeta + "/adv_concave_trap.txt");
+    assert(clear(trampa, trampa.base, trampa.clientes[0]));                         // Entra al hueco de la U
+    assert(!clear(trampa, trampa.base, trampa.clientes[1]));                        // El cliente de atrás está bloqueado
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testBomAndNames() {
+void probarBomYNombres() {
     std::cout << "[TEST] 6. Archivo con BOM UTF-8 y nombres con espacios..." << std::endl;
 
     // El Bloc de notas puede anteponer un BOM (EF BB BF): se ignora y el archivo se lee igual.
-    Scenario withBom = readText("\xEF\xBB\xBF" + DECISIONS_EXAMPLE);
-    assert(withBom.name == "small_001" && withBom.numClients() == 3);
+    Escenario conBom = leerTexto("\xEF\xBB\xBF" + EJEMPLO_DECISIONES);
+    assert(conBom.nombre == "small_001" && conBom.numClientes() == 3);
 
     // Un nombre con espacios o vacío no se puede guardar, porque el archivo no se podría releer.
-    Scenario s = readText(DECISIONS_EXAMPLE);
-    for (const std::string& badName : {std::string("mi escenario"), std::string("")}) {
-        s.name = badName;
-        std::ostringstream out;
-        bool rejected = false;
+    Escenario s = leerTexto(EJEMPLO_DECISIONES);
+    for (const std::string& nombreInvalido : {std::string("mi escenario"), std::string("")}) {
+        s.nombre = nombreInvalido;
+        std::ostringstream salida;
+        bool rechazado = false;
         try {
-            ScenarioIO::write(s, out);
+            ArchivoEscenario::escribir(s, salida);
         } catch (const std::invalid_argument&) {
-            rejected = true;
+            rechazado = true;
         }
-        assert(rejected && out.str().empty());
+        assert(rechazado && salida.str().empty());
     }
 
-    // save() valida antes de crear el archivo: no queda un archivo vacío.
-    const std::string path = "tmp_test_bad_name.txt";
-    std::filesystem::remove(path);
-    s.name = "con espacio";
-    bool rejected = false;
+    // guardar() valida antes de crear el archivo: no queda un archivo vacío.
+    const std::string ruta = "tmp_test_bad_name.txt";
+    std::filesystem::remove(ruta);
+    s.nombre = "con espacio";
+    bool rechazado = false;
     try {
-        ScenarioIO::save(s, path);
+        ArchivoEscenario::guardar(s, ruta);
     } catch (const std::invalid_argument&) {
-        rejected = true;
+        rechazado = true;
     }
-    assert(rejected && !std::filesystem::exists(path));
+    assert(rechazado && !std::filesystem::exists(ruta));
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
@@ -263,18 +263,18 @@ int main(int argc, char* argv[]) {
     std::cin.tie(NULL);
 
     // CTest pasa la carpeta de los casos adversariales como argumento.
-    std::string adversarialFolder = argc > 1 ? argv[1] : "data/adversarial";
+    std::string carpetaAdversarial = argc > 1 ? argv[1] : "data/adversarial";
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   GEODRONE CHALLENGE - PRUEBAS DE ESCENARIOS (TXT)      " << std::endl;
     std::cout << "=========================================================\n" << std::endl;
 
-    testDecisionsExample();
-    testRoundTrip();
-    testSaveAndLoadFile();
-    testErrors();
-    testAdversarialFiles(adversarialFolder);
-    testBomAndNames();
+    probarEjemploDecisiones();
+    probarIdaYVuelta();
+    probarGuardarYCargar();
+    probarErrores();
+    probarArchivosAdversariales(carpetaAdversarial);
+    probarBomYNombres();
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   TODAS LAS PRUEBAS DE ESCENARIOS PASARON CON EXITO     " << std::endl;

@@ -13,73 +13,73 @@ namespace geodrone {
  * @brief Polígono simple bidimensional que modela edificios, no-fly zones y áreas de exclusión.
  * Los vértices están ordenados secuencialmente alrededor del perímetro.
  */
-struct Polygon {
+struct Poligono {
     int id;
-    std::string name;
-    std::vector<Point> vertices;
+    std::string nombre;
+    std::vector<Punto> vertices;
 
-    Polygon() : id(-1), name(""), vertices() {}
-    Polygon(int id_, const std::string& name_ = "") : id(id_), name(name_), vertices() {}
-    Polygon(int id_, const std::vector<Point>& vertices_, const std::string& name_ = "")
-        : id(id_), name(name_), vertices(vertices_) {}
+    Poligono() : id(-1), nombre(""), vertices() {}
+    Poligono(int id_, const std::string& nombre_ = "") : id(id_), nombre(nombre_), vertices() {}
+    Poligono(int id_, const std::vector<Punto>& vertices_, const std::string& nombre_ = "")
+        : id(id_), nombre(nombre_), vertices(vertices_) {}
 
     // Número de vértices del polígono
-    int size() const {
+    int numVertices() const {
         return static_cast<int>(vertices.size());
     }
 
     // Acceso indexado a los vértices (sin comprobar el rango)
-    const Point& operator[](int i) const {
+    const Punto& operator[](int i) const {
         return vertices[i];
     }
 
-    Point& operator[](int i) {
+    Punto& operator[](int i) {
         return vertices[i];
     }
 
-    void addVertex(const Point& pt) {
-        vertices.push_back(pt);
+    void agregarVertice(const Punto& punto) {
+        vertices.push_back(punto);
     }
 
     // Genera la lista de segmentos perimetrales del polígono (aristas)
-    std::vector<Segment> getEdges() const {
-        std::vector<Segment> edges;
-        int n = size();
-        if (n < 2) return edges;
-        edges.reserve(n);
+    std::vector<Segmento> aristas() const {
+        std::vector<Segmento> resultado;
+        int n = numVertices();
+        if (n < 2) return resultado;
+        resultado.reserve(n);
         for (int i = 0; i < n; ++i) {
-            int next = (i + 1) % n;
-            edges.emplace_back(vertices[i], vertices[next]);
+            int siguiente = (i + 1) % n;
+            resultado.emplace_back(vertices[i], vertices[siguiente]);
         }
-        return edges;
+        return resultado;
     }
 
     // Perímetro total del polígono
-    double perimeter() const {
-        double perim = 0.0;
-        int n = size();
+    double perimetro() const {
+        double suma = 0.0;
+        int n = numVertices();
         if (n < 2) return 0.0;
         for (int i = 0; i < n; ++i) {
-            perim += vertices[i].dist(vertices[(i + 1) % n]);
+            suma += vertices[i].distancia(vertices[(i + 1) % n]);
         }
-        return perim;
+        return suma;
     }
 
     // Área con signo (fórmula de la lazada / Shoelace). Positiva si antihorario, negativa si horario.
-    double signedArea() const {
+    double areaConSigno() const {
         double area2 = 0.0;
-        int n = size();
+        int n = numVertices();
         if (n < 3) return 0.0;
         for (int i = 0; i < n; ++i) {
-            int next = (i + 1) % n;
-            area2 += vertices[i].cross(vertices[next]);
+            int siguiente = (i + 1) % n;
+            area2 += vertices[i].cruz(vertices[siguiente]);
         }
         return area2 * 0.5;
     }
 
     // Área absoluta del polígono
     double area() const {
-        return std::abs(signedArea());
+        return std::abs(areaConSigno());
     }
 };
 

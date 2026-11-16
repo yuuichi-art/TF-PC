@@ -4,16 +4,16 @@
 #include <vector>
 
 namespace geodrone {
-namespace GeometryUtils {
+namespace Geometria {
 
-int ccw(const Point& a, const Point& b, const Point& c) {
-    double cp = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-    if (cp > EPS) return 1;    // Antihorario / izquierda
-    if (cp < -EPS) return -1;  // Horario / derecha
+int orientacion(const Punto& a, const Punto& b, const Punto& c) {
+    double producto = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    if (producto > EPS) return 1;    // Antihorario / izquierda
+    if (producto < -EPS) return -1;  // Horario / derecha
     return 0;                  // Colineal
 }
 
-bool onSegment(const Point& p, const Point& a, const Point& b) {
+bool estaEnSegmento(const Punto& p, const Punto& a, const Punto& b) {
     // Verificar colinealidad con tolerancia EPS
     if (std::abs((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)) > EPS) {
         return false;
@@ -27,103 +27,103 @@ bool onSegment(const Point& p, const Point& a, const Point& b) {
     return (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY);
 }
 
-bool onSegment(const Point& p, const Segment& s) {
-    return onSegment(p, s.a, s.b);
+bool estaEnSegmento(const Punto& p, const Segmento& s) {
+    return estaEnSegmento(p, s.a, s.b);
 }
 
-bool segmentsIntersect(const Segment& s1, const Segment& s2, bool properOnly) {
-    const Point& p1 = s1.a;
-    const Point& q1 = s1.b;
-    const Point& p2 = s2.a;
-    const Point& q2 = s2.b;
+bool segmentosSeIntersecan(const Segmento& s1, const Segmento& s2, bool soloPropia) {
+    const Punto& p1 = s1.a;
+    const Punto& q1 = s1.b;
+    const Punto& p2 = s2.a;
+    const Punto& q2 = s2.b;
 
-    int o1 = ccw(p1, q1, p2);
-    int o2 = ccw(p1, q1, q2);
-    int o3 = ccw(p2, q2, p1);
-    int o4 = ccw(p2, q2, q1);
+    int o1 = orientacion(p1, q1, p2);
+    int o2 = orientacion(p1, q1, q2);
+    int o3 = orientacion(p2, q2, p1);
+    int o4 = orientacion(p2, q2, q1);
 
     // Intersección propia estricta (en cruz, sin que ningún extremo toque el otro segmento)
-    bool proper = (o1 * o2 < 0) && (o3 * o4 < 0);
-    if (properOnly) {
-        return proper;
+    bool propia = (o1 * o2 < 0) && (o3 * o4 < 0);
+    if (soloPropia) {
+        return propia;
     }
-    if (proper) {
+    if (propia) {
         return true;
     }
 
     // Casos especiales: puntos colineales donde un extremo reside dentro del otro segmento
-    if (o1 == 0 && onSegment(p2, p1, q1)) return true;
-    if (o2 == 0 && onSegment(q2, p1, q1)) return true;
-    if (o3 == 0 && onSegment(p1, p2, q2)) return true;
-    if (o4 == 0 && onSegment(q1, p2, q2)) return true;
+    if (o1 == 0 && estaEnSegmento(p2, p1, q1)) return true;
+    if (o2 == 0 && estaEnSegmento(q2, p1, q1)) return true;
+    if (o3 == 0 && estaEnSegmento(p1, p2, q2)) return true;
+    if (o4 == 0 && estaEnSegmento(q1, p2, q2)) return true;
 
     return false;
 }
 
-bool properIntersection(const Segment& s1, const Segment& s2) {
-    return segmentsIntersect(s1, s2, true);
+bool interseccionPropia(const Segmento& s1, const Segmento& s2) {
+    return segmentosSeIntersecan(s1, s2, true);
 }
 
-PointLocation pointInPolygon(const Point& pt, const Polygon& poly) {
-    int n = poly.size();
-    if (n < 3) return PointLocation::OUTSIDE;
+UbicacionPunto ubicacionEnPoligono(const Punto& punto, const Poligono& poligono) {
+    int n = poligono.numVertices();
+    if (n < 3) return UbicacionPunto::FUERA;
 
     // 1. Validar primero si el punto reside sobre alguna arista perimetral o vértice
     for (int i = 0; i < n; ++i) {
-        int next = (i + 1) % n;
-        if (onSegment(pt, poly[i], poly[next])) {
-            return PointLocation::BOUNDARY;
+        int siguiente = (i + 1) % n;
+        if (estaEnSegmento(punto, poligono[i], poligono[siguiente])) {
+            return UbicacionPunto::BORDE;
         }
     }
 
     // 2. Algoritmo de Ray Casting (Teorema de la curva de Jordan)
     // Se proyecta un rayo horizontal hacia x -> +inf
-    int crossings = 0;
+    int cruces = 0;
     for (int i = 0; i < n; ++i) {
-        Point v1 = poly[i];
-        Point v2 = poly[(i + 1) % n];
+        Punto v1 = poligono[i];
+        Punto v2 = poligono[(i + 1) % n];
 
         // Normalizar para que v1 tenga menor o igual coordenada Y
         if (v1.y > v2.y) {
             std::swap(v1, v2);
         }
 
-        // Evaluar si el rayo horizontal en pt.y cruza el semi-intervalo [v1.y, v2.y)
+        // Evaluar si el rayo horizontal en punto.y cruza el semi-intervalo [v1.y, v2.y)
         // La condición semi-abierta previene contar dos veces cuando el rayo cruza un vértice común.
-        if (pt.y >= v1.y - EPS && pt.y < v2.y - EPS) {
+        if (punto.y >= v1.y - EPS && punto.y < v2.y - EPS) {
             double dy = v2.y - v1.y;
             if (std::abs(dy) > EPS) {
-                double xIntersection = v1.x + (pt.y - v1.y) * (v2.x - v1.x) / dy;
-                if (xIntersection > pt.x + EPS) {
-                    crossings++;
+                double xCruce = v1.x + (punto.y - v1.y) * (v2.x - v1.x) / dy;
+                if (xCruce > punto.x + EPS) {
+                    cruces++;
                 }
             }
         }
     }
 
-    return (crossings % 2 == 1) ? PointLocation::INSIDE : PointLocation::OUTSIDE;
+    return (cruces % 2 == 1) ? UbicacionPunto::DENTRO : UbicacionPunto::FUERA;
 }
 
-bool isPointStrictlyInside(const Point& pt, const Polygon& poly) {
-    return pointInPolygon(pt, poly) == PointLocation::INSIDE;
+bool estaEstrictamenteDentro(const Punto& punto, const Poligono& poligono) {
+    return ubicacionEnPoligono(punto, poligono) == UbicacionPunto::DENTRO;
 }
 
-bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {
-    int n = poly.size();
+bool segmentoCruzaInterior(const Segmento& segmento, const Poligono& poligono) {
+    int n = poligono.numVertices();
     if (n < 3) return false;
 
     // Caso de punto degenerado
-    if (seg.a == seg.b) {
-        return isPointStrictlyInside(seg.a, poly);
+    if (segmento.a == segmento.b) {
+        return estaEstrictamenteDentro(segmento.a, poligono);
     }
 
     // 1. Si el segmento interseca propiamente (en cruz) cualquier arista del polígono,
     // forzosamente penetra o atraviesa el interior.
-    // Las aristas se arman en la pila en vez de pedir poly.getEdges(): esta función se llama
+    // Las aristas se arman en la pila en vez de pedir poligono.aristas(): esta función se llama
     // millones de veces al construir el grafo y crear un vector en cada llamada era el costo dominante.
     for (int i = 0; i < n; ++i) {
-        Segment edge(poly[i], poly[(i + 1) % n]);
-        if (properIntersection(seg, edge)) {
+        Segmento arista(poligono[i], poligono[(i + 1) % n]);
+        if (interseccionPropia(segmento, arista)) {
             return true;
         }
     }
@@ -134,43 +134,43 @@ bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {
     // Caso rápido (el más común): si ningún vértice está sobre el segmento, el segmento no
     // cruza el borde en ningún punto interior, así que queda entero dentro o entero fuera:
     // basta revisar su punto medio.
-    bool touchesVertex = false;
-    for (int i = 0; i < n && !touchesVertex; ++i) {
-        touchesVertex = onSegment(poly[i], seg);
+    bool tocaVertice = false;
+    for (int i = 0; i < n && !tocaVertice; ++i) {
+        tocaVertice = estaEnSegmento(poligono[i], segmento);
     }
-    if (!touchesVertex) {
-        return isPointStrictlyInside(seg.midpoint(), poly);
+    if (!tocaVertice) {
+        return estaEstrictamenteDentro(segmento.puntoMedio(), poligono);
     }
 
     // Caso general: el segmento pasa por vértices. Recolectamos las proyecciones t en [0, 1]
     // de esos vértices y revisamos el punto medio de cada sub-intervalo.
-    std::vector<double> tSamples = {0.0, 1.0};
+    std::vector<double> muestrasT = {0.0, 1.0};
 
-    Point dir = seg.b - seg.a;
-    double segLenSq = dir.x * dir.x + dir.y * dir.y;
+    Punto direccion = segmento.b - segmento.a;
+    double longitudCuadrada = direccion.x * direccion.x + direccion.y * direccion.y;
 
-    if (segLenSq > EPS) {
+    if (longitudCuadrada > EPS) {
         for (int i = 0; i < n; ++i) {
-            Point p = poly[i];
-            if (onSegment(p, seg)) {
-                double t = ((p.x - seg.a.x) * dir.x + (p.y - seg.a.y) * dir.y) / segLenSq;
+            Punto p = poligono[i];
+            if (estaEnSegmento(p, segmento)) {
+                double t = ((p.x - segmento.a.x) * direccion.x + (p.y - segmento.a.y) * direccion.y) / longitudCuadrada;
                 if (t > EPS && t < 1.0 - EPS) {
-                    tSamples.push_back(t);
+                    muestrasT.push_back(t);
                 }
             }
         }
     }
 
-    std::sort(tSamples.begin(), tSamples.end());
-    tSamples.erase(std::unique(tSamples.begin(), tSamples.end(), [](double a, double b) {
+    std::sort(muestrasT.begin(), muestrasT.end());
+    muestrasT.erase(std::unique(muestrasT.begin(), muestrasT.end(), [](double a, double b) {
         return std::abs(a - b) < EPS;
-    }), tSamples.end());
+    }), muestrasT.end());
 
     // Evaluamos el punto medio de cada sub-intervalo libre
-    for (size_t i = 0; i + 1 < tSamples.size(); ++i) {
-        double midT = (tSamples[i] + tSamples[i + 1]) * 0.5;
-        Point testPoint = seg.a + dir * midT;
-        if (isPointStrictlyInside(testPoint, poly)) {
+    for (size_t i = 0; i + 1 < muestrasT.size(); ++i) {
+        double tMedio = (muestrasT[i] + muestrasT[i + 1]) * 0.5;
+        Punto puntoPrueba = segmento.a + direccion * tMedio;
+        if (estaEstrictamenteDentro(puntoPrueba, poligono)) {
             return true;
         }
     }
@@ -178,14 +178,14 @@ bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {
     return false;
 }
 
-bool isFlightPathClear(const Segment& seg, const std::vector<Polygon>& obstacles) {
-    for (const auto& poly : obstacles) {
-        if (segmentIntersectsPolygonInterior(seg, poly)) {
+bool tramoLibre(const Segmento& segmento, const std::vector<Poligono>& obstaculos) {
+    for (const auto& poligono : obstaculos) {
+        if (segmentoCruzaInterior(segmento, poligono)) {
             return false;
         }
     }
     return true;
 }
 
-} // namespace GeometryUtils
+} // namespace Geometria
 } // namespace geodrone

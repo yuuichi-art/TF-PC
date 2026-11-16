@@ -13,7 +13,7 @@ namespace geodrone {
  * "D0" base, "S2" estación 2, "C5" cliente 5, "V" vértice de obstáculo.
  */
 struct RoutePoint {
-    Point point;
+    Punto point;
     std::string label;
 };
 
@@ -30,7 +30,7 @@ struct ExcludedClient {
  * el juez. Es autosuficiente: no depende de las estructuras internas del solver.
  */
 struct Route {
-    std::string scenario;
+    std::string escenario;
     std::string algorithm;
     bool feasible = false;
     double cost = 0.0;                      // Distancia total volada, con los desvíos a recargar

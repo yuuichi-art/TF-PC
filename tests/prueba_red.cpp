@@ -21,16 +21,16 @@ using namespace geodrone;
 
 const double TOLERANCE = 1e-6;
 
-Scenario makeScenario(const Point& depot, const std::vector<Point>& stations, const std::vector<Point>& clients) {
-    Scenario s;
-    s.depot = depot;
-    s.stations = stations;
-    s.clients = clients;
+Escenario makeScenario(const Punto& base, const std::vector<Punto>& estaciones, const std::vector<Punto>& clientes) {
+    Escenario s;
+    s.base = base;
+    s.estaciones = estaciones;
+    s.clientes = clientes;
     return s;
 }
 
-Scenario layout(DatasetCategory category, uint64_t seed) {
-    return DatasetGenerator::generateLayout(DatasetGenerator::specFor(category), category, seed);
+Escenario layout(Categoria categoria, uint64_t semilla) {
+    return GeneradorDatasets::generarGeometria(GeneradorDatasets::rangosDe(categoria), categoria, semilla);
 }
 
 // Simula la ruta tramo a tramo y comprueba todo lo que el juez exigirá:
@@ -43,21 +43,21 @@ void assertValidPlan(const MissionGraph& mission, const ChargingNetwork& network
     assert(seq.front() == mission.depotKey() && seq.back() == mission.depotKey());
 
     std::vector<int> visited;
-    double battery = network.battery();
+    double bateria = network.bateria();
     double cost = 0.0;
     int recharges = 0;
     for (size_t i = 1; i < seq.size(); ++i) {
         double d = mission.distance(seq[i - 1], seq[i]);
-        battery -= d;
+        bateria -= d;
         cost += d;
-        assert(battery >= -TOLERANCE);
-        bool isRechargePoint = seq[i] <= mission.numStations();
+        assert(bateria >= -TOLERANCE);
+        bool isRechargePoint = seq[i] <= mission.numEstaciones();
         if (isRechargePoint) {
-            battery = network.battery();
+            bateria = network.bateria();
             if (i + 1 < seq.size()) ++recharges;
         } else {
             visited.push_back(seq[i]);
-            assert(battery + TOLERANCE >= network.distanceToRecharge(seq[i]));
+            assert(bateria + TOLERANCE >= network.distanceToRecharge(seq[i]));
         }
     }
     assert(visited == order);   // Mismos clientes, mismo orden, sin repetir
@@ -96,9 +96,9 @@ void testNetworkStructure() {
 
     // Base y estaciones en cadena: D(0,0) - S1(10,0) - S2(20,0) - S3(30,0), y S4(20,8) colgando
     // de S2. Con B = 10.5 solo existen esas aristas, así que S1 y S2 son críticas.
-    Scenario s = makeScenario(Point(0, 0),
-                              {Point(10, 0), Point(20, 0), Point(30, 0), Point(20, 8)},
-                              {Point(0, 6), Point(30, 4)});
+    Escenario s = makeScenario(Punto(0, 0),
+                              {Punto(10, 0), Punto(20, 0), Punto(30, 0), Punto(20, 8)},
+                              {Punto(0, 6), Punto(30, 4)});
     MissionGraph mission(s);
     ChargingNetwork network(mission, 10.5);
 
@@ -139,7 +139,7 @@ void testMinimumAutonomyByHand() {
     // Base (0,0), estación (10,0), cliente (10,6).
     // Con B ≥ 10 la estación es alcanzable y el cliente queda a 6 de ella: hace falta B ≥ 12.
     // Con B < 10 solo sirve la base, a sqrt(136) ≈ 11.66: haría falta B ≥ 23.3, contradicción.
-    Scenario s = makeScenario(Point(0, 0), {Point(10, 0)}, {Point(10, 6)});
+    Escenario s = makeScenario(Punto(0, 0), {Punto(10, 0)}, {Punto(10, 6)});
     MissionGraph mission(s);
     assert(std::abs(ChargingNetwork::minimumAutonomy(mission) - 12.0) < TOLERANCE);
     assert(ChargingNetwork::isFeasible(mission, 12.0));
@@ -151,9 +151,9 @@ void testMinimumAutonomyByHand() {
 void testMinimumAutonomyIsMonotone() {
     std::cout << "[TEST] 4. Busqueda binaria: factibilidad monotona en escenarios generados..." << std::endl;
 
-    for (DatasetCategory category : {DatasetCategory::SMALL, DatasetCategory::MEDIUM}) {
-        for (uint64_t seed = 1; seed <= 3; ++seed) {
-            MissionGraph mission(layout(category, seed));
+    for (Categoria categoria : {Categoria::SMALL, Categoria::MEDIUM}) {
+        for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
+            MissionGraph mission(layout(categoria, semilla));
             double minimum = ChargingNetwork::minimumAutonomy(mission);
             assert(ChargingNetwork::isFeasible(mission, minimum));
             assert(!ChargingNetwork::isFeasible(mission, minimum * 0.999));
@@ -178,7 +178,7 @@ void testPlannerByHand() {
     // dejaría 0.34 y su recarga más cercana está a 6: se desvía por la estación. De vuelta,
     // con 6 de batería no llega a la base (11.66): vuelve a pasar por la estación.
     // Ruta: D -> S1 -> C1 -> S1 -> D = 10 + 6 + 6 + 10 = 32, con 2 recargas.
-    Scenario s = makeScenario(Point(0, 0), {Point(10, 0)}, {Point(10, 6)});
+    Escenario s = makeScenario(Punto(0, 0), {Punto(10, 0)}, {Punto(10, 6)});
     MissionGraph mission(s);
     ChargingNetwork network(mission, 12.0);
     RechargePlanner planner(mission, network);
@@ -202,18 +202,18 @@ void testPlannerOnGenerated() {
     std::cout << "[TEST] 6. Rutas con recargas validas en escenarios generados (B minima y B x 1.2)..." << std::endl;
 
     std::mt19937 rng(2026);
-    for (DatasetCategory category : {DatasetCategory::SMALL, DatasetCategory::MEDIUM, DatasetCategory::LARGE}) {
-        for (uint64_t seed = 1; seed <= 2; ++seed) {
-            MissionGraph mission(layout(category, seed));
+    for (Categoria categoria : {Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE}) {
+        for (uint64_t semilla = 1; semilla <= 2; ++semilla) {
+            MissionGraph mission(layout(categoria, semilla));
             assert(mission.unreachableClients().empty());   // El generador nunca encierra clientes
 
             double minimum = ChargingNetwork::minimumAutonomy(mission);
-            for (double battery : {minimum, std::ceil(minimum * 1.2)}) {
-                ChargingNetwork network(mission, battery);
+            for (double bateria : {minimum, std::ceil(minimum * 1.2)}) {
+                ChargingNetwork network(mission, bateria);
                 RechargePlanner planner(mission, network);
 
                 std::vector<int> order;
-                for (int c = 0; c < mission.numClients(); ++c) order.push_back(mission.clientKey(c));
+                for (int c = 0; c < mission.numClientes(); ++c) order.push_back(mission.clientKey(c));
                 for (int attempt = 0; attempt < 3; ++attempt) {
                     std::shuffle(order.begin(), order.end(), rng);
                     assertValidPlan(mission, network, order, planner.plan(order));
@@ -229,18 +229,18 @@ void testAdversarialBattery(const std::string& folder) {
     std::cout << "[TEST] 7. Casos adversariales: cliente fuera de alcance y cliente encerrado..." << std::endl;
 
     // Con B = 60 el cliente (95,95) queda lejos de toda recarga; los otros tres se atienden.
-    Scenario s = ScenarioIO::load(folder + "/adv_unreachable_battery.txt");
+    Escenario s = ArchivoEscenario::cargar(folder + "/adv_unreachable_battery.txt");
     MissionGraph mission(s);
-    ChargingNetwork network(mission, s.battery);
+    ChargingNetwork network(mission, s.bateria);
     assert(!network.canServe(mission.clientKey(3)));
     for (int c = 0; c < 3; ++c) assert(network.canServe(mission.clientKey(c)));
-    assert(!ChargingNetwork::isFeasible(mission, s.battery));
+    assert(!ChargingNetwork::isFeasible(mission, s.bateria));
 
     std::vector<int> servable = {mission.clientKey(0), mission.clientKey(1), mission.clientKey(2)};
     assertValidPlan(mission, network, servable, RechargePlanner(mission, network).plan(servable));
 
     // El cliente encerrado no cuenta para la autonomía mínima: la separan obstáculos, no batería.
-    MissionGraph enclosed(ScenarioIO::load(folder + "/adv_enclosed.txt"));
+    MissionGraph enclosed(ArchivoEscenario::cargar(folder + "/adv_enclosed.txt"));
     double minimum = ChargingNetwork::minimumAutonomy(enclosed);
     assert(std::isfinite(minimum) && ChargingNetwork::isFeasible(enclosed, minimum));
 
@@ -250,12 +250,12 @@ void testAdversarialBattery(const std::string& folder) {
 void testGeneratorBattery() {
     std::cout << "[TEST] 8. Bateria del generador = autonomia minima x 1.2, redondeada..." << std::endl;
 
-    for (uint64_t seed = 1; seed <= 3; ++seed) {
-        Scenario s = DatasetGenerator::generate(DatasetCategory::SMALL, seed);
+    for (uint64_t semilla = 1; semilla <= 3; ++semilla) {
+        Escenario s = GeneradorDatasets::generar(Categoria::SMALL, semilla);
         MissionGraph mission(s);
         double expected = std::max(1.0, std::ceil(ChargingNetwork::minimumAutonomy(mission) * 1.2));
-        assert(s.battery == expected);
-        assert(ChargingNetwork::isFeasible(mission, s.battery));
+        assert(s.bateria == expected);
+        assert(ChargingNetwork::isFeasible(mission, s.bateria));
     }
 
     std::cout << "  -> PASSED\n" << std::endl;

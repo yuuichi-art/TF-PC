@@ -25,9 +25,9 @@ void preorder(int node, const std::vector<std::vector<int>>& children, const std
 // Double-bridge: corta en tres puntos al azar (A | B | C | D) y arma A C B D.
 std::vector<int> doubleBridge(const std::vector<int>& order, std::mt19937_64& rng) {
     int n = static_cast<int>(order.size());
-    int p1 = static_cast<int>(randomInt(rng, 1, n - 3));
-    int p2 = static_cast<int>(randomInt(rng, p1 + 1, n - 2));
-    int p3 = static_cast<int>(randomInt(rng, p2 + 1, n - 1));
+    int p1 = static_cast<int>(enteroAleatorio(rng, 1, n - 3));
+    int p2 = static_cast<int>(enteroAleatorio(rng, p1 + 1, n - 2));
+    int p3 = static_cast<int>(enteroAleatorio(rng, p2 + 1, n - 1));
     std::vector<int> result(order.begin(), order.begin() + p1);                  // A
     result.insert(result.end(), order.begin() + p2, order.begin() + p3);         // C
     result.insert(result.end(), order.begin() + p1, order.begin() + p2);         // B
@@ -37,40 +37,40 @@ std::vector<int> doubleBridge(const std::vector<int>& order, std::mt19937_64& rn
 
 } // namespace
 
-double tourCost(const std::vector<std::vector<double>>& dist, int depot, const std::vector<int>& order) {
+double tourCost(const std::vector<std::vector<double>>& dist, int base, const std::vector<int>& order) {
     double cost = 0.0;
-    int position = depot;
+    int position = base;
     for (int client : order) {
         cost += dist[position][client];
         position = client;
     }
-    return cost + dist[position][depot];
+    return cost + dist[position][base];
 }
 
-std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int depot,
-                                 const std::vector<int>& clients) {
+std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int base,
+                                 const std::vector<int>& clientes) {
     std::vector<int> order;
-    std::vector<char> visited(clients.size(), 0);
-    int position = depot;
-    for (size_t step = 0; step < clients.size(); ++step) {
+    std::vector<char> visited(clientes.size(), 0);
+    int position = base;
+    for (size_t step = 0; step < clientes.size(); ++step) {
         int next = -1;
-        for (size_t i = 0; i < clients.size(); ++i) {
+        for (size_t i = 0; i < clientes.size(); ++i) {
             if (visited[i]) continue;
-            if (next == -1 || dist[position][clients[i]] < dist[position][clients[next]]) {
+            if (next == -1 || dist[position][clientes[i]] < dist[position][clientes[next]]) {
                 next = static_cast<int>(i);
             }
         }
         visited[next] = 1;
-        position = clients[next];
+        position = clientes[next];
         order.push_back(position);
     }
     return order;
 }
 
-std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int depot,
-                                  const std::vector<int>& clients) {
-    std::vector<int> nodes = {depot};
-    nodes.insert(nodes.end(), clients.begin(), clients.end());
+std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int base,
+                                  const std::vector<int>& clientes) {
+    std::vector<int> nodes = {base};
+    nodes.insert(nodes.end(), clientes.begin(), clientes.end());
     MstResult tree = primMst(dist, nodes);
 
     // Hijos de cada nodo del árbol (posiciones dentro de nodes), del más cercano al más lejano.
@@ -93,12 +93,12 @@ std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, 
     return order;
 }
 
-bool twoOpt(const std::vector<std::vector<double>>& dist, int depot, std::vector<int>& order,
+bool twoOpt(const std::vector<std::vector<double>>& dist, int base, std::vector<int>& order,
             Clock::time_point deadline) {
     // Ruta completa con la base en ambos extremos: tour[0] = tour[n + 1] = base.
-    std::vector<int> tour = {depot};
+    std::vector<int> tour = {base};
     tour.insert(tour.end(), order.begin(), order.end());
-    tour.push_back(depot);
+    tour.push_back(base);
     int n = static_cast<int>(order.size());
 
     // Se repiten pasadas sobre todos los pares (i, j) hasta que una pasada no mejore nada.
@@ -129,18 +129,18 @@ bool twoOpt(const std::vector<std::vector<double>>& dist, int depot, std::vector
     return finished;
 }
 
-IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int depot,
-                              const std::vector<int>& initialOrder, uint64_t seed,
+IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int base,
+                              const std::vector<int>& initialOrder, uint64_t semilla,
                               int maxIterations, Clock::time_point deadline) {
     IlsResult result;
     result.order = initialOrder;
-    result.stoppedByTime = !twoOpt(dist, depot, result.order, deadline);
-    double bestCost = tourCost(dist, depot, result.order);
+    result.stoppedByTime = !twoOpt(dist, base, result.order, deadline);
+    double bestCost = tourCost(dist, base, result.order);
 
     // Double-bridge necesita al menos 4 clientes para cortar la ruta en cuatro tramos.
     if (result.order.size() < 4) return result;
 
-    std::mt19937_64 rng(seed);
+    std::mt19937_64 rng(semilla);
     while (result.iterations < maxIterations && !result.stoppedByTime) {
         if (Clock::now() > deadline) {
             result.stoppedByTime = true;
@@ -148,11 +148,11 @@ IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int 
         }
         ++result.iterations;
         std::vector<int> candidate = doubleBridge(result.order, rng);
-        if (!twoOpt(dist, depot, candidate, deadline)) {
+        if (!twoOpt(dist, base, candidate, deadline)) {
             result.stoppedByTime = true;   // La candidata quedó a medias: no se considera
             break;
         }
-        double cost = tourCost(dist, depot, candidate);
+        double cost = tourCost(dist, base, candidate);
         if (cost < bestCost - MIN_IMPROVEMENT) {
             result.order = std::move(candidate);
             bestCost = cost;

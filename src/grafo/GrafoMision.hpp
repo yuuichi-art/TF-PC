@@ -25,20 +25,20 @@ namespace geodrone {
  */
 class MissionGraph {
 public:
-    explicit MissionGraph(const Scenario& scenario);
+    explicit MissionGraph(const Escenario& escenario);
 
     int numKeyNodes() const { return 1 + numStations_ + numClients_; }
-    int numStations() const { return numStations_; }
-    int numClients() const { return numClients_; }
+    int numEstaciones() const { return numStations_; }
+    int numClientes() const { return numClients_; }
 
     int depotKey() const { return 0; }
     int stationKey(int station) const { return 1 + station; }
     int clientKey(int client) const { return 1 + numStations_ + client; }
 
-    const Point& keyPoint(int key) const { return graph_.getNode(key).pt; }
+    const Punto& keyPoint(int key) const { return graph_.getNode(key).pt; }
 
     // Etiqueta del nodo clave: "D0", "S1".."S<S>" o "C1".."C<N>", como en los archivos de ruta.
-    const std::string& label(int key) const { return graph_.getNode(key).name; }
+    const std::string& label(int key) const { return graph_.getNode(key).nombre; }
 
     // Distancia de vuelo mínima entre dos nodos clave (infinito si no hay camino).
     double distance(int fromKey, int toKey) const { return dist_[fromKey][toKey]; }

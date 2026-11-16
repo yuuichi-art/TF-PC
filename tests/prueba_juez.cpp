@@ -17,20 +17,20 @@
 
 using namespace geodrone;
 
-Scenario handScenario() {
+Escenario handScenario() {
     // Base (0,0), estación (10,0), cliente (10,6), batería 12: D0 -> S1 -> C1 -> S1 -> D0.
-    Scenario s;
-    s.name = "hand";
-    s.category = DatasetCategory::ADVERSARIAL;
-    s.battery = 12;
-    s.depot = Point(0, 0);
-    s.stations = {Point(10, 0)};
-    s.clients = {Point(10, 6)};
+    Escenario s;
+    s.nombre = "hand";
+    s.categoria = Categoria::ADVERSARIAL;
+    s.bateria = 12;
+    s.base = Punto(0, 0);
+    s.estaciones = {Punto(10, 0)};
+    s.clientes = {Punto(10, 6)};
     return s;
 }
 
 // La ruta debe rechazarse y el motivo debe mencionar el fragmento esperado.
-void expectRejected(const Scenario& s, const MissionSolver& solver, const Route& route, const std::string& fragment) {
+void expectRejected(const Escenario& s, const MissionSolver& solver, const Route& route, const std::string& fragment) {
     VerificationResult result = Judge::verifyRoute(s, solver, route);
     if (result.valid || result.problem.find(fragment) == std::string::npos) {
         std::cerr << "  Resultado: " << (result.valid ? "valida" : result.problem) << "\n  Se esperaba: " << fragment << "\n";
@@ -45,18 +45,18 @@ void removePoint(Route& route, size_t index) {
 void testAcceptsValidRoutes(const std::string& folder) {
     std::cout << "[TEST] 1. El verificador acepta las rutas de todos los algoritmos..." << std::endl;
 
-    std::vector<Scenario> scenarios;
-    for (const std::string& file : Judge::findScenarioFiles(folder)) scenarios.push_back(ScenarioIO::load(file));
-    scenarios.push_back(DatasetGenerator::generate(DatasetCategory::SMALL, 1));
-    scenarios.push_back(DatasetGenerator::generate(DatasetCategory::MEDIUM, 1));
+    std::vector<Escenario> scenarios;
+    for (const std::string& file : Judge::findScenarioFiles(folder)) scenarios.push_back(ArchivoEscenario::cargar(file));
+    scenarios.push_back(GeneradorDatasets::generar(Categoria::SMALL, 1));
+    scenarios.push_back(GeneradorDatasets::generar(Categoria::MEDIUM, 1));
     scenarios.push_back(handScenario());
 
-    for (const Scenario& s : scenarios) {
+    for (const Escenario& s : scenarios) {
         MissionSolver solver(s);
         for (Algorithm algorithm : allAlgorithms()) {
             if (algorithm == Algorithm::BRANCH_AND_BOUND && !solver.supportsExact()) continue;
             VerificationResult result = Judge::verifyRoute(s, solver, solver.solve(algorithm));
-            if (!result.valid) std::cerr << "  " << s.name << ": " << result.problem << "\n";
+            if (!result.valid) std::cerr << "  " << s.nombre << ": " << result.problem << "\n";
             assert(result.valid);
         }
     }
@@ -68,7 +68,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     std::cout << "[TEST] 2. El verificador rechaza cada tipo de ruta invalida..." << std::endl;
 
     // Trampa en U: sin los vértices de obstáculo, la ruta atraviesa la U.
-    Scenario trap = ScenarioIO::load(folder + "/adv_concave_trap.txt");
+    Escenario trap = ArchivoEscenario::cargar(folder + "/adv_concave_trap.txt");
     MissionSolver trapSolver(trap);
     Route straight = trapSolver.solve(Algorithm::BRANCH_AND_BOUND);
     straight.path.erase(std::remove_if(straight.path.begin(), straight.path.end(),
@@ -77,13 +77,13 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     expectRejected(trap, trapSolver, straight, "cruza un obstaculo");
 
     // Ruta a mano D0 S1 C1 S1 D0, que es válida, y variantes rotas.
-    Scenario hand = handScenario();
+    Escenario hand = handScenario();
     MissionSolver solver(hand);
     const Route good = solver.solve(Algorithm::BRANCH_AND_BOUND);
     assert(Judge::verifyRoute(hand, solver, good).valid);
 
-    Scenario weak = hand;
-    weak.battery = 8;                                   // Con 8 no alcanza el tramo de 10 a la estación
+    Escenario weak = hand;
+    weak.bateria = 8;                                   // Con 8 no alcanza el tramo de 10 a la estación
     expectRejected(weak, solver, good, "bateria se agota");
 
     Route r = good;
@@ -137,7 +137,7 @@ void testRejectsInvalidRoutes(const std::string& folder) {
 void testVerdicts() {
     std::cout << "[TEST] 3. Veredictos OK, WA, TLE y MLE..." << std::endl;
 
-    CategoryLimits limits{1.0, 256.0};
+    LimitesCategoria limits{1.0, 256.0};
     assert(Judge::verdictFor(true, 999.0, 100.0, limits) == "OK");
     assert(Judge::verdictFor(false, 1.0, 1.0, limits) == "WA");
     assert(Judge::verdictFor(false, 5000.0, 900.0, limits) == "WA");   // Una ruta inválida es WA aunque tarde
@@ -147,10 +147,10 @@ void testVerdicts() {
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-JudgeRow makeRow(DatasetCategory category, const std::string& algorithm, const std::string& verdict,
+JudgeRow makeRow(Categoria categoria, const std::string& algorithm, const std::string& verdict,
                  double gap, double timeMs) {
     JudgeRow row;
-    row.category = category;
+    row.categoria = categoria;
     row.algorithm = algorithm;
     row.verdict = verdict;
     row.gapBest = gap;
@@ -162,15 +162,15 @@ void testRanking() {
     std::cout << "[TEST] 4. Ranking: mas casos OK, luego menor gap, luego menor tiempo..." << std::endl;
 
     std::vector<JudgeRow> rows = {
-        makeRow(DatasetCategory::SMALL, "lento", "OK", 0.0, 10.0),
-        makeRow(DatasetCategory::SMALL, "lento", "OK", 2.0, 10.0),
-        makeRow(DatasetCategory::SMALL, "fallado", "OK", 0.0, 1.0),
-        makeRow(DatasetCategory::SMALL, "fallado", "WA", 0.0, 1.0),
-        makeRow(DatasetCategory::SMALL, "rapido", "OK", 0.0, 5.0),
-        makeRow(DatasetCategory::SMALL, "rapido", "OK", 2.0, 5.0),
-        makeRow(DatasetCategory::SMALL, "preciso", "OK", 0.0, 50.0),
-        makeRow(DatasetCategory::SMALL, "preciso", "OK", 0.0, 50.0),
-        makeRow(DatasetCategory::MEDIUM, "rapido", "OK", 3.0, 7.0),
+        makeRow(Categoria::SMALL, "lento", "OK", 0.0, 10.0),
+        makeRow(Categoria::SMALL, "lento", "OK", 2.0, 10.0),
+        makeRow(Categoria::SMALL, "fallado", "OK", 0.0, 1.0),
+        makeRow(Categoria::SMALL, "fallado", "WA", 0.0, 1.0),
+        makeRow(Categoria::SMALL, "rapido", "OK", 0.0, 5.0),
+        makeRow(Categoria::SMALL, "rapido", "OK", 2.0, 5.0),
+        makeRow(Categoria::SMALL, "preciso", "OK", 0.0, 50.0),
+        makeRow(Categoria::SMALL, "preciso", "OK", 0.0, 50.0),
+        makeRow(Categoria::MEDIUM, "rapido", "OK", 3.0, 7.0),
     };
     std::vector<RankingRow> ranking = Judge::rank(rows);
     assert(ranking.size() == 5);
@@ -178,12 +178,12 @@ void testRanking() {
     // Small: preciso (2 OK, gap 0) > rapido (2 OK, gap 1, 5 ms) > lento (2 OK, gap 1, 10 ms) > fallado (1 OK).
     const std::vector<std::string> expected = {"preciso", "rapido", "lento", "fallado"};
     for (size_t i = 0; i < expected.size(); ++i) {
-        assert(ranking[i].category == DatasetCategory::SMALL);
+        assert(ranking[i].categoria == Categoria::SMALL);
         assert(ranking[i].algorithm == expected[i] && ranking[i].position == static_cast<int>(i) + 1);
     }
     assert(ranking[1].okCases == 2 && ranking[1].cases == 2 && std::abs(ranking[1].meanGap - 1.0) < 1e-9);
     assert(ranking[3].okCases == 1 && ranking[3].cases == 2);
-    assert(ranking[4].category == DatasetCategory::MEDIUM && ranking[4].position == 1);
+    assert(ranking[4].categoria == Categoria::MEDIUM && ranking[4].position == 1);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
@@ -210,9 +210,9 @@ void testRunEndToEnd(const std::string& folder) {
     }
     // Cada caso tiene al menos una ruta con gap 0 contra la mejor.
     for (const std::string& file : files) {
-        std::string name = ScenarioIO::load(file).name;
+        std::string nombre = ArchivoEscenario::cargar(file).nombre;
         bool hasBest = std::any_of(rows.begin(), rows.end(), [&](const JudgeRow& row) {
-            return row.scenario == name && std::abs(row.gapBest) < 1e-9;
+            return row.escenario == nombre && std::abs(row.gapBest) < 1e-9;
         });
         assert(hasBest);
     }

@@ -43,7 +43,7 @@ const std::vector<Algorithm>& allAlgorithms();
  */
 class MissionSolver {
 public:
-    explicit MissionSolver(const Scenario& scenario);
+    explicit MissionSolver(const Escenario& escenario);
     MissionSolver(const MissionSolver&) = delete;
     MissionSolver& operator=(const MissionSolver&) = delete;
 

@@ -30,14 +30,14 @@ namespace HeuristicSolver {
     /**
      * @brief Costo del ciclo base -> clientes en ese orden -> base. O(n).
      */
-    double tourCost(const std::vector<std::vector<double>>& dist, int depot, const std::vector<int>& order);
+    double tourCost(const std::vector<std::vector<double>>& dist, int base, const std::vector<int>& order);
 
     /**
      * @brief Vecino más cercano (greedy): desde la base, ir siempre al cliente pendiente más cercano.
      * Rápido pero sin garantía de calidad. Complejidad: O(n^2) en tiempo, O(n) en espacio.
      */
-    std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int depot,
-                                     const std::vector<int>& clients);
+    std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int base,
+                                     const std::vector<int>& clientes);
 
     /**
      * @brief 2-aproximación: árbol de expansión mínima (Prim) de la base y los clientes, recorrido
@@ -49,8 +49,8 @@ namespace HeuristicSolver {
      * arista, es un árbol, así que cuesta al menos lo que el árbol mínimo.
      * Complejidad: O(n^2) en tiempo (Prim sobre matriz) y O(n) en espacio.
      */
-    std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int depot,
-                                      const std::vector<int>& clients);
+    std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int base,
+                                      const std::vector<int>& clientes);
 
     /**
      * @brief 2-opt: mientras exista, aplica un intercambio que acorte la ruta. Un intercambio quita
@@ -60,7 +60,7 @@ namespace HeuristicSolver {
      * depende de la ruta inicial. Espacio O(n).
      * @return false si se detuvo por el límite de tiempo antes del óptimo local.
      */
-    bool twoOpt(const std::vector<std::vector<double>>& dist, int depot, std::vector<int>& order,
+    bool twoOpt(const std::vector<std::vector<double>>& dist, int base, std::vector<int>& order,
                 Clock::time_point deadline = noDeadline());
 
     struct IlsResult {
@@ -79,8 +79,8 @@ namespace HeuristicSolver {
      * el límite de tiempo la corte antes.
      * Complejidad: O(iteraciones · costo de 2-opt). Espacio O(n).
      */
-    IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int depot,
-                                  const std::vector<int>& initialOrder, uint64_t seed,
+    IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int base,
+                                  const std::vector<int>& initialOrder, uint64_t semilla,
                                   int maxIterations = DEFAULT_ILS_ITERATIONS,
                                   Clock::time_point deadline = noDeadline());
 

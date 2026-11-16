@@ -21,34 +21,34 @@ namespace geodrone {
  *         puntos colineales. Si hay menos de 3 puntos distintos no colineales, devuelve
  *         menos de 3 vértices.
  */
-inline std::vector<Point> convexHull(std::vector<Point> points) {
-    std::sort(points.begin(), points.end());
-    points.erase(std::unique(points.begin(), points.end()), points.end());
-    int n = static_cast<int>(points.size());
-    if (n < 3) return points;
+inline std::vector<Punto> envolventeConvexa(std::vector<Punto> puntos) {
+    std::sort(puntos.begin(), puntos.end());
+    puntos.erase(std::unique(puntos.begin(), puntos.end()), puntos.end());
+    int n = static_cast<int>(puntos.size());
+    if (n < 3) return puntos;
 
-    std::vector<Point> hull(2 * n);
+    std::vector<Punto> envolvente(2 * n);
     int k = 0;
 
     // Cadena inferior: de izquierda a derecha.
     for (int i = 0; i < n; ++i) {
-        while (k >= 2 && (hull[k - 1] - hull[k - 2]).cross(points[i] - hull[k - 2]) <= EPS) {
+        while (k >= 2 && (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
             --k;
         }
-        hull[k++] = points[i];
+        envolvente[k++] = puntos[i];
     }
 
-    // Cadena superior: de derecha a izquierda. lowerSize evita borrar la cadena inferior.
-    int lowerSize = k + 1;
+    // Cadena superior: de derecha a izquierda. tamanoInferior evita borrar la cadena inferior.
+    int tamanoInferior = k + 1;
     for (int i = n - 2; i >= 0; --i) {
-        while (k >= lowerSize && (hull[k - 1] - hull[k - 2]).cross(points[i] - hull[k - 2]) <= EPS) {
+        while (k >= tamanoInferior && (envolvente[k - 1] - envolvente[k - 2]).cruz(puntos[i] - envolvente[k - 2]) <= EPS) {
             --k;
         }
-        hull[k++] = points[i];
+        envolvente[k++] = puntos[i];
     }
 
-    hull.resize(k - 1); // El último punto repite el primero
-    return hull;
+    envolvente.resize(k - 1); // El último punto repite el primero
+    return envolvente;
 }
 
 } // namespace geodrone

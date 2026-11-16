@@ -8,24 +8,24 @@ namespace geodrone {
 /**
  * @brief Segmento de trayectoria de vuelo delimitado por dos puntos extremos A y B.
  */
-struct Segment {
-    Point a;
-    Point b;
+struct Segmento {
+    Punto a;
+    Punto b;
 
-    Segment() = default;
-    Segment(const Point& a_, const Point& b_) : a(a_), b(b_) {}
+    Segmento() = default;
+    Segmento(const Punto& a_, const Punto& b_) : a(a_), b(b_) {}
 
     // Longitud euclidiana del segmento
-    double length() const {
-        return a.dist(b);
+    double longitud() const {
+        return a.distancia(b);
     }
 
     // Punto medio del segmento (utilizado para validar si el segmento penetra obstáculos)
-    Point midpoint() const {
-        return Point((a.x + b.x) * 0.5, (a.y + b.y) * 0.5);
+    Punto puntoMedio() const {
+        return Punto((a.x + b.x) * 0.5, (a.y + b.y) * 0.5);
     }
 
-    // Para saber si un punto está sobre el segmento se usa GeometryUtils::onSegment.
+    // Para saber si un punto está sobre el segmento se usa Geometria::estaEnSegmento.
 };
 
 } // namespace geodrone

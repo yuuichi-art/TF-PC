@@ -52,14 +52,14 @@ private:
     const MissionGraph& mission_;
     const ChargingNetwork& network_;
 
-    // Recargas a visitar desde `from` con batería `battery` para llegar seguro a `target`.
+    // Recargas a visitar desde `from` con batería `bateria` para llegar seguro a `target`.
     // Devuelve false si no hay forma. El camino no incluye a `from` ni a `target`.
-    bool findRechargePath(int from, double battery, int target, std::vector<int>& path) const;
+    bool findRechargePath(int from, double bateria, int target, std::vector<int>& path) const;
 
     // Paso 1: Dijkstra O(R^2) sobre la red de recarga. Orígenes: los puntos que se alcanzan
     // desde `from` con la batería actual. best[i] es la distancia hasta reachablePoints()[i]
     // y previous[i] el punto anterior en ese camino (-1 si es un origen o no se alcanza).
-    std::vector<double> networkDistances(int from, double battery, std::vector<int>& previous) const;
+    std::vector<double> networkDistances(int from, double bateria, std::vector<int>& previous) const;
 
     // Paso 2: el último punto de recarga, desde el cual `target` es seguro con batería llena,
     // que minimiza el total. Devuelve su posición en reachablePoints() o -1.

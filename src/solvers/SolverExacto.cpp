@@ -12,36 +12,36 @@ namespace {
 // Estado de la búsqueda: lo que comparten todas las llamadas recursivas.
 struct Search {
     const std::vector<std::vector<double>>& dist;
-    int depot;
-    const std::vector<int>& clients;
+    int base;
+    const std::vector<int>& clientes;
 
-    std::vector<char> visited;      // visited[i]: clients[i] ya está en la ruta parcial
+    std::vector<char> visited;      // visited[i]: clientes[i] ya está en la ruta parcial
     std::vector<int> current;       // Ruta parcial (claves de clientes)
     ExactResult best;
 
-    Search(const std::vector<std::vector<double>>& d, int base, const std::vector<int>& c)
-        : dist(d), depot(base), clients(c), visited(c.size(), 0) {
+    Search(const std::vector<std::vector<double>>& d, int b, const std::vector<int>& c)
+        : dist(d), base(b), clientes(c), visited(c.size(), 0) {
         best.cost = INF;
     }
 
     // Árbol de expansión mínima de {posición, clientes pendientes, base}.
     double lowerBound(int position) const {
         std::vector<int> nodes = {position};
-        for (size_t i = 0; i < clients.size(); ++i) {
-            if (!visited[i]) nodes.push_back(clients[i]);
+        for (size_t i = 0; i < clientes.size(); ++i) {
+            if (!visited[i]) nodes.push_back(clientes[i]);
         }
-        if (position != depot) nodes.push_back(depot);
+        if (position != base) nodes.push_back(base);
         return primMst(dist, nodes).cost;
     }
 
     // Clientes pendientes, del más cercano al más lejano desde `position`.
     std::vector<int> candidatesFrom(int position) const {
         std::vector<int> candidates;
-        for (size_t i = 0; i < clients.size(); ++i) {
+        for (size_t i = 0; i < clientes.size(); ++i) {
             if (!visited[i]) candidates.push_back(static_cast<int>(i));
         }
         std::sort(candidates.begin(), candidates.end(), [&](int a, int b) {
-            return dist[position][clients[a]] < dist[position][clients[b]];
+            return dist[position][clientes[a]] < dist[position][clientes[b]];
         });
         return candidates;
     }
@@ -50,8 +50,8 @@ struct Search {
         ++best.nodesExplored;
 
         // Hoja: todos los clientes visitados, solo falta volver a la base.
-        if (current.size() == clients.size()) {
-            double total = cost + dist[position][depot];
+        if (current.size() == clientes.size()) {
+            double total = cost + dist[position][base];
             if (total < best.cost) {
                 best.cost = total;
                 best.order = current;
@@ -66,14 +66,14 @@ struct Search {
         }
 
         for (int i : candidatesFrom(position)) {
-            double nextCost = cost + dist[position][clients[i]];
+            double nextCost = cost + dist[position][clientes[i]];
             if (nextCost >= best.cost) {    // Solo llegar a ese cliente ya iguala la mejor ruta
                 ++best.nodesPruned;
                 continue;
             }
             visited[i] = 1;
-            current.push_back(clients[i]);
-            branch(clients[i], nextCost);
+            current.push_back(clientes[i]);
+            branch(clientes[i], nextCost);
             current.pop_back();
             visited[i] = 0;
         }
@@ -82,14 +82,14 @@ struct Search {
 
 } // namespace
 
-ExactResult ExactSolver::solve(const std::vector<std::vector<double>>& dist, int depot,
-                               const std::vector<int>& clients) {
-    if (static_cast<int>(clients.size()) > MAX_CLIENTS) {
+ExactResult ExactSolver::solve(const std::vector<std::vector<double>>& dist, int base,
+                               const std::vector<int>& clientes) {
+    if (static_cast<int>(clientes.size()) > MAX_CLIENTS) {
         throw std::invalid_argument("el solver exacto admite hasta " + std::to_string(MAX_CLIENTS) +
-                                    " clientes y se pidieron " + std::to_string(clients.size()));
+                                    " clientes y se pidieron " + std::to_string(clientes.size()));
     }
-    Search search(dist, depot, clients);
-    search.branch(depot, 0.0);
+    Search search(dist, base, clientes);
+    search.branch(base, 0.0);
     return search.best;
 }
 

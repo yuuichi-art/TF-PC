@@ -16,39 +16,39 @@ namespace geodrone {
  *
  * Complejidad: O(T) en tiempo y espacio, donde T es la cantidad de valores del archivo.
  */
-namespace ScenarioIO {
+namespace ArchivoEscenario {
 
     /**
      * @brief Lee un escenario desde un flujo.
      * Lanza std::runtime_error con la línea y lo que se esperaba si el contenido no es válido.
      */
-    Scenario read(std::istream& in);
+    Escenario leer(std::istream& entrada);
 
     /**
      * @brief Lee un escenario desde un archivo. El mensaje de error incluye la ruta del archivo.
      */
-    Scenario load(const std::string& path);
+    Escenario cargar(const std::string& ruta);
 
     /**
-     * @brief Escribe un escenario en el mismo formato que read() acepta.
+     * @brief Escribe un escenario en el mismo formato que leer() acepta.
      * Lanza std::invalid_argument si el nombre está vacío o tiene espacios.
      */
-    void write(const Scenario& scenario, std::ostream& out);
+    void escribir(const Escenario& escenario, std::ostream& salida);
 
     /**
      * @brief Guarda un escenario en un archivo, creando las carpetas que falten.
      * Lanza std::invalid_argument si el nombre no es válido y std::runtime_error si no se
      * puede escribir.
      */
-    void save(const Scenario& scenario, const std::string& path);
+    void guardar(const Escenario& escenario, const std::string& ruta);
 
     /**
      * @brief Crea el archivo para escribir, con las carpetas que falten. Lanza std::runtime_error
      * si no se puede. La usan también las exportaciones de rutas, CSV y SVG.
      */
-    std::ofstream openForWriting(const std::string& path);
+    std::ofstream abrirParaEscribir(const std::string& ruta);
 
-} // namespace ScenarioIO
+} // namespace ArchivoEscenario
 
 } // namespace geodrone
 

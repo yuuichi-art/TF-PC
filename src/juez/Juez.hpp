@@ -23,9 +23,9 @@ struct VerificationResult {
  * @brief Una fila del CSV de resultados: un escenario resuelto con un algoritmo.
  */
 struct JudgeRow {
-    std::string scenario;
-    DatasetCategory category = DatasetCategory::SMALL;
-    int clients = 0;                // Clientes del escenario, incluidos los excluidos
+    std::string escenario;
+    Categoria categoria = Categoria::SMALL;
+    int clientes = 0;                // Clientes del escenario, incluidos los excluidos
     std::string algorithm;
     std::string verdict;            // OK, WA, TLE o MLE
     std::string problem;            // Motivo del WA (se muestra en consola, no va al CSV)
@@ -42,7 +42,7 @@ struct JudgeRow {
  * @brief Una fila del ranking de una categoría.
  */
 struct RankingRow {
-    DatasetCategory category = DatasetCategory::SMALL;
+    Categoria categoria = Categoria::SMALL;
     int position = 0;
     std::string algorithm;
     int okCases = 0;
@@ -68,13 +68,13 @@ namespace Judge {
      * - el costo, las recargas y el orden informados coinciden con la trayectoria.
      * Complejidad: O(P · M) con P puntos de la trayectoria y M aristas de obstáculos.
      */
-    VerificationResult verifyRoute(const Scenario& scenario, const MissionSolver& solver, const Route& route);
+    VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& solver, const Route& route);
 
     /**
      * @brief Veredicto: WA si la ruta no es válida; si es válida, TLE si excede el tiempo,
      * MLE si excede la memoria y OK en otro caso.
      */
-    std::string verdictFor(bool valid, double timeMs, double memoryMB, const CategoryLimits& limits);
+    std::string verdictFor(bool valid, double timeMs, double memoryMB, const LimitesCategoria& limits);
 
     // Archivos .txt de una carpeta, ordenados por nombre. Vacío si la carpeta no existe.
     std::vector<std::string> findScenarioFiles(const std::string& folder);

@@ -6,17 +6,17 @@
 
 namespace geodrone {
 
-MissionGraph::MissionGraph(const Scenario& scenario)
-    : numStations_(scenario.numStations()), numClients_(scenario.numClients()) {
+MissionGraph::MissionGraph(const Escenario& escenario)
+    : numStations_(escenario.numEstaciones()), numClients_(escenario.numClientes()) {
     // Primero los nodos clave, en el orden base, estaciones, clientes; después los obstáculos.
-    graph_.addNode(scenario.depot, NodeType::DEPOT, "D0");
+    graph_.addNode(escenario.base, NodeType::DEPOT, "D0");
     for (int i = 0; i < numStations_; ++i) {
-        graph_.addNode(scenario.stations[i], NodeType::CHARGING_STATION, "S" + std::to_string(i + 1));
+        graph_.addNode(escenario.estaciones[i], NodeType::CHARGING_STATION, "S" + std::to_string(i + 1));
     }
     for (int i = 0; i < numClients_; ++i) {
-        graph_.addNode(scenario.clients[i], NodeType::CLIENT, "C" + std::to_string(i + 1));
+        graph_.addNode(escenario.clientes[i], NodeType::CLIENT, "C" + std::to_string(i + 1));
     }
-    for (const Polygon& poly : scenario.obstacles) {
+    for (const Poligono& poly : escenario.obstaculos) {
         graph_.addObstacle(poly);
     }
     graph_.buildVisibilityEdges();
@@ -50,13 +50,13 @@ void MissionGraph::markConnected(int node) {
 }
 
 std::vector<int> MissionGraph::unreachableClients() const {
-    std::vector<int> clients;
+    std::vector<int> clientes;
     for (int i = 0; i < numClients_; ++i) {
         if (!isConnectedToDepot(clientKey(i))) {
-            clients.push_back(i);
+            clientes.push_back(i);
         }
     }
-    return clients;
+    return clientes;
 }
 
 std::vector<int> MissionGraph::pathNodes(int fromKey, int toKey) const {

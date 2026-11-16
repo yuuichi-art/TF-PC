@@ -19,170 +19,170 @@ namespace geodrone {
 
 namespace {
 
-// Obstáculos convexos sin solape. El área se divide en una cuadrícula de side x side celdas
+// Obstáculos convexos sin solape. El área se divide en una cuadrícula de lado x lado celdas
 // (unas el doble que obstáculos, para dejar espacio libre) y cada obstáculo ocupa una celda
 // distinta elegida al azar. Dentro de la celda se deja un margen del 15 % por lado, así que
 // dos obstáculos nunca se tocan.
-std::vector<Polygon> generateObstacles(std::mt19937_64& rng, int count, int maxPoints,
-                                       double width, double height) {
-    std::vector<Polygon> obstacles;
-    if (count == 0) return obstacles;
+std::vector<Poligono> generarObstaculos(std::mt19937_64& rng, int cantidad, int maxPuntos,
+                                       double ancho, double alto) {
+    std::vector<Poligono> obstaculos;
+    if (cantidad == 0) return obstaculos;
 
-    int side = std::max(3, static_cast<int>(std::ceil(std::sqrt(2.0 * count))));
-    double cellWidth = width / side;
-    double cellHeight = height / side;
+    int lado = std::max(3, static_cast<int>(std::ceil(std::sqrt(2.0 * cantidad))));
+    double anchoCelda = ancho / lado;
+    double altoCelda = alto / lado;
 
     // Orden aleatorio de las celdas (Fisher-Yates).
-    std::vector<int> cells(side * side);
-    std::iota(cells.begin(), cells.end(), 0);
-    for (int i = static_cast<int>(cells.size()) - 1; i > 0; --i) {
-        std::swap(cells[i], cells[randomInt(rng, 0, i)]);
+    std::vector<int> celdas(lado * lado);
+    std::iota(celdas.begin(), celdas.end(), 0);
+    for (int i = static_cast<int>(celdas.size()) - 1; i > 0; --i) {
+        std::swap(celdas[i], celdas[enteroAleatorio(rng, 0, i)]);
     }
 
-    obstacles.reserve(count);
-    for (int k = 0; k < count; ++k) {
-        int column = cells[k] % side;
-        int row = cells[k] / side;
-        long long minX = static_cast<long long>(std::ceil((column + 0.15) * cellWidth));
-        long long maxX = static_cast<long long>(std::floor((column + 0.85) * cellWidth));
-        long long minY = static_cast<long long>(std::ceil((row + 0.15) * cellHeight));
-        long long maxY = static_cast<long long>(std::floor((row + 0.85) * cellHeight));
+    obstaculos.reserve(cantidad);
+    for (int k = 0; k < cantidad; ++k) {
+        int columna = celdas[k] % lado;
+        int fila = celdas[k] / lado;
+        long long minX = static_cast<long long>(std::ceil((columna + 0.15) * anchoCelda));
+        long long maxX = static_cast<long long>(std::floor((columna + 0.85) * anchoCelda));
+        long long minY = static_cast<long long>(std::ceil((fila + 0.15) * altoCelda));
+        long long maxY = static_cast<long long>(std::floor((fila + 0.85) * altoCelda));
 
         // Se repite en el caso raro de puntos colineales (envolvente con menos de 3 vértices).
-        std::vector<Point> hull;
-        while (hull.size() < 3) {
-            int pointCount = static_cast<int>(randomInt(rng, 3, maxPoints));
-            std::vector<Point> points;
-            points.reserve(pointCount);
-            for (int p = 0; p < pointCount; ++p) {
-                points.emplace_back(static_cast<double>(randomInt(rng, minX, maxX)),
-                                    static_cast<double>(randomInt(rng, minY, maxY)));
+        std::vector<Punto> envolvente;
+        while (envolvente.size() < 3) {
+            int cantidadPuntos = static_cast<int>(enteroAleatorio(rng, 3, maxPuntos));
+            std::vector<Punto> puntos;
+            puntos.reserve(cantidadPuntos);
+            for (int p = 0; p < cantidadPuntos; ++p) {
+                puntos.emplace_back(static_cast<double>(enteroAleatorio(rng, minX, maxX)),
+                                    static_cast<double>(enteroAleatorio(rng, minY, maxY)));
             }
-            hull = convexHull(points);
+            envolvente = envolventeConvexa(puntos);
         }
-        obstacles.emplace_back(k + 1, hull, "Obs" + std::to_string(k + 1));
+        obstaculos.emplace_back(k + 1, envolvente, "Obs" + std::to_string(k + 1));
     }
-    return obstacles;
+    return obstaculos;
 }
 
 // Punto entero libre: fuera de todo obstáculo (ni dentro ni sobre el borde) y no usado antes.
-Point randomFreePoint(std::mt19937_64& rng, double width, double height,
-                      const std::vector<Polygon>& obstacles,
-                      std::set<std::pair<long long, long long>>& used) {
+Punto puntoLibreAleatorio(std::mt19937_64& rng, double ancho, double alto,
+                      const std::vector<Poligono>& obstaculos,
+                      std::set<std::pair<long long, long long>>& usados) {
     while (true) {
-        long long x = randomInt(rng, 0, static_cast<long long>(width));
-        long long y = randomInt(rng, 0, static_cast<long long>(height));
-        if (used.count({x, y})) continue;
+        long long x = enteroAleatorio(rng, 0, static_cast<long long>(ancho));
+        long long y = enteroAleatorio(rng, 0, static_cast<long long>(alto));
+        if (usados.count({x, y})) continue;
 
-        Point candidate(static_cast<double>(x), static_cast<double>(y));
-        bool free = true;
-        for (const Polygon& poly : obstacles) {
-            if (GeometryUtils::pointInPolygon(candidate, poly) != PointLocation::OUTSIDE) {
-                free = false;
+        Punto candidato(static_cast<double>(x), static_cast<double>(y));
+        bool libre = true;
+        for (const Poligono& poligono : obstaculos) {
+            if (Geometria::ubicacionEnPoligono(candidato, poligono) != UbicacionPunto::FUERA) {
+                libre = false;
                 break;
             }
         }
-        if (free) {
-            used.insert({x, y});
-            return candidate;
+        if (libre) {
+            usados.insert({x, y});
+            return candidato;
         }
     }
 }
 
-std::string lowercase(std::string text) {
-    for (char& c : text) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return text;
+std::string minusculas(std::string texto) {
+    for (char& c : texto) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return texto;
 }
 
 } // namespace
 
-CategorySpec DatasetGenerator::specFor(DatasetCategory category) {
+RangosCategoria GeneradorDatasets::rangosDe(Categoria categoria) {
     // Clientes y obstáculos según la tabla del README. Puntos por obstáculo elegidos para
     // respetar el máximo de vértices de obstáculos de cada categoría (30, 100, 400 y 1500).
-    switch (category) {
-        case DatasetCategory::SMALL:   return {1, 10, 1, 3, 1, 5, 6};
-        case DatasetCategory::MEDIUM:  return {11, 40, 3, 6, 5, 15, 6};
-        case DatasetCategory::LARGE:   return {41, 200, 6, 12, 15, 50, 8};
-        case DatasetCategory::EXTREME: return {201, 1000, 12, 25, 50, 150, 10};
-        case DatasetCategory::ADVERSARIAL: break;
+    switch (categoria) {
+        case Categoria::SMALL:   return {1, 10, 1, 3, 1, 5, 6};
+        case Categoria::MEDIUM:  return {11, 40, 3, 6, 5, 15, 6};
+        case Categoria::LARGE:   return {41, 200, 6, 12, 15, 50, 8};
+        case Categoria::EXTREME: return {201, 1000, 12, 25, 50, 150, 10};
+        case Categoria::ADVERSARIAL: break;
     }
     throw std::invalid_argument("la categoria ADVERSARIAL no se genera: sus casos se escriben a mano");
 }
 
-CategorySpec DatasetGenerator::worstCaseSpecFor(DatasetCategory category) {
-    CategorySpec spec = specFor(category);
-    spec.minClients = spec.maxClients;
-    spec.minStations = spec.maxStations;
-    spec.minObstacles = spec.maxObstacles;
-    return spec;
+RangosCategoria GeneradorDatasets::rangosPeorCaso(Categoria categoria) {
+    RangosCategoria rangos = rangosDe(categoria);
+    rangos.minClientes = rangos.maxClientes;
+    rangos.minEstaciones = rangos.maxEstaciones;
+    rangos.minObstaculos = rangos.maxObstaculos;
+    return rangos;
 }
 
-Scenario DatasetGenerator::generate(DatasetCategory category, uint64_t seed, double width, double height) {
-    Scenario scenario = generateLayout(specFor(category), category, seed, width, height);
-    scenario.battery = batteryFor(scenario);
-    return scenario;
+Escenario GeneradorDatasets::generar(Categoria categoria, uint64_t semilla, double ancho, double alto) {
+    Escenario escenario = generarGeometria(rangosDe(categoria), categoria, semilla, ancho, alto);
+    escenario.bateria = bateriaPara(escenario);
+    return escenario;
 }
 
-double DatasetGenerator::batteryFor(const Scenario& layout) {
-    MissionGraph mission(layout);
-    double minimum = ChargingNetwork::minimumAutonomy(mission);
-    return std::max(1.0, std::ceil(minimum * BATTERY_MARGIN));
+double GeneradorDatasets::bateriaPara(const Escenario& geometria) {
+    MissionGraph mision(geometria);
+    double autonomia = ChargingNetwork::minimumAutonomy(mision);
+    return std::max(1.0, std::ceil(autonomia * MARGEN_BATERIA));
 }
 
-Scenario DatasetGenerator::generateLayout(const CategorySpec& spec, DatasetCategory category, uint64_t seed,
-                                          double width, double height) {
-    std::mt19937_64 rng(seed);
+Escenario GeneradorDatasets::generarGeometria(const RangosCategoria& rangos, Categoria categoria, uint64_t semilla,
+                                          double ancho, double alto) {
+    std::mt19937_64 rng(semilla);
 
-    Scenario scenario;
-    scenario.category = category;
-    scenario.seed = seed;
-    scenario.name = lowercase(categoryName(category)) + "_" + std::to_string(seed);
-    scenario.areaWidth = width;
-    scenario.areaHeight = height;
-    scenario.battery = 0.0;   // Sin calcular: lo completa batteryFor
+    Escenario escenario;
+    escenario.categoria = categoria;
+    escenario.semilla = semilla;
+    escenario.nombre = minusculas(nombreCategoria(categoria)) + "_" + std::to_string(semilla);
+    escenario.anchoArea = ancho;
+    escenario.altoArea = alto;
+    escenario.bateria = 0.0;   // Sin calcular: lo completa bateriaPara
 
     // El orden de los sorteos es fijo: cambiarlo cambia los escenarios de cada semilla.
-    int clientCount = static_cast<int>(randomInt(rng, spec.minClients, spec.maxClients));
-    int stationCount = static_cast<int>(randomInt(rng, spec.minStations, spec.maxStations));
-    int obstacleCount = static_cast<int>(randomInt(rng, spec.minObstacles, spec.maxObstacles));
+    int cantidadClientes = static_cast<int>(enteroAleatorio(rng, rangos.minClientes, rangos.maxClientes));
+    int cantidadEstaciones = static_cast<int>(enteroAleatorio(rng, rangos.minEstaciones, rangos.maxEstaciones));
+    int cantidadObstaculos = static_cast<int>(enteroAleatorio(rng, rangos.minObstaculos, rangos.maxObstaculos));
 
-    scenario.obstacles = generateObstacles(rng, obstacleCount, spec.maxPointsPerObstacle, width, height);
+    escenario.obstaculos = generarObstaculos(rng, cantidadObstaculos, rangos.maxPuntosPorObstaculo, ancho, alto);
 
-    std::set<std::pair<long long, long long>> used;
-    scenario.depot = randomFreePoint(rng, width, height, scenario.obstacles, used);
-    for (int i = 0; i < stationCount; ++i) {
-        scenario.stations.push_back(randomFreePoint(rng, width, height, scenario.obstacles, used));
+    std::set<std::pair<long long, long long>> usados;
+    escenario.base = puntoLibreAleatorio(rng, ancho, alto, escenario.obstaculos, usados);
+    for (int i = 0; i < cantidadEstaciones; ++i) {
+        escenario.estaciones.push_back(puntoLibreAleatorio(rng, ancho, alto, escenario.obstaculos, usados));
     }
-    for (int i = 0; i < clientCount; ++i) {
-        scenario.clients.push_back(randomFreePoint(rng, width, height, scenario.obstacles, used));
+    for (int i = 0; i < cantidadClientes; ++i) {
+        escenario.clientes.push_back(puntoLibreAleatorio(rng, ancho, alto, escenario.obstaculos, usados));
     }
-    return scenario;
+    return escenario;
 }
 
-std::vector<std::string> DatasetGenerator::generateBenchmarkSet(const std::string& folder, int seedsPerCategory,
-                                                                bool includeWorstCase) {
-    const DatasetCategory categories[] = {
-        DatasetCategory::SMALL, DatasetCategory::MEDIUM, DatasetCategory::LARGE, DatasetCategory::EXTREME
+std::vector<std::string> GeneradorDatasets::generarConjuntoBenchmark(const std::string& carpeta, int semillasPorCategoria,
+                                                                bool incluirPeorCaso) {
+    const Categoria categorias[] = {
+        Categoria::SMALL, Categoria::MEDIUM, Categoria::LARGE, Categoria::EXTREME
     };
-    std::vector<std::string> paths;
-    auto saveScenario = [&](const Scenario& scenario) {
-        std::string path = folder + "/" + scenario.name + ".txt";
-        ScenarioIO::save(scenario, path);
-        paths.push_back(path);
+    std::vector<std::string> rutas;
+    auto guardarEscenario = [&](const Escenario& escenario) {
+        std::string ruta = carpeta + "/" + escenario.nombre + ".txt";
+        ArchivoEscenario::guardar(escenario, ruta);
+        rutas.push_back(ruta);
     };
 
-    for (DatasetCategory category : categories) {
-        for (int seed = 1; seed <= seedsPerCategory; ++seed) {
-            saveScenario(generate(category, static_cast<uint64_t>(seed)));
+    for (Categoria categoria : categorias) {
+        for (int semilla = 1; semilla <= semillasPorCategoria; ++semilla) {
+            guardarEscenario(generar(categoria, static_cast<uint64_t>(semilla)));
         }
     }
-    if (includeWorstCase) {
-        Scenario worst = generateLayout(worstCaseSpecFor(DatasetCategory::EXTREME), DatasetCategory::EXTREME, 1);
-        worst.name = "extreme_max";
-        worst.battery = batteryFor(worst);
-        saveScenario(worst);
+    if (incluirPeorCaso) {
+        Escenario peor = generarGeometria(rangosPeorCaso(Categoria::EXTREME), Categoria::EXTREME, 1);
+        peor.nombre = "extreme_max";
+        peor.bateria = bateriaPara(peor);
+        guardarEscenario(peor);
     }
-    return paths;
+    return rutas;
 }
 
 } // namespace geodrone
