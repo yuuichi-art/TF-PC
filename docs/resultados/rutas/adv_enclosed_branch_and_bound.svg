@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840.00" height="894.00" viewBox="0 0 840.00 894.00">
+<rect width="840.00" height="894.00" fill="#ffffff"/>
+<text x="20.00" y="26" font-family="sans-serif" font-size="15" fill="#111827"><tspan font-weight="bold">adv_enclosed</tspan>  branch_and_bound  |  costo 293.42  |  recargas 0  |  excluidos 1</text>
+<rect class="area" x="20.00" y="40.00" width="800.00" height="800.00" fill="#f9fafb" stroke="#d1d5db"/>
+<polygon class="obstacle" points="260.00,600.00 340.00,600.00 340.00,280.00 260.00,280.00" fill="#9ca3af" fill-opacity="0.6" stroke="#4b5563" stroke-width="1"/>
+<polygon class="obstacle" points="500.00,600.00 580.00,600.00 580.00,280.00 500.00,280.00" fill="#9ca3af" fill-opacity="0.6" stroke="#4b5563" stroke-width="1"/>
+<polygon class="obstacle" points="220.00,640.00 620.00,640.00 620.00,560.00 220.00,560.00" fill="#9ca3af" fill-opacity="0.6" stroke="#4b5563" stroke-width="1"/>
+<polygon class="obstacle" points="220.00,320.00 620.00,320.00 620.00,240.00 220.00,240.00" fill="#9ca3af" fill-opacity="0.6" stroke="#4b5563" stroke-width="1"/>
+<polyline class="route" points="100.00,760.00 740.00,760.00 740.00,120.00 620.00,640.00 100.00,760.00" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
+<path class="excluded" d="M415.00,435.00 L425.00,445.00 M415.00,445.00 L425.00,435.00" stroke="#dc2626" stroke-width="2"/>
+<text x="426.00" y="434.00" font-family="sans-serif" font-size="10" fill="#374151">C1</text>
+<circle class="client" cx="740.00" cy="120.00" r="4.00" fill="#111827"/>
+<text x="746.00" y="114.00" font-family="sans-serif" font-size="10" fill="#374151">C2</text>
+<circle class="client" cx="740.00" cy="760.00" r="4.00" fill="#111827"/>
+<text x="746.00" y="754.00" font-family="sans-serif" font-size="10" fill="#374151">C3</text>
+<polygon class="station" points="100.00,111.60 93.00,124.90 107.00,124.90" fill="#16a34a"/>
+<text x="106.00" y="114.00" font-family="sans-serif" font-size="10" fill="#374151">S1</text>
+<rect class="depot" x="94.00" y="754.00" width="12" height="12" fill="#dc2626"/>
+<text x="106.00" y="754.00" font-family="sans-serif" font-size="10" fill="#374151">D0</text>
+<rect x="15.00" y="875.00" width="10" height="10" fill="#dc2626"/>
+<text x="34.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Base</text>
+<polygon  points="84.00,872.80 78.00,884.20 90.00,884.20" fill="#16a34a"/>
+<text x="98.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Estacion</text>
+<circle cx="180.00" cy="880.00" r="4" fill="#111827"/>
+<text x="194.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Cliente</text>
+<path  d="M263.00,875.00 L273.00,885.00 M263.00,885.00 L273.00,875.00" stroke="#dc2626" stroke-width="2"/>
+<text x="282.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Excluido</text>
+<line x1="357.00" y1="880.00" x2="371.00" y2="880.00" stroke="#2563eb" stroke-width="2"/>
+<text x="378.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Ruta</text>
+<rect x="422.00" y="874.00" width="12" height="12" fill="#9ca3af" stroke="#4b5563"/>
+<text x="442.00" y="884.00" font-family="sans-serif" font-size="12" fill="#374151">Obstaculo</text>
+</svg>

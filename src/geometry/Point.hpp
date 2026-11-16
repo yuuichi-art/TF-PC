@@ -4,11 +4,15 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 namespace geodrone {
 
 // Tolerancia numérica estándar para operaciones geométricas en punto flotante
 inline constexpr double EPS = 1e-9;
+
+// Distancia "infinita": no hay camino. Única definición para todo el proyecto.
+inline constexpr double INF = std::numeric_limits<double>::infinity();
 
 /**
  * @brief Estructura que representa un punto o vector en el plano bidimensional R^2.
@@ -17,26 +21,25 @@ inline constexpr double EPS = 1e-9;
 struct Point {
     double x;
     double y;
-    int id; // Identificador único opcional (-1 por defecto)
 
-    constexpr Point() : x(0.0), y(0.0), id(-1) {}
-    constexpr Point(double x_, double y_, int id_ = -1) : x(x_), y(y_), id(id_) {}
+    constexpr Point() : x(0.0), y(0.0) {}
+    constexpr Point(double x_, double y_) : x(x_), y(y_) {}
 
     // Operadores vectoriales
     Point operator+(const Point& o) const {
-        return Point(x + o.x, y + o.y, id);
+        return Point(x + o.x, y + o.y);
     }
 
     Point operator-(const Point& o) const {
-        return Point(x - o.x, y - o.y, id);
+        return Point(x - o.x, y - o.y);
     }
 
     Point operator*(double k) const {
-        return Point(x * k, y * k, id);
+        return Point(x * k, y * k);
     }
 
     Point operator/(double k) const {
-        return Point(x / k, y / k, id);
+        return Point(x / k, y / k);
     }
 
     // Producto punto (dot product): x1 * x2 + y1 * y2
@@ -92,9 +95,7 @@ struct Point {
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Point& p) {
-        os << "(" << std::fixed << std::setprecision(4) << p.x << ", " << p.y;
-        if (p.id != -1) os << " [id=" << p.id << "]";
-        os << ")";
+        os << "(" << std::fixed << std::setprecision(4) << p.x << ", " << p.y << ")";
         return os;
     }
 };

@@ -131,8 +131,10 @@ bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {
 
     // 1. Si el segmento interseca propiamente (en cruz) cualquier arista del polígono,
     // forzosamente penetra o atraviesa el interior.
-    auto edges = poly.getEdges();
-    for (const auto& edge : edges) {
+    // Las aristas se arman en la pila en vez de pedir poly.getEdges(): esta función se llama
+    // millones de veces al construir el grafo y crear un vector en cada llamada era el costo dominante.
+    for (int i = 0; i < n; ++i) {
+        Segment edge(poly[i], poly[(i + 1) % n]);
         if (properIntersection(seg, edge)) {
             return true;
         }
@@ -141,8 +143,19 @@ bool segmentIntersectsPolygonInterior(const Segment& seg, const Polygon& poly) {
     // 2. Si no hay intersección propia en cruz, podría ser una cuerda interna
     // (ej. conectando dos vértices del polígono a través del interior) o un segmento
     // que toca un vértice tangencialmente.
-    // Analizamos los puntos medios muestreados a lo largo del segmento.
-    // Recolectamos todas las proyecciones t en [0, 1] donde el segmento toca vértices o aristas.
+    // Caso rápido (el más común): si ningún vértice está sobre el segmento, el segmento no
+    // cruza el borde en ningún punto interior, así que queda entero dentro o entero fuera:
+    // basta revisar su punto medio.
+    bool touchesVertex = false;
+    for (int i = 0; i < n && !touchesVertex; ++i) {
+        touchesVertex = onSegment(poly[i], seg);
+    }
+    if (!touchesVertex) {
+        return isPointStrictlyInside(seg.midpoint(), poly);
+    }
+
+    // Caso general: el segmento pasa por vértices. Recolectamos las proyecciones t en [0, 1]
+    // de esos vértices y revisamos el punto medio de cada sub-intervalo.
     std::vector<double> tSamples = {0.0, 1.0};
 
     Point dir = seg.b - seg.a;
