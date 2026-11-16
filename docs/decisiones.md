@@ -93,6 +93,10 @@ Los escenarios generados usan como batería la autonomía mínima × 1,2, redond
 - Se maneja con un menú interactivo: generar datasets, resolver un escenario, ejecutar el juez y analizar la red de recarga.
 - Se ejecuta desde la raíz del proyecto: las rutas por defecto (`data/generated/`, `output/`) son relativas a ella.
 - Con MinGW se enlaza estático, para que el `.exe` funcione en cualquier PC con Windows sin instalar MinGW.
+- Código en español, sin tildes ni ñ: `PascalCase` para tipos, `camelCase` para funciones y variables, y `MAYUSCULAS` para constantes. Los comentarios también van en español.
+  - **Términos en inglés:** se mantienen los que la guía usa en inglés (*solver*, *dataset*, *benchmark*, *ranking*, *gap*, *branch and bound*, *2-opt*) y los nombres propios (Dijkstra, Prim, Tarjan).
+  - **Formatos:** los de §6 no se traducen, porque son datos y no código.
+  - **Tabla de nombres:** está en [`glosario.md`](glosario.md); el renombrado se aplica por fases.
 - Resolver un escenario prepara una sola vez el grafo de misión y la red de recarga, y luego aplica el algoritmo elegido. El tiempo informado es preparación + resolución.
 - La búsqueda local iterada se detiene antes de llegar al 90 % del tiempo límite de la categoría, descontando la preparación.
 - Algoritmos, con el nombre que aparece en los archivos: `branch_and_bound` (solo hasta 12 clientes atendibles), `nearest_neighbor`, `mst_approximation`, `nearest_neighbor_2opt`, `mst_approximation_2opt` e `iterated_local_search` (parte del vecino más cercano y usa la semilla del escenario).
