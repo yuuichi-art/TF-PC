@@ -143,51 +143,51 @@ void solveScenario() {
     Escenario escenario = ArchivoEscenario::cargar(path);
     printScenarioSummary(escenario);
 
-    MissionSolver solver(escenario);
+    SolverMision solver(escenario);
     std::cout << std::fixed << std::setprecision(2)
-              << "  Grafo de mision y red de recarga listos en " << solver.preparationMs() << " ms\n";
+              << "  Grafo de mision y red de recarga listos en " << solver.preparacionMs() << " ms\n";
 
     // Opciones 1..count; el exacto solo está disponible con pocos clientes atendibles.
-    const std::vector<Algorithm>& algorithms = allAlgorithms();
+    const std::vector<Algoritmo>& algorithms = todosLosAlgoritmos();
     int count = static_cast<int>(algorithms.size());
     auto available = [&](int option) {
-        return algorithms[option - 1] != Algorithm::BRANCH_AND_BOUND || solver.supportsExact();
+        return algorithms[option - 1] != Algoritmo::BRANCH_AND_BOUND || solver.admiteExacto();
     };
     for (int option = 1; option <= count; ++option) {
-        std::cout << "  " << option << ". " << algorithmName(algorithms[option - 1])
+        std::cout << "  " << option << ". " << nombreAlgoritmo(algorithms[option - 1])
                   << (available(option) ? "" : "  (no disponible: demasiados clientes para el exacto)") << '\n';
     }
     // El valor por defecto siempre está disponible (el exacto o la búsqueda local iterada), así que el
     // bucle termina aunque se cierre la entrada: askNumber devuelve entonces ese valor.
-    int defaultChoice = solver.supportsExact() ? 1 : count;
+    int defaultChoice = solver.admiteExacto() ? 1 : count;
     int choice = askNumber("Algoritmo", defaultChoice, 1, count);
     while (!available(choice)) {
         std::cout << "  El exacto no esta disponible para este escenario.\n";
         choice = askNumber("Algoritmo", defaultChoice, 1, count);
     }
 
-    Route route = solver.solve(algorithms[choice - 1]);
+    Ruta ruta = solver.resolver(algorithms[choice - 1]);
     LimitesCategoria limits = limitesDe(escenario.categoria);
 
-    std::cout << "\n  Algoritmo:  " << route.algorithm << "\n";
-    std::cout << "  Estado:     " << (route.feasible ? "OK" : "INFACTIBLE") << "\n";
-    std::cout << std::setprecision(2) << "  Costo:      " << route.costo << " (distancia volada, con recargas)\n";
-    std::cout << "  Recargas:   " << route.recharges << "\n";
-    std::cout << "  Excluidos:  " << route.excluded.size();
-    for (const ExcludedClient& client : route.excluded) std::cout << "  " << client.etiqueta << " (" << client.reason << ")";
+    std::cout << "\n  Algoritmo:  " << ruta.algoritmo << "\n";
+    std::cout << "  Estado:     " << (ruta.factible ? "OK" : "INFACTIBLE") << "\n";
+    std::cout << std::setprecision(2) << "  Costo:      " << ruta.costo << " (distancia volada, con recargas)\n";
+    std::cout << "  Recargas:   " << ruta.recargas << "\n";
+    std::cout << "  Excluidos:  " << ruta.excluidos.size();
+    for (const ClienteExcluido& client : ruta.excluidos) std::cout << "  " << client.etiqueta << " (" << client.motivo << ")";
     std::cout << '\n';
-    std::cout << "  Tiempo:     " << route.totalMs() << " ms = " << route.preparationMs << " de preparacion + "
-              << route.solveMs << " de resolucion (limite " << static_cast<int>(limits.limiteTiempoSegundos * 1000)
+    std::cout << "  Tiempo:     " << ruta.totalMs() << " ms = " << ruta.preparacionMs << " de preparacion + "
+              << ruta.resolucionMs << " de resolucion (limite " << static_cast<int>(limits.limiteTiempoSegundos * 1000)
               << " ms)\n";
     std::cout << "  Memoria:    " << peakMemoryMB() << " MB pico del proceso (limite "
               << static_cast<int>(limits.limiteMemoriaMB) << " MB)\n";
     std::cout << "  Orden:     ";
-    printLabels(route.order);
+    printLabels(ruta.orden);
 
-    std::string output = "output/" + route.escenario + "_" + route.algorithm;
-    Exporter::saveRoute(route, output + ".txt");
-    Exporter::saveSvg(escenario, route, output + ".svg");
-    std::cout << "  Ruta completa (" << route.path.size() << " puntos) exportada en " << output << ".txt\n"
+    std::string output = "output/" + ruta.escenario + "_" + ruta.algoritmo;
+    Exporter::saveRoute(ruta, output + ".txt");
+    Exporter::saveSvg(escenario, ruta, output + ".svg");
+    std::cout << "  Ruta completa (" << ruta.trayectoria.size() << " puntos) exportada en " << output << ".txt\n"
               << "  Dibujo de la ruta en " << output << ".svg (se abre con cualquier navegador)\n";
 }
 
@@ -203,7 +203,7 @@ void printRanking(const std::vector<RankingRow>& ranking) {
             std::cout << "\n  " << nombreCategoria(row.categoria) << "\n"
                       << "    #  algoritmo                 OK/casos   gap medio   tiempo medio\n";
         }
-        std::cout << "    " << row.position << "  " << std::left << std::setw(26) << row.algorithm << std::right
+        std::cout << "    " << row.position << "  " << std::left << std::setw(26) << row.algoritmo << std::right
                   << std::setw(3) << row.okCases << "/" << std::left << std::setw(6) << row.cases << std::right
                   << std::fixed << std::setprecision(2) << std::setw(8) << row.meanGap << " %"
                   << std::setw(12) << row.meanTimeMs << " ms\n";
@@ -263,7 +263,7 @@ void analyzeNetwork() {
     printScenarioSummary(escenario);
 
     // El solver prepara el grafo de misión y la red de recarga, y clasifica a los excluidos.
-    MissionSolver solver(escenario);
+    SolverMision solver(escenario);
     const GrafoMision& mision = solver.mision();
     const RedRecarga& red = solver.red();
     std::cout << std::fixed << std::setprecision(2);
@@ -308,8 +308,8 @@ void analyzeNetwork() {
               << " (el escenario tiene " << escenario.bateria << ")\n";
 
     std::vector<std::string> byObstacles, byBattery;
-    for (const ExcludedClient& client : solver.excluded()) {
-        if (client.reason == "OBSTACLES") {
+    for (const ClienteExcluido& client : solver.excluidos()) {
+        if (client.motivo == "OBSTACLES") {
             byObstacles.push_back(client.etiqueta);
         } else {
             byBattery.push_back(client.etiqueta);

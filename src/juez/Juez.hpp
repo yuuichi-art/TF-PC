@@ -26,12 +26,12 @@ struct JudgeRow {
     std::string escenario;
     Categoria categoria = Categoria::SMALL;
     int clientes = 0;                // Clientes del escenario, incluidos los excluidos
-    std::string algorithm;
+    std::string algoritmo;
     std::string verdict;            // OK, WA, TLE o MLE
     std::string problem;            // Motivo del WA (se muestra en consola, no va al CSV)
     double costo = 0.0;
-    int recharges = 0;
-    int excluded = 0;
+    int recargas = 0;
+    int excluidos = 0;
     double timeMs = 0.0;            // Preparación + resolución
     double memoryMB = 0.0;          // Memoria pico del proceso al terminar el caso
     double gapBest = 0.0;           // % sobre la mejor ruta OK del caso; solo con veredicto OK
@@ -44,7 +44,7 @@ struct JudgeRow {
 struct RankingRow {
     Categoria categoria = Categoria::SMALL;
     int position = 0;
-    std::string algorithm;
+    std::string algoritmo;
     int okCases = 0;
     int cases = 0;
     double meanGap = 0.0;           // Promedio de gapBest en los casos OK
@@ -68,7 +68,7 @@ namespace Judge {
      * - el costo, las recargas y el orden informados coinciden con la trayectoria.
      * Complejidad: O(P · M) con P puntos de la trayectoria y M aristas de obstáculos.
      */
-    VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& solver, const Route& route);
+    VerificationResult verifyRoute(const Escenario& escenario, const SolverMision& solver, const Ruta& ruta);
 
     /**
      * @brief Veredicto: WA si la ruta no es válida; si es válida, TLE si excede el tiempo,

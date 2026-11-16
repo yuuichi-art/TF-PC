@@ -22,46 +22,46 @@
 
 using namespace geodrone;
 
-const double TOLERANCE = 1e-6;
+const double TOLERANCIA = 1e-6;
 
-bool isRechargeLabel(const std::string& etiqueta) { return etiqueta[0] == 'D' || etiqueta[0] == 'S'; }
+bool esEtiquetaRecarga(const std::string& etiqueta) { return etiqueta[0] == 'D' || etiqueta[0] == 'S'; }
 
 // Verificación independiente del solver, solo con la ruta y el escenario: lo mismo que hará el juez.
-void assertValidRoute(const Escenario& s, const Route& route, size_t expectedClients) {
-    assert(route.feasible);
-    assert(!route.path.empty() && route.path.front().etiqueta == "D0" && route.path.back().etiqueta == "D0");
-    assert(route.order.front() == "D0" && route.order.back() == "D0");
-    assert(route.preparationMs >= 0 && route.solveMs >= 0);
+void verificarRutaValida(const Escenario& s, const Ruta& ruta, size_t clientesEsperados) {
+    assert(ruta.factible);
+    assert(!ruta.trayectoria.empty() && ruta.trayectoria.front().etiqueta == "D0" && ruta.trayectoria.back().etiqueta == "D0");
+    assert(ruta.orden.front() == "D0" && ruta.orden.back() == "D0");
+    assert(ruta.preparacionMs >= 0 && ruta.resolucionMs >= 0);
 
     double bateria = s.bateria;
-    double length = 0.0;
-    int recharges = 0;
-    std::set<std::string> visited;
-    std::vector<std::string> keyLabels = {route.path.front().etiqueta};
-    for (size_t i = 1; i < route.path.size(); ++i) {
-        Segmento leg(route.path[i - 1].point, route.path[i].point);
-        assert(Geometria::tramoLibre(leg, s.obstaculos));   // Ningún tramo cruza un obstáculo
-        length += leg.longitud();
-        bateria -= leg.longitud();
-        assert(bateria >= -TOLERANCE);                                 // La batería nunca baja de 0
+    double longitud = 0.0;
+    int recargas = 0;
+    std::set<std::string> visitados;
+    std::vector<std::string> etiquetasClave = {ruta.trayectoria.front().etiqueta};
+    for (size_t i = 1; i < ruta.trayectoria.size(); ++i) {
+        Segmento tramo(ruta.trayectoria[i - 1].punto, ruta.trayectoria[i].punto);
+        assert(Geometria::tramoLibre(tramo, s.obstaculos));   // Ningún tramo cruza un obstáculo
+        longitud += tramo.longitud();
+        bateria -= tramo.longitud();
+        assert(bateria >= -TOLERANCIA);                                 // La batería nunca baja de 0
 
-        const std::string& etiqueta = route.path[i].etiqueta;
+        const std::string& etiqueta = ruta.trayectoria[i].etiqueta;
         if (etiqueta == "V") continue;
-        keyLabels.push_back(etiqueta);
-        if (isRechargeLabel(etiqueta)) {
+        etiquetasClave.push_back(etiqueta);
+        if (esEtiquetaRecarga(etiqueta)) {
             bateria = s.bateria;
-            if (i + 1 < route.path.size()) ++recharges;
+            if (i + 1 < ruta.trayectoria.size()) ++recargas;
         } else {
-            assert(visited.insert(etiqueta).second);                      // Cada cliente una sola vez
+            assert(visitados.insert(etiqueta).second);                      // Cada cliente una sola vez
         }
     }
-    assert(std::abs(length - route.costo) < TOLERANCE);
-    assert(recharges == route.recharges);
-    assert(visited.size() == expectedClients);
-    assert(keyLabels == route.order);                                  // La trayectoria sigue el orden
+    assert(std::abs(longitud - ruta.costo) < TOLERANCIA);
+    assert(recargas == ruta.recargas);
+    assert(visitados.size() == clientesEsperados);
+    assert(etiquetasClave == ruta.orden);                                  // La trayectoria sigue el orden
 }
 
-Escenario handScenario() {
+Escenario escenarioAMano() {
     // Base (0,0), estación (10,0), cliente (10,6), batería 12: la ruta óptima es
     // D0 -> S1 -> C1 -> S1 -> D0 = 32, con dos recargas (calculada a mano en prueba_red).
     Escenario s;
@@ -74,19 +74,19 @@ Escenario handScenario() {
     return s;
 }
 
-void testHandRouteAndExport() {
+void probarRutaAManoYExportacion() {
     std::cout << "[TEST] 1. Ruta calculada a mano y su archivo exportado..." << std::endl;
 
-    Escenario s = handScenario();
-    MissionSolver solver(s);
-    Route route = solver.solve(Algorithm::BRANCH_AND_BOUND);
-    assertValidRoute(s, route, 1);
-    assert(route.order == std::vector<std::string>({"D0", "S1", "C1", "S1", "D0"}));
-    assert(std::abs(route.costo - 32.0) < TOLERANCE && route.recharges == 2);
+    Escenario s = escenarioAMano();
+    SolverMision solver(s);
+    Ruta ruta = solver.resolver(Algoritmo::BRANCH_AND_BOUND);
+    verificarRutaValida(s, ruta, 1);
+    assert(ruta.orden == std::vector<std::string>({"D0", "S1", "C1", "S1", "D0"}));
+    assert(std::abs(ruta.costo - 32.0) < TOLERANCIA && ruta.recargas == 2);
 
-    std::ostringstream out;
-    Exporter::writeRoute(route, out);
-    const std::string expected =
+    std::ostringstream salida;
+    Exporter::writeRoute(ruta, salida);
+    const std::string esperado =
         "SCENARIO hand\n"
         "ALGORITHM branch_and_bound\n"
         "STATUS OK\n"
@@ -101,154 +101,154 @@ void testHandRouteAndExport() {
         "10 6 C1\n"
         "10 0 S1\n"
         "0 0 D0\n";
-    assert(out.str() == expected);
+    assert(salida.str() == esperado);
 
     // saveRoute crea la carpeta y escribe lo mismo.
-    const std::string folder = "tmp_test_mission";
-    std::filesystem::remove_all(folder);
-    Exporter::saveRoute(route, folder + "/ruta.txt");
-    std::ifstream file(folder + "/ruta.txt");
-    std::stringstream content;
-    content << file.rdbuf();
-    file.close();
-    assert(content.str() == expected);
-    std::filesystem::remove_all(folder);
+    const std::string carpeta = "tmp_test_mission";
+    std::filesystem::remove_all(carpeta);
+    Exporter::saveRoute(ruta, carpeta + "/ruta.txt");
+    std::ifstream archivo(carpeta + "/ruta.txt");
+    std::stringstream contenido;
+    contenido << archivo.rdbuf();
+    archivo.close();
+    assert(contenido.str() == esperado);
+    std::filesystem::remove_all(carpeta);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testAllAlgorithmsProduceValidRoutes(const std::string& folder) {
+void probarTodosDanRutasValidas(const std::string& carpeta) {
     std::cout << "[TEST] 2. Todos los algoritmos dan rutas validas (adversariales y generados)..." << std::endl;
 
-    std::vector<Escenario> scenarios;
+    std::vector<Escenario> escenarios;
     for (const char* nombre : {"adv_collinear", "adv_enclosed", "adv_corridor", "adv_concave_trap",
                              "adv_unreachable_battery"}) {
-        scenarios.push_back(ArchivoEscenario::cargar(folder + "/" + nombre + ".txt"));
+        escenarios.push_back(ArchivoEscenario::cargar(carpeta + "/" + nombre + ".txt"));
     }
     for (uint64_t semilla = 1; semilla <= 2; ++semilla) {
-        scenarios.push_back(GeneradorDatasets::generar(Categoria::SMALL, semilla));
-        scenarios.push_back(GeneradorDatasets::generar(Categoria::MEDIUM, semilla));
+        escenarios.push_back(GeneradorDatasets::generar(Categoria::SMALL, semilla));
+        escenarios.push_back(GeneradorDatasets::generar(Categoria::MEDIUM, semilla));
     }
 
-    for (const Escenario& s : scenarios) {
-        MissionSolver solver(s);
-        assert(solver.servableClients().size() + solver.excluded().size() == static_cast<size_t>(s.numClientes()));
-        for (Algorithm algorithm : allAlgorithms()) {
-            if (algorithm == Algorithm::BRANCH_AND_BOUND && !solver.supportsExact()) continue;
-            Route route = solver.solve(algorithm);
-            assert(route.algorithm == algorithmName(algorithm) && route.escenario == s.nombre);
-            assertValidRoute(s, route, solver.servableClients().size());
+    for (const Escenario& s : escenarios) {
+        SolverMision solver(s);
+        assert(solver.clientesAtendibles().size() + solver.excluidos().size() == static_cast<size_t>(s.numClientes()));
+        for (Algoritmo algoritmo : todosLosAlgoritmos()) {
+            if (algoritmo == Algoritmo::BRANCH_AND_BOUND && !solver.admiteExacto()) continue;
+            Ruta ruta = solver.resolver(algoritmo);
+            assert(ruta.algoritmo == nombreAlgoritmo(algoritmo) && ruta.escenario == s.nombre);
+            verificarRutaValida(s, ruta, solver.clientesAtendibles().size());
         }
     }
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testExclusions(const std::string& folder) {
+void probarExclusiones(const std::string& carpeta) {
     std::cout << "[TEST] 3. Clientes excluidos por obstaculos y por bateria..." << std::endl;
 
-    Escenario enclosed = ArchivoEscenario::cargar(folder + "/adv_enclosed.txt");
-    MissionSolver enclosedSolver(enclosed);
-    assert(enclosedSolver.excluded().size() == 1);
-    assert(enclosedSolver.excluded()[0].etiqueta == "C1" && enclosedSolver.excluded()[0].reason == "OBSTACLES");
-    assertValidRoute(enclosed, enclosedSolver.solve(Algorithm::BRANCH_AND_BOUND), 2);
+    Escenario encerrado = ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt");
+    SolverMision solverEncerrado(encerrado);
+    assert(solverEncerrado.excluidos().size() == 1);
+    assert(solverEncerrado.excluidos()[0].etiqueta == "C1" && solverEncerrado.excluidos()[0].motivo == "OBSTACLES");
+    verificarRutaValida(encerrado, solverEncerrado.resolver(Algoritmo::BRANCH_AND_BOUND), 2);
 
-    Escenario bateria = ArchivoEscenario::cargar(folder + "/adv_unreachable_battery.txt");
-    MissionSolver batterySolver(bateria);
-    assert(batterySolver.excluded().size() == 1);
-    assert(batterySolver.excluded()[0].etiqueta == "C4" && batterySolver.excluded()[0].reason == "BATTERY");
-    Route route = batterySolver.solve(Algorithm::ITERATED_LOCAL_SEARCH);
-    assertValidRoute(bateria, route, 3);
-    assert(route.excluded.size() == 1);
+    Escenario bateria = ArchivoEscenario::cargar(carpeta + "/adv_unreachable_battery.txt");
+    SolverMision solverBateria(bateria);
+    assert(solverBateria.excluidos().size() == 1);
+    assert(solverBateria.excluidos()[0].etiqueta == "C4" && solverBateria.excluidos()[0].motivo == "BATTERY");
+    Ruta ruta = solverBateria.resolver(Algoritmo::BUSQUEDA_LOCAL_ITERADA);
+    verificarRutaValida(bateria, ruta, 3);
+    assert(ruta.excluidos.size() == 1);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testExactAvailability() {
+void probarDisponibilidadExacto() {
     std::cout << "[TEST] 4. El exacto solo se ofrece con pocos clientes..." << std::endl;
 
-    Escenario medium = GeneradorDatasets::generar(Categoria::MEDIUM, 1);
-    assert(medium.numClientes() > ExactSolver::MAX_CLIENTS);
-    MissionSolver solver(medium);
-    assert(!solver.supportsExact());
-    bool rejected = false;
+    Escenario mediano = GeneradorDatasets::generar(Categoria::MEDIUM, 1);
+    assert(mediano.numClientes() > SolverExacto::MAX_CLIENTES);
+    SolverMision solver(mediano);
+    assert(!solver.admiteExacto());
+    bool rechazado = false;
     try {
-        solver.solve(Algorithm::BRANCH_AND_BOUND);
+        solver.resolver(Algoritmo::BRANCH_AND_BOUND);
     } catch (const std::invalid_argument&) {
-        rejected = true;
+        rechazado = true;
     }
-    assert(rejected);
+    assert(rechazado);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-void testNoClients() {
+void probarSinClientes() {
     std::cout << "[TEST] 5. Sin clientes el dron no despega..." << std::endl;
 
-    Escenario s = handScenario();
+    Escenario s = escenarioAMano();
     s.clientes.clear();
-    MissionSolver solver(s);
-    for (Algorithm algorithm : allAlgorithms()) {
-        Route route = solver.solve(algorithm);
-        assert(route.feasible && route.costo == 0.0 && route.recharges == 0);
-        assert(route.order == std::vector<std::string>{"D0"} && route.path.size() == 1);
+    SolverMision solver(s);
+    for (Algoritmo algoritmo : todosLosAlgoritmos()) {
+        Ruta ruta = solver.resolver(algoritmo);
+        assert(ruta.factible && ruta.costo == 0.0 && ruta.recargas == 0);
+        assert(ruta.orden == std::vector<std::string>{"D0"} && ruta.trayectoria.size() == 1);
     }
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-size_t countOf(const std::string& text, const std::string& fragment) {
-    size_t count = 0;
-    for (size_t pos = text.find(fragment); pos != std::string::npos; pos = text.find(fragment, pos + 1)) ++count;
-    return count;
+size_t contarApariciones(const std::string& texto, const std::string& fragmento) {
+    size_t cantidad = 0;
+    for (size_t pos = texto.find(fragmento); pos != std::string::npos; pos = texto.find(fragmento, pos + 1)) ++cantidad;
+    return cantidad;
 }
 
-std::string svgOf(const Escenario& s, const Route& route) {
-    std::ostringstream out;
-    Exporter::writeSvg(s, route, out);
-    return out.str();
+std::string svgDe(const Escenario& s, const Ruta& ruta) {
+    std::ostringstream salida;
+    Exporter::writeSvg(s, ruta, salida);
+    return salida.str();
 }
 
-void testSvg(const std::string& folder) {
+void probarSvg(const std::string& carpeta) {
     std::cout << "[TEST] 6. Dibujo SVG del escenario y la ruta..." << std::endl;
 
     // Ruta a mano: un SVG completo con un elemento de cada tipo y la trayectoria de 5 puntos.
-    Escenario hand = handScenario();
-    MissionSolver handSolver(hand);
-    std::string svg = svgOf(hand, handSolver.solve(Algorithm::BRANCH_AND_BOUND));
+    Escenario aMano = escenarioAMano();
+    SolverMision solverAMano(aMano);
+    std::string svg = svgDe(aMano, solverAMano.resolver(Algoritmo::BRANCH_AND_BOUND));
     assert(svg.rfind("<svg xmlns=\"http://www.w3.org/2000/svg\"", 0) == 0);
     assert(svg.size() >= 7 && svg.compare(svg.size() - 7, 7, "</svg>\n") == 0);
-    assert(countOf(svg, "class=\"route\"") == 1 && countOf(svg, "class=\"depot\"") == 1);
-    assert(countOf(svg, "class=\"station\"") == 1 && countOf(svg, "class=\"client\"") == 1);
-    assert(countOf(svg, "class=\"obstacle\"") == 0 && countOf(svg, "class=\"excluded\"") == 0);
-    size_t start = svg.find("points=\"", svg.find("class=\"route\"")) + 8;
-    std::string points = svg.substr(start, svg.find('"', start) - start);
-    assert(std::count(points.begin(), points.end(), ' ') + 1 == 5);
+    assert(contarApariciones(svg, "class=\"route\"") == 1 && contarApariciones(svg, "class=\"depot\"") == 1);
+    assert(contarApariciones(svg, "class=\"station\"") == 1 && contarApariciones(svg, "class=\"client\"") == 1);
+    assert(contarApariciones(svg, "class=\"obstacle\"") == 0 && contarApariciones(svg, "class=\"excluded\"") == 0);
+    size_t inicio = svg.find("points=\"", svg.find("class=\"route\"")) + 8;
+    std::string puntos = svg.substr(inicio, svg.find('"', inicio) - inicio);
+    assert(std::count(puntos.begin(), puntos.end(), ' ') + 1 == 5);
     // Área de 1000 x 1000 en 800 px (escala 0,8), margen 20 y encabezado 40: la base (0,0) queda
     // en el píxel (20, 840) y su cuadrado de 12 px empieza en (14, 834). El eje y se invierte.
     assert(svg.find("class=\"depot\" x=\"14.00\" y=\"834.00\"") != std::string::npos);
     assert(svg.find(">C1</text>") != std::string::npos && svg.find("costo 32.00") != std::string::npos);
 
     // Cliente encerrado: 4 obstáculos, el excluido como cruz y los otros dos como círculos.
-    Escenario enclosed = ArchivoEscenario::cargar(folder + "/adv_enclosed.txt");
-    MissionSolver enclosedSolver(enclosed);
-    svg = svgOf(enclosed, enclosedSolver.solve(Algorithm::BRANCH_AND_BOUND));
-    assert(countOf(svg, "class=\"obstacle\"") == 4);
-    assert(countOf(svg, "class=\"excluded\"") == 1 && countOf(svg, "class=\"client\"") == 2);
+    Escenario encerrado = ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt");
+    SolverMision solverEncerrado(encerrado);
+    svg = svgDe(encerrado, solverEncerrado.resolver(Algoritmo::BRANCH_AND_BOUND));
+    assert(contarApariciones(svg, "class=\"obstacle\"") == 4);
+    assert(contarApariciones(svg, "class=\"excluded\"") == 1 && contarApariciones(svg, "class=\"client\"") == 2);
 
     // Con más de 40 clientes se omiten las etiquetas para que el dibujo se lea.
-    Escenario large = GeneradorDatasets::generar(Categoria::LARGE, 1);
-    MissionSolver largeSolver(large);
-    svg = svgOf(large, largeSolver.solve(Algorithm::NEAREST_NEIGHBOR));
-    assert(countOf(svg, "class=\"client\"") == static_cast<size_t>(large.numClientes()));
+    Escenario grande = GeneradorDatasets::generar(Categoria::LARGE, 1);
+    SolverMision solverGrande(grande);
+    svg = svgDe(grande, solverGrande.resolver(Algoritmo::VECINO_MAS_CERCANO));
+    assert(contarApariciones(svg, "class=\"client\"") == static_cast<size_t>(grande.numClientes()));
     assert(svg.find(">C1</text>") == std::string::npos);
 
     // saveSvg crea la carpeta y el archivo.
-    const std::string folderOut = "tmp_test_svg";
-    std::filesystem::remove_all(folderOut);
-    Exporter::saveSvg(hand, handSolver.solve(Algorithm::NEAREST_NEIGHBOR), folderOut + "/ruta.svg");
-    assert(std::filesystem::file_size(folderOut + "/ruta.svg") > 500);
-    std::filesystem::remove_all(folderOut);
+    const std::string carpetaSalida = "tmp_test_svg";
+    std::filesystem::remove_all(carpetaSalida);
+    Exporter::saveSvg(aMano, solverAMano.resolver(Algoritmo::VECINO_MAS_CERCANO), carpetaSalida + "/ruta.svg");
+    assert(std::filesystem::file_size(carpetaSalida + "/ruta.svg") > 500);
+    std::filesystem::remove_all(carpetaSalida);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
@@ -258,18 +258,18 @@ int main(int argc, char* argv[]) {
     std::cin.tie(NULL);
 
     // CTest pasa la carpeta de los casos adversariales como argumento.
-    std::string adversarialFolder = argc > 1 ? argv[1] : "data/adversarial";
+    std::string carpetaAdversarial = argc > 1 ? argv[1] : "data/adversarial";
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   GEODRONE CHALLENGE - PRUEBAS DE LA MISION COMPLETA    " << std::endl;
     std::cout << "=========================================================\n" << std::endl;
 
-    testHandRouteAndExport();
-    testAllAlgorithmsProduceValidRoutes(adversarialFolder);
-    testExclusions(adversarialFolder);
-    testExactAvailability();
-    testNoClients();
-    testSvg(adversarialFolder);
+    probarRutaAManoYExportacion();
+    probarTodosDanRutasValidas(carpetaAdversarial);
+    probarExclusiones(carpetaAdversarial);
+    probarDisponibilidadExacto();
+    probarSinClientes();
+    probarSvg(carpetaAdversarial);
 
     std::cout << "=========================================================" << std::endl;
     std::cout << "   TODAS LAS PRUEBAS DE LA MISION PASARON CON EXITO      " << std::endl;

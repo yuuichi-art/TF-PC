@@ -37,15 +37,15 @@ Escenario soloGeometria(Categoria categoria, uint64_t semilla) {
 // empieza y termina en la base, visita cada cliente una vez, la batería nunca baja de 0,
 // al llegar a un cliente queda batería para su recarga más cercana, y costo y recargas cuadran.
 void verificarPlanValido(const GrafoMision& mision, const RedRecarga& red,
-                     const std::vector<int>& order, const RechargePlan& plan) {
-    assert(plan.feasible);
-    const std::vector<int>& secuencia = plan.keySequence;
+                     const std::vector<int>& orden, const PlanRecargas& plan) {
+    assert(plan.factible);
+    const std::vector<int>& secuencia = plan.secuenciaClaves;
     assert(secuencia.front() == mision.claveBase() && secuencia.back() == mision.claveBase());
 
     std::vector<int> visitados;
     double bateria = red.bateria();
     double costo = 0.0;
-    int recharges = 0;
+    int recargas = 0;
     for (size_t i = 1; i < secuencia.size(); ++i) {
         double d = mision.distancia(secuencia[i - 1], secuencia[i]);
         bateria -= d;
@@ -54,15 +54,15 @@ void verificarPlanValido(const GrafoMision& mision, const RedRecarga& red,
         bool esPuntoRecarga = secuencia[i] <= mision.numEstaciones();
         if (esPuntoRecarga) {
             bateria = red.bateria();
-            if (i + 1 < secuencia.size()) ++recharges;
+            if (i + 1 < secuencia.size()) ++recargas;
         } else {
             visitados.push_back(secuencia[i]);
             assert(bateria + TOLERANCIA >= red.distanciaARecarga(secuencia[i]));
         }
     }
-    assert(visitados == order);   // Mismos clientes, mismo orden, sin repetir
+    assert(visitados == orden);   // Mismos clientes, mismo orden, sin repetir
     assert(std::abs(costo - plan.costo) < TOLERANCIA);
-    assert(recharges == plan.recharges);
+    assert(recargas == plan.recargas);
 }
 
 void probarPrim() {
@@ -161,9 +161,9 @@ void probarAutonomiaMinimaMonotona() {
             // Recorriendo B de menor a mayor, una vez factible nunca deja de serlo.
             bool vioFactible = false;
             for (int paso = 0; paso <= 40; ++paso) {
-                bool feasible = RedRecarga::esFactible(mision, minima * 2.0 * paso / 40.0);
-                assert(!(vioFactible && !feasible));
-                vioFactible = vioFactible || feasible;
+                bool factible = RedRecarga::esFactible(mision, minima * 2.0 * paso / 40.0);
+                assert(!(vioFactible && !factible));
+                vioFactible = vioFactible || factible;
             }
         }
     }
@@ -181,19 +181,19 @@ void probarPlanificadorAMano() {
     Escenario s = crearEscenario(Punto(0, 0), {Punto(10, 0)}, {Punto(10, 6)});
     GrafoMision mision(s);
     RedRecarga red(mision, 12.0);
-    RechargePlanner planner(mision, red);
-    std::vector<int> order = {mision.claveCliente(0)};
-    RechargePlan plan = planner.plan(order);
+    PlanificadorRecargas planificador(mision, red);
+    std::vector<int> orden = {mision.claveCliente(0)};
+    PlanRecargas plan = planificador.planificar(orden);
 
-    assert(plan.keySequence == std::vector<int>({0, 1, 2, 1, 0}));
-    assert(plan.recharges == 2);
+    assert(plan.secuenciaClaves == std::vector<int>({0, 1, 2, 1, 0}));
+    assert(plan.recargas == 2);
     assert(std::abs(plan.costo - 32.0) < TOLERANCIA);
-    verificarPlanValido(mision, red, order, plan);
+    verificarPlanValido(mision, red, orden, plan);
 
     // Con batería de sobra no hace falta ninguna recarga.
     RedRecarga grande(mision, 100.0);
-    RechargePlan directo = RechargePlanner(mision, grande).plan(order);
-    assert(directo.keySequence == std::vector<int>({0, 2, 0}) && directo.recharges == 0);
+    PlanRecargas directo = PlanificadorRecargas(mision, grande).planificar(orden);
+    assert(directo.secuenciaClaves == std::vector<int>({0, 2, 0}) && directo.recargas == 0);
 
     std::cout << "  -> PASSED\n" << std::endl;
 }
@@ -210,13 +210,13 @@ void probarPlanificadorEnGenerados() {
             double minima = RedRecarga::autonomiaMinima(mision);
             for (double bateria : {minima, std::ceil(minima * 1.2)}) {
                 RedRecarga red(mision, bateria);
-                RechargePlanner planner(mision, red);
+                PlanificadorRecargas planificador(mision, red);
 
-                std::vector<int> order;
-                for (int c = 0; c < mision.numClientes(); ++c) order.push_back(mision.claveCliente(c));
+                std::vector<int> orden;
+                for (int c = 0; c < mision.numClientes(); ++c) orden.push_back(mision.claveCliente(c));
                 for (int intento = 0; intento < 3; ++intento) {
-                    std::shuffle(order.begin(), order.end(), rng);
-                    verificarPlanValido(mision, red, order, planner.plan(order));
+                    std::shuffle(orden.begin(), orden.end(), rng);
+                    verificarPlanValido(mision, red, orden, planificador.planificar(orden));
                 }
             }
         }
@@ -237,7 +237,7 @@ void probarBateriaAdversarial(const std::string& carpeta) {
     assert(!RedRecarga::esFactible(mision, s.bateria));
 
     std::vector<int> atendibles = {mision.claveCliente(0), mision.claveCliente(1), mision.claveCliente(2)};
-    verificarPlanValido(mision, red, atendibles, RechargePlanner(mision, red).plan(atendibles));
+    verificarPlanValido(mision, red, atendibles, PlanificadorRecargas(mision, red).planificar(atendibles));
 
     // El cliente encerrado no cuenta para la autonomía mínima: la separan obstáculos, no batería.
     GrafoMision encerrado(ArchivoEscenario::cargar(carpeta + "/adv_enclosed.txt"));

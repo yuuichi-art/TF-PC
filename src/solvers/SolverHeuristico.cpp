@@ -6,160 +6,160 @@
 #include <random>
 
 namespace geodrone {
-namespace HeuristicSolver {
+namespace SolverHeuristico {
 
 namespace {
 
 // Mejora mínima para aplicar un intercambio: evita ciclos infinitos por errores de redondeo.
-const double MIN_IMPROVEMENT = 1e-7;
+const double MEJORA_MINIMA = 1e-7;
 
 // Preorden del árbol: se visita un nodo y luego sus hijos, del más cercano al más lejano.
-void preorder(int node, const std::vector<std::vector<int>>& children, const std::vector<int>& nodes,
-              std::vector<int>& order) {
-    order.push_back(nodes[node]);
-    for (int child : children[node]) {
-        preorder(child, children, nodes, order);
+void preorden(int nodo, const std::vector<std::vector<int>>& hijos, const std::vector<int>& nodos,
+              std::vector<int>& orden) {
+    orden.push_back(nodos[nodo]);
+    for (int hijo : hijos[nodo]) {
+        preorden(hijo, hijos, nodos, orden);
     }
 }
 
 // Double-bridge: corta en tres puntos al azar (A | B | C | D) y arma A C B D.
-std::vector<int> doubleBridge(const std::vector<int>& order, std::mt19937_64& rng) {
-    int n = static_cast<int>(order.size());
+std::vector<int> doblePuente(const std::vector<int>& orden, std::mt19937_64& rng) {
+    int n = static_cast<int>(orden.size());
     int p1 = static_cast<int>(enteroAleatorio(rng, 1, n - 3));
     int p2 = static_cast<int>(enteroAleatorio(rng, p1 + 1, n - 2));
     int p3 = static_cast<int>(enteroAleatorio(rng, p2 + 1, n - 1));
-    std::vector<int> result(order.begin(), order.begin() + p1);                  // A
-    result.insert(result.end(), order.begin() + p2, order.begin() + p3);         // C
-    result.insert(result.end(), order.begin() + p1, order.begin() + p2);         // B
-    result.insert(result.end(), order.begin() + p3, order.end());                // D
-    return result;
+    std::vector<int> resultado(orden.begin(), orden.begin() + p1);                  // A
+    resultado.insert(resultado.end(), orden.begin() + p2, orden.begin() + p3);         // C
+    resultado.insert(resultado.end(), orden.begin() + p1, orden.begin() + p2);         // B
+    resultado.insert(resultado.end(), orden.begin() + p3, orden.end());                // D
+    return resultado;
 }
 
 } // namespace
 
-double tourCost(const std::vector<std::vector<double>>& dist, int base, const std::vector<int>& order) {
+double costoCiclo(const std::vector<std::vector<double>>& distancias, int base, const std::vector<int>& orden) {
     double costo = 0.0;
-    int position = base;
-    for (int client : order) {
-        costo += dist[position][client];
-        position = client;
+    int posicion = base;
+    for (int cliente : orden) {
+        costo += distancias[posicion][cliente];
+        posicion = cliente;
     }
-    return costo + dist[position][base];
+    return costo + distancias[posicion][base];
 }
 
-std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int base,
+std::vector<int> vecinoMasCercano(const std::vector<std::vector<double>>& distancias, int base,
                                  const std::vector<int>& clientes) {
-    std::vector<int> order;
-    std::vector<char> visited(clientes.size(), 0);
-    int position = base;
-    for (size_t step = 0; step < clientes.size(); ++step) {
-        int next = -1;
+    std::vector<int> orden;
+    std::vector<char> visitado(clientes.size(), 0);
+    int posicion = base;
+    for (size_t paso = 0; paso < clientes.size(); ++paso) {
+        int siguiente = -1;
         for (size_t i = 0; i < clientes.size(); ++i) {
-            if (visited[i]) continue;
-            if (next == -1 || dist[position][clientes[i]] < dist[position][clientes[next]]) {
-                next = static_cast<int>(i);
+            if (visitado[i]) continue;
+            if (siguiente == -1 || distancias[posicion][clientes[i]] < distancias[posicion][clientes[siguiente]]) {
+                siguiente = static_cast<int>(i);
             }
         }
-        visited[next] = 1;
-        position = clientes[next];
-        order.push_back(position);
+        visitado[siguiente] = 1;
+        posicion = clientes[siguiente];
+        orden.push_back(posicion);
     }
-    return order;
+    return orden;
 }
 
-std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int base,
+std::vector<int> dosAproximacion(const std::vector<std::vector<double>>& distancias, int base,
                                   const std::vector<int>& clientes) {
-    std::vector<int> nodes = {base};
-    nodes.insert(nodes.end(), clientes.begin(), clientes.end());
-    ArbolMinimo tree = arbolMinimoPrim(dist, nodes);
+    std::vector<int> nodos = {base};
+    nodos.insert(nodos.end(), clientes.begin(), clientes.end());
+    ArbolMinimo arbol = arbolMinimoPrim(distancias, nodos);
 
-    // Hijos de cada nodo del árbol (posiciones dentro de nodes), del más cercano al más lejano.
+    // Hijos de cada nodo del árbol (posiciones dentro de nodos), del más cercano al más lejano.
     // Un nodo sin padre solo aparece si no tiene camino (no debería pasar: los clientes deben ser
     // alcanzables); se cuelga de la raíz para no acceder fuera del vector.
-    std::vector<std::vector<int>> children(nodes.size());
-    for (size_t i = 1; i < nodes.size(); ++i) {
-        int padre = tree.padre[i] >= 0 ? tree.padre[i] : 0;
-        children[padre].push_back(static_cast<int>(i));
+    std::vector<std::vector<int>> hijos(nodos.size());
+    for (size_t i = 1; i < nodos.size(); ++i) {
+        int padre = arbol.padre[i] >= 0 ? arbol.padre[i] : 0;
+        hijos[padre].push_back(static_cast<int>(i));
     }
-    for (size_t p = 0; p < nodes.size(); ++p) {
-        std::sort(children[p].begin(), children[p].end(), [&](int a, int b) {
-            return dist[nodes[p]][nodes[a]] < dist[nodes[p]][nodes[b]];
+    for (size_t p = 0; p < nodos.size(); ++p) {
+        std::sort(hijos[p].begin(), hijos[p].end(), [&](int a, int b) {
+            return distancias[nodos[p]][nodos[a]] < distancias[nodos[p]][nodos[b]];
         });
     }
 
-    std::vector<int> order;
-    preorder(0, children, nodes, order);
-    order.erase(order.begin());   // El preorden empieza en la base; el orden lleva solo clientes
-    return order;
+    std::vector<int> orden;
+    preorden(0, hijos, nodos, orden);
+    orden.erase(orden.begin());   // El preorden empieza en la base; el orden lleva solo clientes
+    return orden;
 }
 
-bool twoOpt(const std::vector<std::vector<double>>& dist, int base, std::vector<int>& order,
-            Clock::time_point deadline) {
-    // Ruta completa con la base en ambos extremos: tour[0] = tour[n + 1] = base.
-    std::vector<int> tour = {base};
-    tour.insert(tour.end(), order.begin(), order.end());
-    tour.push_back(base);
-    int n = static_cast<int>(order.size());
+bool aplicar2Opt(const std::vector<std::vector<double>>& distancias, int base, std::vector<int>& orden,
+            Reloj::time_point limite) {
+    // Ruta completa con la base en ambos extremos: ciclo[0] = ciclo[n + 1] = base.
+    std::vector<int> ciclo = {base};
+    ciclo.insert(ciclo.end(), orden.begin(), orden.end());
+    ciclo.push_back(base);
+    int n = static_cast<int>(orden.size());
 
     // Se repiten pasadas sobre todos los pares (i, j) hasta que una pasada no mejore nada.
     // Cada mejora se aplica en el momento y la pasada sigue con la ruta ya cambiada.
-    // finished pasa a false si se acaba el tiempo: la ruta queda como esté en ese momento.
-    bool improved = true;
-    bool finished = true;
-    while (improved && finished) {
-        improved = false;
-        for (int i = 1; i < n && finished; ++i) {
-            if (Clock::now() > deadline) {
-                finished = false;
+    // terminado pasa a false si se acaba el tiempo: la ruta queda como esté en ese momento.
+    bool mejoro = true;
+    bool terminado = true;
+    while (mejoro && terminado) {
+        mejoro = false;
+        for (int i = 1; i < n && terminado; ++i) {
+            if (Reloj::now() > limite) {
+                terminado = false;
                 break;
             }
             for (int j = i + 1; j <= n; ++j) {
                 // Quitar (a,b) y (c,d); poner (a,c) y (b,d) invirtiendo el tramo b..c.
-                int a = tour[i - 1], b = tour[i], c = tour[j], d = tour[j + 1];
-                double delta = dist[a][c] + dist[b][d] - dist[a][b] - dist[c][d];
-                if (delta < -MIN_IMPROVEMENT) {
-                    std::reverse(tour.begin() + i, tour.begin() + j + 1);
-                    improved = true;
+                int a = ciclo[i - 1], b = ciclo[i], c = ciclo[j], d = ciclo[j + 1];
+                double delta = distancias[a][c] + distancias[b][d] - distancias[a][b] - distancias[c][d];
+                if (delta < -MEJORA_MINIMA) {
+                    std::reverse(ciclo.begin() + i, ciclo.begin() + j + 1);
+                    mejoro = true;
                 }
             }
         }
     }
 
-    order.assign(tour.begin() + 1, tour.end() - 1);
-    return finished;
+    orden.assign(ciclo.begin() + 1, ciclo.end() - 1);
+    return terminado;
 }
 
-IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int base,
-                              const std::vector<int>& initialOrder, uint64_t semilla,
-                              int maxIterations, Clock::time_point deadline) {
-    IlsResult result;
-    result.order = initialOrder;
-    result.stoppedByTime = !twoOpt(dist, base, result.order, deadline);
-    double bestCost = tourCost(dist, base, result.order);
+ResultadoBusquedaIterada busquedaLocalIterada(const std::vector<std::vector<double>>& distancias, int base,
+                              const std::vector<int>& ordenInicial, uint64_t semilla,
+                              int maxIteraciones, Reloj::time_point limite) {
+    ResultadoBusquedaIterada resultado;
+    resultado.orden = ordenInicial;
+    resultado.cortadaPorTiempo = !aplicar2Opt(distancias, base, resultado.orden, limite);
+    double mejorCosto = costoCiclo(distancias, base, resultado.orden);
 
     // Double-bridge necesita al menos 4 clientes para cortar la ruta en cuatro tramos.
-    if (result.order.size() < 4) return result;
+    if (resultado.orden.size() < 4) return resultado;
 
     std::mt19937_64 rng(semilla);
-    while (result.iterations < maxIterations && !result.stoppedByTime) {
-        if (Clock::now() > deadline) {
-            result.stoppedByTime = true;
+    while (resultado.iteraciones < maxIteraciones && !resultado.cortadaPorTiempo) {
+        if (Reloj::now() > limite) {
+            resultado.cortadaPorTiempo = true;
             break;
         }
-        ++result.iterations;
-        std::vector<int> candidate = doubleBridge(result.order, rng);
-        if (!twoOpt(dist, base, candidate, deadline)) {
-            result.stoppedByTime = true;   // La candidata quedó a medias: no se considera
+        ++resultado.iteraciones;
+        std::vector<int> candidato = doblePuente(resultado.orden, rng);
+        if (!aplicar2Opt(distancias, base, candidato, limite)) {
+            resultado.cortadaPorTiempo = true;   // La candidata quedó a medias: no se considera
             break;
         }
-        double costo = tourCost(dist, base, candidate);
-        if (costo < bestCost - MIN_IMPROVEMENT) {
-            result.order = std::move(candidate);
-            bestCost = costo;
+        double costo = costoCiclo(distancias, base, candidato);
+        if (costo < mejorCosto - MEJORA_MINIMA) {
+            resultado.orden = std::move(candidato);
+            mejorCosto = costo;
         }
     }
-    return result;
+    return resultado;
 }
 
-} // namespace HeuristicSolver
+} // namespace SolverHeuristico
 } // namespace geodrone

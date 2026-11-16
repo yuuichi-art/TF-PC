@@ -11,10 +11,10 @@ namespace geodrone {
 /**
  * @brief Ruta de nodos clave con las recargas ya insertadas.
  */
-struct RechargePlan {
-    bool feasible = false;
-    std::vector<int> keySequence;   // Empieza y termina en la base (clave 0)
-    int recharges = 0;              // Paradas en estaciones o en la base a mitad de ruta
+struct PlanRecargas {
+    bool factible = false;
+    std::vector<int> secuenciaClaves;   // Empieza y termina en la base (clave 0)
+    int recargas = 0;              // Paradas en estaciones o en la base a mitad de ruta
     double costo = 0.0;              // Distancia total volada, incluidos los desvíos
 };
 
@@ -38,32 +38,32 @@ struct RechargePlan {
  * Complejidad: O(N · R^2) en tiempo y O(R) en espacio extra, con N clientes y R puntos de recarga.
  * La red y el grafo de misión deben seguir existiendo mientras se use el planificador.
  */
-class RechargePlanner {
+class PlanificadorRecargas {
 public:
-    RechargePlanner(const GrafoMision& mision, const RedRecarga& red);
+    PlanificadorRecargas(const GrafoMision& mision, const RedRecarga& red);
     // Prohibido con temporales: las referencias quedarían apuntando a objetos destruidos.
-    RechargePlanner(GrafoMision&& mision, const RedRecarga& red) = delete;
-    RechargePlanner(const GrafoMision& mision, RedRecarga&& red) = delete;
+    PlanificadorRecargas(GrafoMision&& mision, const RedRecarga& red) = delete;
+    PlanificadorRecargas(const GrafoMision& mision, RedRecarga&& red) = delete;
 
-    // clientOrder: claves de los clientes en el orden de visita (sin la base).
-    RechargePlan plan(const std::vector<int>& clientOrder) const;
+    // ordenClientes: claves de los clientes en el orden de visita (sin la base).
+    PlanRecargas planificar(const std::vector<int>& ordenClientes) const;
 
 private:
     const GrafoMision& mision_;
     const RedRecarga& red_;
 
-    // Recargas a visitar desde `from` con batería `bateria` para llegar seguro a `target`.
-    // Devuelve false si no hay forma. El camino no incluye a `from` ni a `target`.
-    bool findRechargePath(int from, double bateria, int target, std::vector<int>& path) const;
+    // Recargas a visitar desde `inicio` con batería `bateria` para llegar seguro a `destino`.
+    // Devuelve false si no hay forma. El camino no incluye a `inicio` ni a `destino`.
+    bool buscarCaminoRecarga(int inicio, double bateria, int destino, std::vector<int>& camino) const;
 
     // Paso 1: Dijkstra O(R^2) sobre la red de recarga. Orígenes: los puntos que se alcanzan
-    // desde `from` con la batería actual. best[i] es la distancia hasta puntosAlcanzables()[i]
-    // y previous[i] el punto anterior en ese camino (-1 si es un origen o no se alcanza).
-    std::vector<double> networkDistances(int from, double bateria, std::vector<int>& previous) const;
+    // desde `inicio` con la batería actual. mejor[i] es la distancia hasta puntosAlcanzables()[i]
+    // y anterior[i] el punto anterior en ese camino (-1 si es un origen o no se alcanza).
+    std::vector<double> distanciasEnRed(int inicio, double bateria, std::vector<int>& anterior) const;
 
-    // Paso 2: el último punto de recarga, desde el cual `target` es seguro con batería llena,
+    // Paso 2: el último punto de recarga, desde el cual `destino` es seguro con batería llena,
     // que minimiza el total. Devuelve su posición en puntosAlcanzables() o -1.
-    int chooseLastRecharge(const std::vector<double>& best, int target) const;
+    int elegirUltimaRecarga(const std::vector<double>& mejor, int destino) const;
 };
 
 } // namespace geodrone

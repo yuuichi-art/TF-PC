@@ -17,17 +17,17 @@ namespace geodrone {
  * @brief Algoritmos que deciden el orden de visita. El nombre es el que aparece en los
  * archivos de ruta y en el CSV del juez.
  */
-enum class Algorithm {
-    BRANCH_AND_BOUND,           // Exacto, solo Small (hasta ExactSolver::MAX_CLIENTS clientes)
-    NEAREST_NEIGHBOR,
-    MST_APPROXIMATION,
-    NEAREST_NEIGHBOR_2OPT,
-    MST_APPROXIMATION_2OPT,
-    ITERATED_LOCAL_SEARCH       // Parte del vecino más cercano
+enum class Algoritmo {
+    BRANCH_AND_BOUND,           // Exacto, solo Small (hasta SolverExacto::MAX_CLIENTES clientes)
+    VECINO_MAS_CERCANO,
+    DOS_APROXIMACION,
+    VECINO_MAS_CERCANO_2OPT,
+    DOS_APROXIMACION_2OPT,
+    BUSQUEDA_LOCAL_ITERADA       // Parte del vecino más cercano
 };
 
-std::string algorithmName(Algorithm algorithm);
-const std::vector<Algorithm>& allAlgorithms();
+std::string nombreAlgoritmo(Algoritmo algoritmo);
+const std::vector<Algoritmo>& todosLosAlgoritmos();
 
 /**
  * @brief Resuelve un escenario completo:
@@ -41,43 +41,43 @@ const std::vector<Algorithm>& allAlgorithms();
  *
  * Guarda el grafo y la red como miembros, que se referencian entre sí: no se puede copiar.
  */
-class MissionSolver {
+class SolverMision {
 public:
-    explicit MissionSolver(const Escenario& escenario);
-    MissionSolver(const MissionSolver&) = delete;
-    MissionSolver& operator=(const MissionSolver&) = delete;
+    explicit SolverMision(const Escenario& escenario);
+    SolverMision(const SolverMision&) = delete;
+    SolverMision& operator=(const SolverMision&) = delete;
 
     // El exacto solo se puede usar con pocos clientes atendibles.
-    bool supportsExact() const;
+    bool admiteExacto() const;
 
     /**
      * @brief Resuelve con el algoritmo dado. La búsqueda local iterada se detiene antes de llegar
      * al 90 % del tiempo límite de la categoría, descontando la preparación.
-     * Lanza std::invalid_argument si se pide el exacto y supportsExact() es false.
+     * Lanza std::invalid_argument si se pide el exacto y admiteExacto() es false.
      */
-    Route solve(Algorithm algorithm) const;
+    Ruta resolver(Algoritmo algoritmo) const;
 
     const GrafoMision& mision() const { return mision_; }
     const RedRecarga& red() const { return red_; }
-    const std::vector<ExcludedClient>& excluded() const { return excluded_; }
-    const std::vector<int>& servableClients() const { return servable_; }   // Claves
-    double preparationMs() const { return preparationMs_; }
+    const std::vector<ClienteExcluido>& excluidos() const { return excluidos_; }
+    const std::vector<int>& clientesAtendibles() const { return atendibles_; }   // Claves
+    double preparacionMs() const { return preparacionMs_; }
 
 private:
-    std::string name_;
-    uint64_t seed_;
-    double timeLimitSeconds_;
-    double preparationMs_ = 0.0;
+    std::string nombre_;
+    uint64_t semilla_;
+    double limiteTiempoSegundos_;
+    double preparacionMs_ = 0.0;
     // Los miembros se construyen en el orden en que se declaran: este va antes que el grafo
     // para que la medición de la preparación lo incluya.
-    std::chrono::steady_clock::time_point constructionStart_;
+    std::chrono::steady_clock::time_point inicioConstruccion_;
     GrafoMision mision_;
     RedRecarga red_;              // Referencia a mision_: se declara después
-    std::vector<int> servable_;
-    std::vector<ExcludedClient> excluded_;
+    std::vector<int> atendibles_;
+    std::vector<ClienteExcluido> excluidos_;
 
-    std::vector<int> chooseOrder(Algorithm algorithm) const;
-    std::vector<RoutePoint> expandPath(const std::vector<int>& keySequence) const;
+    std::vector<int> elegirOrden(Algoritmo algoritmo) const;
+    std::vector<PuntoRuta> expandirTrayectoria(const std::vector<int>& secuenciaClaves) const;
 };
 
 } // namespace geodrone

@@ -17,26 +17,26 @@ namespace geodrone {
  * - Constructivas: vecino más cercano (greedy) y 2-aproximación por árbol de expansión mínima.
  * - Mejora: 2-opt y búsqueda local iterada (aleatoria, con semilla).
  */
-namespace HeuristicSolver {
+namespace SolverHeuristico {
 
-    using Clock = std::chrono::steady_clock;
+    using Reloj = std::chrono::steady_clock;
 
     // Sin límite de tiempo.
-    inline Clock::time_point noDeadline() { return Clock::time_point::max(); }
+    inline Reloj::time_point sinLimite() { return Reloj::time_point::max(); }
 
     // Iteraciones por defecto de la búsqueda local iterada (fijas, para que sea reproducible).
-    inline constexpr int DEFAULT_ILS_ITERATIONS = 200;
+    inline constexpr int ITERACIONES_POR_DEFECTO = 200;
 
     /**
      * @brief Costo del ciclo base -> clientes en ese orden -> base. O(n).
      */
-    double tourCost(const std::vector<std::vector<double>>& dist, int base, const std::vector<int>& order);
+    double costoCiclo(const std::vector<std::vector<double>>& distancias, int base, const std::vector<int>& orden);
 
     /**
      * @brief Vecino más cercano (greedy): desde la base, ir siempre al cliente pendiente más cercano.
      * Rápido pero sin garantía de calidad. Complejidad: O(n^2) en tiempo, O(n) en espacio.
      */
-    std::vector<int> nearestNeighbor(const std::vector<std::vector<double>>& dist, int base,
+    std::vector<int> vecinoMasCercano(const std::vector<std::vector<double>>& distancias, int base,
                                      const std::vector<int>& clientes);
 
     /**
@@ -49,7 +49,7 @@ namespace HeuristicSolver {
      * arista, es un árbol, así que cuesta al menos lo que el árbol mínimo.
      * Complejidad: O(n^2) en tiempo (Prim sobre matriz) y O(n) en espacio.
      */
-    std::vector<int> mstApproximation(const std::vector<std::vector<double>>& dist, int base,
+    std::vector<int> dosAproximacion(const std::vector<std::vector<double>>& distancias, int base,
                                       const std::vector<int>& clientes);
 
     /**
@@ -60,13 +60,13 @@ namespace HeuristicSolver {
      * depende de la ruta inicial. Espacio O(n).
      * @return false si se detuvo por el límite de tiempo antes del óptimo local.
      */
-    bool twoOpt(const std::vector<std::vector<double>>& dist, int base, std::vector<int>& order,
-                Clock::time_point deadline = noDeadline());
+    bool aplicar2Opt(const std::vector<std::vector<double>>& distancias, int base, std::vector<int>& orden,
+                Reloj::time_point limite = sinLimite());
 
-    struct IlsResult {
-        std::vector<int> order;
-        int iterations = 0;          // Iteraciones realizadas
-        bool stoppedByTime = false;
+    struct ResultadoBusquedaIterada {
+        std::vector<int> orden;
+        int iteraciones = 0;          // Iteraciones realizadas
+        bool cortadaPorTiempo = false;
     };
 
     /**
@@ -79,12 +79,12 @@ namespace HeuristicSolver {
      * el límite de tiempo la corte antes.
      * Complejidad: O(iteraciones · costo de 2-opt). Espacio O(n).
      */
-    IlsResult iteratedLocalSearch(const std::vector<std::vector<double>>& dist, int base,
-                                  const std::vector<int>& initialOrder, uint64_t semilla,
-                                  int maxIterations = DEFAULT_ILS_ITERATIONS,
-                                  Clock::time_point deadline = noDeadline());
+    ResultadoBusquedaIterada busquedaLocalIterada(const std::vector<std::vector<double>>& distancias, int base,
+                                  const std::vector<int>& ordenInicial, uint64_t semilla,
+                                  int maxIteraciones = ITERACIONES_POR_DEFECTO,
+                                  Reloj::time_point limite = sinLimite());
 
-} // namespace HeuristicSolver
+} // namespace SolverHeuristico
 
 } // namespace geodrone
 

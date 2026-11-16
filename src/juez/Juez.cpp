@@ -54,11 +54,11 @@ double percentOver(double value, double reference) {
 }
 
 // Una exclusión es real si el grafo de misión la confirma.
-bool exclusionIsGenuine(const MissionSolver& solver, int clientIndex, const std::string& reason) {
+bool exclusionIsGenuine(const SolverMision& solver, int clientIndex, const std::string& motivo) {
     int key = solver.mision().claveCliente(clientIndex);
     bool connected = solver.mision().conectadoABase(key);
-    if (reason == "OBSTACLES") return !connected;
-    if (reason == "BATTERY") return connected && !solver.red().puedeAtender(key);
+    if (motivo == "OBSTACLES") return !connected;
+    if (motivo == "BATTERY") return connected && !solver.red().puedeAtender(key);
     return false;
 }
 
@@ -69,33 +69,33 @@ int sizeOf(const Escenario& s) {
 
 } // namespace
 
-VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& solver, const Route& route) {
-    if (!route.feasible) return fail("el solver no encontro una ruta factible");
-    if (route.path.empty()) return fail("la trayectoria esta vacia");
-    if (route.path.front().etiqueta != "D0" || route.path.back().etiqueta != "D0") {
+VerificationResult verifyRoute(const Escenario& escenario, const SolverMision& solver, const Ruta& ruta) {
+    if (!ruta.factible) return fail("el solver no encontro una ruta factible");
+    if (ruta.trayectoria.empty()) return fail("la trayectoria esta vacia");
+    if (ruta.trayectoria.front().etiqueta != "D0" || ruta.trayectoria.back().etiqueta != "D0") {
         return fail("la ruta no empieza y termina en la base");
     }
 
     double bateria = escenario.bateria;
     double length = 0.0;
-    int recharges = 0;
+    int recargas = 0;
     std::vector<int> visits(escenario.numClientes(), 0);
     std::vector<std::string> keyLabels;     // Nodos clave de la trayectoria, para compararlos con ORDER
 
-    for (size_t i = 0; i < route.path.size(); ++i) {
-        const RoutePoint& p = route.path[i];
+    for (size_t i = 0; i < ruta.trayectoria.size(); ++i) {
+        const PuntoRuta& p = ruta.trayectoria[i];
         char tipo = 'V';
         int number = 0;
         if (p.etiqueta != "V") {
             if (!parseLabel(escenario, p.etiqueta, tipo, number)) return fail("etiqueta desconocida '" + p.etiqueta + "'");
-            if (p.point != pointOf(escenario, tipo, number)) {
+            if (p.punto != pointOf(escenario, tipo, number)) {
                 return fail(p.etiqueta + " no esta en las coordenadas del escenario");
             }
             keyLabels.push_back(p.etiqueta);
         }
         if (i == 0) continue;
 
-        Segmento leg(route.path[i - 1].point, p.point);
+        Segmento leg(ruta.trayectoria[i - 1].punto, p.punto);
         if (!Geometria::tramoLibre(leg, escenario.obstaculos)) {
             return fail("el tramo " + std::to_string(i) + " (hacia " + p.etiqueta + ") cruza un obstaculo");
         }
@@ -109,34 +109,34 @@ VerificationResult verifyRoute(const Escenario& escenario, const MissionSolver& 
         // cuenta como recarga, porque ahí termina la misión.
         if (tipo == 'D' || tipo == 'S') {
             bateria = escenario.bateria;
-            if (i + 1 < route.path.size()) ++recharges;
+            if (i + 1 < ruta.trayectoria.size()) ++recargas;
         } else if (tipo == 'C' && ++visits[number - 1] > 1) {
             return fail(p.etiqueta + " se visita mas de una vez");
         }
     }
 
-    std::vector<char> excluded(escenario.numClientes(), 0);
-    for (const ExcludedClient& client : route.excluded) {
+    std::vector<char> excluidos(escenario.numClientes(), 0);
+    for (const ClienteExcluido& client : ruta.excluidos) {
         char tipo = 'V';
         int number = 0;
         if (!parseLabel(escenario, client.etiqueta, tipo, number) || tipo != 'C') {
             return fail("excluido desconocido '" + client.etiqueta + "'");
         }
         if (visits[number - 1] > 0) return fail(client.etiqueta + " esta excluido y tambien se visita");
-        if (!exclusionIsGenuine(solver, number - 1, client.reason)) {
-            return fail(client.etiqueta + " se excluyo por " + client.reason + " pero se puede atender");
+        if (!exclusionIsGenuine(solver, number - 1, client.motivo)) {
+            return fail(client.etiqueta + " se excluyo por " + client.motivo + " pero se puede atender");
         }
-        excluded[number - 1] = 1;
+        excluidos[number - 1] = 1;
     }
     for (int c = 0; c < escenario.numClientes(); ++c) {
-        if (visits[c] == 0 && !excluded[c]) return fail("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
+        if (visits[c] == 0 && !excluidos[c]) return fail("C" + std::to_string(c + 1) + " no se visita ni esta excluido");
     }
 
-    if (std::abs(length - route.costo) > TOL * std::max(1.0, length)) {
+    if (std::abs(length - ruta.costo) > TOL * std::max(1.0, length)) {
         return fail("el costo informado no coincide con la trayectoria");
     }
-    if (recharges != route.recharges) return fail("las recargas informadas no coinciden con la trayectoria");
-    if (keyLabels != route.order) return fail("el orden informado no coincide con la trayectoria");
+    if (recargas != ruta.recargas) return fail("las recargas informadas no coinciden con la trayectoria");
+    if (keyLabels != ruta.orden) return fail("el orden informado no coincide con la trayectoria");
     return {};
 }
 
@@ -163,27 +163,27 @@ namespace {
 
 // Resuelve un escenario con cada algoritmo, guarda y verifica cada ruta, y le da veredicto y gap.
 std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& routesFolder) {
-    MissionSolver solver(s);
+    SolverMision solver(s);
     bool smallCase = s.categoria == Categoria::SMALL || s.categoria == Categoria::ADVERSARIAL;
 
     std::vector<JudgeRow> rows;
     std::vector<bool> valid;
-    for (Algorithm algorithm : allAlgorithms()) {
-        if (algorithm == Algorithm::BRANCH_AND_BOUND && !(smallCase && solver.supportsExact())) continue;
-        Route route = solver.solve(algorithm);
-        Exporter::saveRoute(route, routesFolder + "/" + route.escenario + "_" + route.algorithm + ".txt");
-        VerificationResult check = verifyRoute(s, solver, route);
+    for (Algoritmo algoritmo : todosLosAlgoritmos()) {
+        if (algoritmo == Algoritmo::BRANCH_AND_BOUND && !(smallCase && solver.admiteExacto())) continue;
+        Ruta ruta = solver.resolver(algoritmo);
+        Exporter::saveRoute(ruta, routesFolder + "/" + ruta.escenario + "_" + ruta.algoritmo + ".txt");
+        VerificationResult check = verifyRoute(s, solver, ruta);
 
         JudgeRow row;
         row.escenario = s.nombre;
         row.categoria = s.categoria;
         row.clientes = s.numClientes();
-        row.algorithm = route.algorithm;
+        row.algoritmo = ruta.algoritmo;
         row.problem = check.problem;
-        row.costo = route.costo;
-        row.recharges = route.recharges;
-        row.excluded = static_cast<int>(route.excluded.size());
-        row.timeMs = route.totalMs();
+        row.costo = ruta.costo;
+        row.recargas = ruta.recargas;
+        row.excluidos = static_cast<int>(ruta.excluidos.size());
+        row.timeMs = ruta.totalMs();
         rows.push_back(row);
         valid.push_back(check.valid);
     }
@@ -201,7 +201,7 @@ std::vector<JudgeRow> judgeScenario(const Escenario& s, const std::string& route
     // Gap contra la mejor ruta OK y contra la cota inferior: el árbol de expansión mínima de la
     // base y los clientes atendibles.
     std::vector<int> nodes = {solver.mision().claveBase()};
-    nodes.insert(nodes.end(), solver.servableClients().begin(), solver.servableClients().end());
+    nodes.insert(nodes.end(), solver.clientesAtendibles().begin(), solver.clientesAtendibles().end());
     double bound = arbolMinimoPrim(solver.mision().distancias(), nodes).costo;
     for (JudgeRow& row : rows) {
         bool isOk = row.verdict == "OK";
@@ -226,7 +226,7 @@ void printCase(std::ostream& log, size_t number, size_t total, const Escenario& 
         << " OK  mejor " << std::fixed << std::setprecision(2) << best << "\n" << std::flush;
     for (const JudgeRow& row : rows) {
         if (row.verdict != "OK") {
-            log << "         " << row.algorithm << ": " << row.verdict
+            log << "         " << row.algoritmo << ": " << row.verdict
                 << (row.problem.empty() ? "" : " (" + row.problem + ")") << "\n";
         }
     }
@@ -254,9 +254,9 @@ std::vector<RankingRow> rank(const std::vector<JudgeRow>& rows) {
     // Acumulados por categoría y algoritmo.
     std::map<std::pair<int, std::string>, RankingRow> totals;
     for (const JudgeRow& row : rows) {
-        RankingRow& total = totals[{static_cast<int>(row.categoria), row.algorithm}];
+        RankingRow& total = totals[{static_cast<int>(row.categoria), row.algoritmo}];
         total.categoria = row.categoria;
-        total.algorithm = row.algorithm;
+        total.algoritmo = row.algoritmo;
         ++total.cases;
         if (row.verdict == "OK") {
             ++total.okCases;

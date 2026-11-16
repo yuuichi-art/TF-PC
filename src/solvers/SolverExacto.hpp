@@ -8,11 +8,11 @@ namespace geodrone {
 /**
  * @brief Resultado del solver exacto.
  */
-struct ExactResult {
-    std::vector<int> order;         // Claves de los clientes en el orden de visita óptimo
+struct ResultadoExacto {
+    std::vector<int> orden;         // Claves de los clientes en el orden de visita óptimo
     double costo = 0.0;              // Costo del ciclo base -> clientes -> base, sin recargas
-    long long nodesExplored = 0;    // Nodos del árbol de búsqueda visitados
-    long long nodesPruned = 0;      // Ramas descartadas por la cota
+    long long nodosExplorados = 0;    // Nodos del árbol de búsqueda visitados
+    long long nodosPodados = 0;      // Ramas descartadas por la cota
 };
 
 /**
@@ -33,20 +33,20 @@ struct ExactResult {
  * después, así que el óptimo es el del orden, no el de la ruta con recargas.
  *
  * Complejidad: O(n! · n^2) en el peor caso (n! órdenes, Prim O(n^2) por nodo); la poda reduce
- * muchísimo los nodos visitados en la práctica (ver nodesExplored). Espacio O(n) de recursión.
- * Límite práctico: MAX_CLIENTS.
+ * muchísimo los nodos visitados en la práctica (ver nodosExplorados). Espacio O(n) de recursión.
+ * Límite práctico: MAX_CLIENTES.
  */
-class ExactSolver {
+class SolverExacto {
 public:
-    static constexpr int MAX_CLIENTS = 12;
+    static constexpr int MAX_CLIENTES = 12;
 
     /**
-     * @param dist     Matriz de distancias entre nodos clave (la del grafo de misión).
+     * @param distancias     Matriz de distancias entre nodos clave (la del grafo de misión).
      * @param base    Clave de la base.
      * @param clientes  Claves de los clientes a visitar. Deben ser alcanzables desde la base.
-     * Lanza std::invalid_argument si hay más de MAX_CLIENTS clientes.
+     * Lanza std::invalid_argument si hay más de MAX_CLIENTES clientes.
      */
-    static ExactResult solve(const std::vector<std::vector<double>>& dist, int base,
+    static ResultadoExacto resolver(const std::vector<std::vector<double>>& distancias, int base,
                              const std::vector<int>& clientes);
 };
 

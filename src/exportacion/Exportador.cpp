@@ -10,36 +10,36 @@
 namespace geodrone {
 namespace Exporter {
 
-void writeRoute(const Route& route, std::ostream& out) {
-    out << "SCENARIO " << route.escenario << '\n';
-    out << "ALGORITHM " << route.algorithm << '\n';
-    out << "STATUS " << (route.feasible ? "OK" : "INFEASIBLE") << '\n';
+void writeRoute(const Ruta& ruta, std::ostream& out) {
+    out << "SCENARIO " << ruta.escenario << '\n';
+    out << "ALGORITHM " << ruta.algoritmo << '\n';
+    out << "STATUS " << (ruta.factible ? "OK" : "INFEASIBLE") << '\n';
     // Seis decimales: suficientes para que el juez compare el costo con el que recalcula.
-    out << "COST " << std::fixed << std::setprecision(6) << route.costo << '\n';
-    out << "RECHARGES " << route.recharges << '\n';
+    out << "COST " << std::fixed << std::setprecision(6) << ruta.costo << '\n';
+    out << "RECHARGES " << ruta.recargas << '\n';
 
-    out << "EXCLUDED " << route.excluded.size() << '\n';
-    for (const ExcludedClient& client : route.excluded) {
-        out << client.etiqueta << ' ' << client.reason << '\n';
+    out << "EXCLUDED " << ruta.excluidos.size() << '\n';
+    for (const ClienteExcluido& client : ruta.excluidos) {
+        out << client.etiqueta << ' ' << client.motivo << '\n';
     }
 
-    out << "ORDER " << route.order.size() << '\n';
-    for (size_t i = 0; i < route.order.size(); ++i) {
-        out << (i > 0 ? " " : "") << route.order[i];
+    out << "ORDER " << ruta.orden.size() << '\n';
+    for (size_t i = 0; i < ruta.orden.size(); ++i) {
+        out << (i > 0 ? " " : "") << ruta.orden[i];
     }
     out << '\n';
 
     // Coordenadas como en los escenarios: los enteros sin decimales.
     out << std::defaultfloat << std::setprecision(15);
-    out << "PATH " << route.path.size() << '\n';
-    for (const RoutePoint& p : route.path) {
-        out << p.point.x << ' ' << p.point.y << ' ' << p.etiqueta << '\n';
+    out << "PATH " << ruta.trayectoria.size() << '\n';
+    for (const PuntoRuta& p : ruta.trayectoria) {
+        out << p.punto.x << ' ' << p.punto.y << ' ' << p.etiqueta << '\n';
     }
 }
 
-void saveRoute(const Route& route, const std::string& path) {
+void saveRoute(const Ruta& ruta, const std::string& path) {
     std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
-    writeRoute(route, file);
+    writeRoute(ruta, file);
     if (!file) {
         throw std::runtime_error("error al escribir el archivo " + path);
     }
@@ -50,8 +50,8 @@ void writeResultsCsv(const std::vector<JudgeRow>& rows, std::ostream& out) {
            "gap_mejor,gap_cota\n";
     out << std::fixed << std::setprecision(3);
     for (const JudgeRow& row : rows) {
-        out << row.escenario << ',' << nombreCategoria(row.categoria) << ',' << row.clientes << ',' << row.algorithm << ','
-            << row.verdict << ',' << row.costo << ',' << row.recharges << ',' << row.excluded << ',' << row.timeMs
+        out << row.escenario << ',' << nombreCategoria(row.categoria) << ',' << row.clientes << ',' << row.algoritmo << ','
+            << row.verdict << ',' << row.costo << ',' << row.recargas << ',' << row.excluidos << ',' << row.timeMs
             << ',' << row.memoryMB << ',';
         if (!std::isnan(row.gapBest)) out << row.gapBest;
         out << ',';
@@ -70,7 +70,7 @@ void writeRankingCsv(const std::vector<RankingRow>& ranking, std::ostream& out) 
     out << "categoria,posicion,algoritmo,casos_ok,casos,gap_medio,tiempo_medio_ms\n";
     out << std::fixed << std::setprecision(3);
     for (const RankingRow& row : ranking) {
-        out << nombreCategoria(row.categoria) << ',' << row.position << ',' << row.algorithm << ',' << row.okCases
+        out << nombreCategoria(row.categoria) << ',' << row.position << ',' << row.algoritmo << ',' << row.okCases
             << ',' << row.cases << ',' << row.meanGap << ',' << row.meanTimeMs << '\n';
     }
 }
@@ -130,7 +130,7 @@ void writeLabel(std::ostream& out, double x, double y, const std::string& text) 
 
 } // namespace
 
-void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out) {
+void writeSvg(const Escenario& escenario, const Ruta& ruta, std::ostream& out) {
     const double mapSize = 800.0, margin = 20.0, header = 40.0, footer = 34.0;
     double scale = mapSize / std::max(escenario.anchoArea, escenario.altoArea);
     Canvas canvas{scale, margin, header, escenario.altoArea};
@@ -146,9 +146,9 @@ void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out)
         << "\" viewBox=\"0 0 " << width << ' ' << height << "\">\n";
     out << "<rect width=\"" << width << "\" height=\"" << height << "\" fill=\"#ffffff\"/>\n";
     out << "<text x=\"" << margin << "\" y=\"26\" font-family=\"sans-serif\" font-size=\"15\" fill=\"#111827\">"
-        << "<tspan font-weight=\"bold\">" << escapeXml(route.escenario) << "</tspan>  " << escapeXml(route.algorithm)
-        << "  |  costo " << route.costo << "  |  recargas " << route.recharges << "  |  excluidos "
-        << route.excluded.size() << (route.feasible ? "" : "  |  INFACTIBLE") << "</text>\n";
+        << "<tspan font-weight=\"bold\">" << escapeXml(ruta.escenario) << "</tspan>  " << escapeXml(ruta.algoritmo)
+        << "  |  costo " << ruta.costo << "  |  recargas " << ruta.recargas << "  |  excluidos "
+        << ruta.excluidos.size() << (ruta.factible ? "" : "  |  INFACTIBLE") << "</text>\n";
 
     // Área del escenario y obstáculos.
     out << "<rect class=\"area\" x=\"" << canvas.x(0) << "\" y=\"" << canvas.y(escenario.altoArea) << "\" width=\""
@@ -162,18 +162,18 @@ void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out)
 
     // Trayectoria volada.
     std::vector<Punto> path;
-    for (const RoutePoint& p : route.path) path.push_back(p.point);
+    for (const PuntoRuta& p : ruta.trayectoria) path.push_back(p.punto);
     out << "<polyline class=\"route\" points=\"";
     writePoints(out, canvas, path);
     out << "\" fill=\"none\" stroke=\"#2563eb\" stroke-width=\"1.5\" stroke-linejoin=\"round\" opacity=\"0.9\"/>\n";
 
     // Clientes: círculo si se atiende, cruz roja si se excluyó.
-    std::vector<std::string> excluded;
-    for (const ExcludedClient& client : route.excluded) excluded.push_back(client.etiqueta);
+    std::vector<std::string> excluidos;
+    for (const ClienteExcluido& client : ruta.excluidos) excluidos.push_back(client.etiqueta);
     for (int c = 0; c < escenario.numClientes(); ++c) {
         std::string etiqueta = "C" + std::to_string(c + 1);
         double x = canvas.x(escenario.clientes[c].x), y = canvas.y(escenario.clientes[c].y);
-        if (std::find(excluded.begin(), excluded.end(), etiqueta) != excluded.end()) {
+        if (std::find(excluidos.begin(), excluidos.end(), etiqueta) != excluidos.end()) {
             writeCross(out, x, y, radius + 1, "class=\"excluded\"");
         } else {
             out << "<circle class=\"client\" cx=\"" << x << "\" cy=\"" << y << "\" r=\"" << radius
@@ -221,9 +221,9 @@ void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out)
     out << "</svg>\n";
 }
 
-void saveSvg(const Escenario& escenario, const Route& route, const std::string& path) {
+void saveSvg(const Escenario& escenario, const Ruta& ruta, const std::string& path) {
     std::ofstream file = ArchivoEscenario::abrirParaEscribir(path);
-    writeSvg(escenario, route, file);
+    writeSvg(escenario, ruta, file);
     if (!file) throw std::runtime_error("error al escribir el archivo " + path);
 }
 

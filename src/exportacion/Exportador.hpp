@@ -20,13 +20,13 @@ namespace Exporter {
      * @brief Escribe la ruta: resumen, clientes excluidos con su motivo, orden de nodos clave y
      * trayectoria completa con la etiqueta de cada punto. O(longitud de la trayectoria).
      */
-    void writeRoute(const Route& route, std::ostream& out);
+    void writeRoute(const Ruta& ruta, std::ostream& out);
 
     /**
      * @brief Guarda la ruta en un archivo, creando las carpetas que falten.
      * Lanza std::runtime_error si no se puede escribir.
      */
-    void saveRoute(const Route& route, const std::string& path);
+    void saveRoute(const Ruta& ruta, const std::string& path);
 
     /**
      * @brief Resultados del juez, una fila por escenario y algoritmo, con las columnas
@@ -48,8 +48,8 @@ namespace Exporter {
      * Es solo visualización (opcional según la guía): la validación oficial es la del juez.
      * El eje y se invierte, porque en SVG crece hacia abajo. O(puntos + vértices de obstáculos).
      */
-    void writeSvg(const Escenario& escenario, const Route& route, std::ostream& out);
-    void saveSvg(const Escenario& escenario, const Route& route, const std::string& path);
+    void writeSvg(const Escenario& escenario, const Ruta& ruta, std::ostream& out);
+    void saveSvg(const Escenario& escenario, const Ruta& ruta, const std::string& path);
 
 } // namespace Exporter
 

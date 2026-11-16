@@ -30,16 +30,16 @@ Escenario handScenario() {
 }
 
 // La ruta debe rechazarse y el motivo debe mencionar el fragmento esperado.
-void expectRejected(const Escenario& s, const MissionSolver& solver, const Route& route, const std::string& fragment) {
-    VerificationResult result = Judge::verifyRoute(s, solver, route);
+void expectRejected(const Escenario& s, const SolverMision& solver, const Ruta& ruta, const std::string& fragment) {
+    VerificationResult result = Judge::verifyRoute(s, solver, ruta);
     if (result.valid || result.problem.find(fragment) == std::string::npos) {
         std::cerr << "  Resultado: " << (result.valid ? "valida" : result.problem) << "\n  Se esperaba: " << fragment << "\n";
         assert(false);
     }
 }
 
-void removePoint(Route& route, size_t index) {
-    route.path.erase(route.path.begin() + static_cast<long>(index));
+void removePoint(Ruta& ruta, size_t index) {
+    ruta.trayectoria.erase(ruta.trayectoria.begin() + static_cast<long>(index));
 }
 
 void testAcceptsValidRoutes(const std::string& folder) {
@@ -52,10 +52,10 @@ void testAcceptsValidRoutes(const std::string& folder) {
     scenarios.push_back(handScenario());
 
     for (const Escenario& s : scenarios) {
-        MissionSolver solver(s);
-        for (Algorithm algorithm : allAlgorithms()) {
-            if (algorithm == Algorithm::BRANCH_AND_BOUND && !solver.supportsExact()) continue;
-            VerificationResult result = Judge::verifyRoute(s, solver, solver.solve(algorithm));
+        SolverMision solver(s);
+        for (Algoritmo algoritmo : todosLosAlgoritmos()) {
+            if (algoritmo == Algoritmo::BRANCH_AND_BOUND && !solver.admiteExacto()) continue;
+            VerificationResult result = Judge::verifyRoute(s, solver, solver.resolver(algoritmo));
             if (!result.valid) std::cerr << "  " << s.nombre << ": " << result.problem << "\n";
             assert(result.valid);
         }
@@ -69,33 +69,33 @@ void testRejectsInvalidRoutes(const std::string& folder) {
 
     // Trampa en U: sin los vértices de obstáculo, la ruta atraviesa la U.
     Escenario trap = ArchivoEscenario::cargar(folder + "/adv_concave_trap.txt");
-    MissionSolver trapSolver(trap);
-    Route straight = trapSolver.solve(Algorithm::BRANCH_AND_BOUND);
-    straight.path.erase(std::remove_if(straight.path.begin(), straight.path.end(),
-                                       [](const RoutePoint& p) { return p.etiqueta == "V"; }),
-                        straight.path.end());
+    SolverMision trapSolver(trap);
+    Ruta straight = trapSolver.resolver(Algoritmo::BRANCH_AND_BOUND);
+    straight.trayectoria.erase(std::remove_if(straight.trayectoria.begin(), straight.trayectoria.end(),
+                                       [](const PuntoRuta& p) { return p.etiqueta == "V"; }),
+                        straight.trayectoria.end());
     expectRejected(trap, trapSolver, straight, "cruza un obstaculo");
 
     // Ruta a mano D0 S1 C1 S1 D0, que es válida, y variantes rotas.
     Escenario hand = handScenario();
-    MissionSolver solver(hand);
-    const Route good = solver.solve(Algorithm::BRANCH_AND_BOUND);
+    SolverMision solver(hand);
+    const Ruta good = solver.resolver(Algoritmo::BRANCH_AND_BOUND);
     assert(Judge::verifyRoute(hand, solver, good).valid);
 
     Escenario weak = hand;
     weak.bateria = 8;                                   // Con 8 no alcanza el tramo de 10 a la estación
     expectRejected(weak, solver, good, "bateria se agota");
 
-    Route r = good;
+    Ruta r = good;
     removePoint(r, 2);                                  // Sin C1
     expectRejected(hand, solver, r, "C1 no se visita ni esta excluido");
 
     r = good;
-    r.path.insert(r.path.begin() + 2, r.path[2]);       // C1 dos veces
+    r.trayectoria.insert(r.trayectoria.begin() + 2, r.trayectoria[2]);       // C1 dos veces
     expectRejected(hand, solver, r, "C1 se visita mas de una vez");
 
     r = good;
-    r.path[2].point.x += 1;                             // C1 fuera de su lugar
+    r.trayectoria[2].punto.x += 1;                             // C1 fuera de su lugar
     expectRejected(hand, solver, r, "C1 no esta en las coordenadas");
 
     r = good;
@@ -107,28 +107,28 @@ void testRejectsInvalidRoutes(const std::string& folder) {
     expectRejected(hand, solver, r, "costo informado");
 
     r = good;
-    r.recharges = 0;
+    r.recargas = 0;
     expectRejected(hand, solver, r, "recargas informadas");
 
     r = good;
-    std::swap(r.order[1], r.order[2]);                  // ORDER no sigue a la trayectoria
+    std::swap(r.orden[1], r.orden[2]);                  // ORDER no sigue a la trayectoria
     expectRejected(hand, solver, r, "orden informado");
 
     r = good;
-    r.path[1].etiqueta = "X9";
+    r.trayectoria[1].etiqueta = "X9";
     expectRejected(hand, solver, r, "etiqueta desconocida");
 
     r = good;
-    r.feasible = false;
+    r.factible = false;
     expectRejected(hand, solver, r, "no encontro una ruta factible");
 
     // Excluir a un cliente que sí se puede atender.
     r = good;
-    r.path = {good.path.front()};
-    r.order = {"D0"};
+    r.trayectoria = {good.trayectoria.front()};
+    r.orden = {"D0"};
     r.costo = 0;
-    r.recharges = 0;
-    r.excluded = {{"C1", "BATTERY"}};
+    r.recargas = 0;
+    r.excluidos = {{"C1", "BATTERY"}};
     expectRejected(hand, solver, r, "C1 se excluyo por BATTERY pero se puede atender");
 
     std::cout << "  -> PASSED\n" << std::endl;
@@ -147,11 +147,11 @@ void testVerdicts() {
     std::cout << "  -> PASSED\n" << std::endl;
 }
 
-JudgeRow makeRow(Categoria categoria, const std::string& algorithm, const std::string& verdict,
+JudgeRow makeRow(Categoria categoria, const std::string& algoritmo, const std::string& verdict,
                  double gap, double timeMs) {
     JudgeRow row;
     row.categoria = categoria;
-    row.algorithm = algorithm;
+    row.algoritmo = algoritmo;
     row.verdict = verdict;
     row.gapBest = gap;
     row.timeMs = timeMs;
@@ -179,7 +179,7 @@ void testRanking() {
     const std::vector<std::string> expected = {"preciso", "rapido", "lento", "fallado"};
     for (size_t i = 0; i < expected.size(); ++i) {
         assert(ranking[i].categoria == Categoria::SMALL);
-        assert(ranking[i].algorithm == expected[i] && ranking[i].position == static_cast<int>(i) + 1);
+        assert(ranking[i].algoritmo == expected[i] && ranking[i].position == static_cast<int>(i) + 1);
     }
     assert(ranking[1].okCases == 2 && ranking[1].cases == 2 && std::abs(ranking[1].meanGap - 1.0) < 1e-9);
     assert(ranking[3].okCases == 1 && ranking[3].cases == 2);
